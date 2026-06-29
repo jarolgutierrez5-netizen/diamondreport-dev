@@ -380,6 +380,25 @@
   .kprop-chip.neg { border-color:#e6394666; color:#e63946; background:#2a0d0d; }
   .kprop-chip.neu { border-color:var(--border); color:var(--muted); background:var(--surface2); }
   .kprop-summary { font-size:11px; color:#8fa3c8; line-height:1.45; }
+
+
+  /* HR Potential matchup button layout */
+  .hrp-batter-sub { align-items:center; }
+  .hrp-matchup-wrap { width:100%; margin-top:4px; display:flex; justify-content:flex-start; }
+  .hrp-matchup-btn { max-width:100%; white-space:nowrap; }
+
+  /* Pitcher Report expanded lineup layout */
+  .lineup-batter-card { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; padding:10px 0 10px 11px; border-bottom:1px solid var(--border); }
+  .lineup-batter-card.hr-today { padding-left:8px; background:linear-gradient(90deg,#2a1a00 0%,#1a1200 100%); border-left:3px solid var(--accent2); border-radius:4px; }
+  .lineup-batter-main { display:flex; align-items:flex-start; gap:10px; min-width:0; }
+  .lineup-batter-details { min-width:0; flex:1; }
+  .lineup-matchup-action { display:flex; justify-content:flex-end; align-items:center; }
+  .lineup-matchup-action .btn-matchup { padding:5px 10px; font-size:10px; }
+  @media (max-width:768px) {
+    .lineup-batter-card { grid-template-columns:1fr; gap:8px; }
+    .lineup-matchup-action { justify-content:flex-start; }
+  }
+
   /* Live Alert Banner */
   @keyframes marquee {
     0%   { transform: translateX(0); }
@@ -1108,12 +1127,13 @@ function pill(val, dispFn, goodBelow, badAbove) {
 
 function renderPRTable() {
   const el = document.getElementById('pr-content');
-  const colCount = 14;
+  const colCount = 15;
 
   const cols = [
     {key:'gameTime', label:'TIME',    sortable:true,  tip:'Game start time'},
     {key:'name',     label:'PITCHER', sortable:false, tip:'Starting pitcher'},
     {key:'vs',       label:'VS',      sortable:false, tip:'Opposing team'},
+    {key:'kprop',    label:'K PROP',  sortable:true,  tip:'Projected Ks today based on opposing lineup K% vs pitcher K/9'},
     {key:'ip',       label:'IP',      sortable:true,  tip:'Innings Pitched'},
     {key:'bf',       label:'BF',      sortable:true,  tip:'Batters Faced'},
     {key:'fip',      label:'FIP',     sortable:true,  tip:'Fielding Independent Pitching — ERA based only on K, BB, HR'},
@@ -1125,7 +1145,6 @@ function renderPRTable() {
     {key:'hr9',      label:'HR/9',    sortable:true,  tip:'Home Runs per 9 Innings'},
     {key:'tb',       label:'TB',      sortable:true,  tip:'Total Bases Allowed'},
     {key:'kpg',      label:'K/GM',    sortable:true,  tip:'Average Strikeouts per Game Started'},
-    {key:'kprop',    label:'K PROP',  sortable:true,  tip:'Projected Ks today based on opposing lineup K% vs pitcher K/9'},
   ];
 
   const sorted = [...prRows].sort((a,b) => {
@@ -1179,6 +1198,7 @@ function renderPRTable() {
         </div>
       </td>
       <td style="color:var(--muted);font-size:11px">@ ${p.oppAbbr}</td>
+      <td id="kprop-cell-${r.pitcher.id}"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${r.rawK9>=9?'var(--green)':r.rawK9>=7?'var(--accent2)':'var(--muted)'}">${r.kprop??'–'}</span></td>
       <td><span class="pr-plain">${r.ip!=null?r.ip.toFixed(1):'–'}</span></td>
       <td><span class="pr-plain">${r.bf!=null?r.bf:'–'}</span></td>
       <td>${pill(r.fip,  v=>v.toFixed(2), 3.25, 4.50)}</td>
@@ -1190,7 +1210,6 @@ function renderPRTable() {
       <td>${pill(r.hr9,  v=>v.toFixed(2), 0.80, 1.50)}</td>
       <td><span class="pr-plain">${r.tb!=null?r.tb:'–'}</span></td>
       <td><span class="pr-plain" style="color:${r.kpg>=7?'var(--green)':r.kpg>=5?'var(--text)':'var(--muted)'}">${r.kpg??'–'}</span></td>
-      <td id="kprop-cell-${r.pitcher.id}"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${r.rawK9>=9?'var(--green)':r.rawK9>=7?'var(--accent2)':'var(--muted)'}">${r.kprop??'–'}</span></td>
     </tr>`;
 
     const expandRow = `<tr class="pr-expand-row" id="${expandId}" style="${isExpanded?'':'display:none'}">
@@ -1499,30 +1518,25 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
     const bName = b.name.replace(/'/g,"\\'");
     const rowBg = homerToday ? 'background:linear-gradient(90deg,#2a1a00 0%,#1a1200 100%);border-left:3px solid var(--accent2);' : '';
 
-    return `<div data-batter-id="${b.id}" style="display:flex;align-items:center;gap:12px;padding:10px 0 10px ${homerToday?'8px':'11px'};border-bottom:1px solid var(--border);${rowBg}border-radius:${homerToday?'4px':'0'}">
-      <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;min-width:14px">${i+1}</span>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span class="batter-name-span" style="font-size:13px;font-weight:700;color:${homerToday?'var(--accent2)':'var(--text)'}">${b.name}</span>
-          <span class="batter-pos">${b.pos}</span>
-          ${homerToday ? `<span class="hr-today-badge" style="background:#2a1500;color:#f4a261;font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.5px;border:1px solid #f4a26166">💥 HR TODAY${b.todayHR>1?' x'+b.todayHR:''}</span>` : ''}
-          ${isTop ? `<span class="top-hr-badge">⚡ TOP HR THREAT</span>` : ''}
-        </div>
-        <div style="margin-top:3px">${matchupLabel(s)}</div>
-        <div class="batter-stats-line" style="display:flex;gap:12px;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);flex-wrap:wrap">
-          ${buildBatterStatsLine(b)}
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <div>
-          <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:3px;text-align:right">HR PROB/AB</div>
-          <div class="hr-prob-cell">
-            <div class="hr-bar-wrap"><div class="hr-bar-fill" style="width:${barPct.toFixed(0)}%;background:${barColor}"></div></div>
-            <span class="hr-pct" style="color:${homerToday?'var(--accent2)':isTop?'var(--accent2)':'var(--muted)'}">${b.hrProb.toFixed(1)}%</span>
+    return `<div data-batter-id="${b.id}" class="lineup-batter-card${homerToday?' hr-today':''}">
+      <div class="lineup-batter-main">
+        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;min-width:14px">${i+1}</span>
+        <div class="lineup-batter-details">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="batter-name-span" style="font-size:13px;font-weight:700;color:${homerToday?'var(--accent2)':'var(--text)'}">${b.name}</span>
+            <span class="batter-pos">${b.pos}</span>
+            ${homerToday ? `<span class="hr-today-badge" style="background:#2a1500;color:#f4a261;font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.5px;border:1px solid #f4a26166">💥 HR TODAY${b.todayHR>1?' x'+b.todayHR:''}</span>` : ''}
+            ${isTop ? `<span class="top-hr-badge">⚡ TOP HR THREAT</span>` : ''}
+          </div>
+          <div style="margin-top:3px">${matchupLabel(s)}</div>
+          <div class="batter-stats-line" style="display:flex;gap:12px;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);flex-wrap:wrap">
+            ${buildBatterStatsLine(b)}
           </div>
         </div>
+      </div>
+      <div class="lineup-matchup-action">
         <button class="btn-matchup" onclick="openMatchup(${b.id},'${bName}',${pitcherId},'${pName}')" title="Batter vs Pitcher analysis">
-          ⚔ BATTER vs PITCHER
+          ⚔ Pitcher Matchup vs ${pName}
         </button>
       </div>
     </div>`;
@@ -2941,14 +2955,14 @@ function renderHRPTable() {
                 ${r.hrVsPitcher !== null && r.hrVsPitcher !== undefined ? `<span style="background:${r.hrVsPitcher>0?'#2a1500':'var(--bg)'};border:1px solid ${r.hrVsPitcher>0?'#f4a261':'var(--border)'};border-radius:3px;padding:1px 6px;font-size:9px;font-family:'JetBrains Mono',monospace;white-space:nowrap"><span style="color:var(--muted)">vs P </span><strong style="color:${r.hrVsPitcher>0?'var(--accent2)':'var(--muted)'}">${r.hrVsPitcher} HR</strong></span>` : ''}
                 ${r.streakDays>=3?`<span style="background:#1a1200;color:#ffd700;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;border:1px solid #ffd70066;white-space:nowrap">👑 ON A HEATER</span>`:r.streakDays===2?`<span style="background:#1a0d00;color:#ff8c00;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;border:1px solid #ff8c0066;white-space:nowrap">🔥 BACK TO BACK</span>`:''}
               </div>
-              <div style="width:100%;margin-top:2px">
+              <div class="hrp-matchup-wrap">
                 <button class="hrp-matchup-btn"
                   data-batter-id="${r.id}"
                   data-batter-name="${r.name.replace(/"/g,'&quot;')}"
                   data-pitcher-id="${r.pitcherId}"
                   data-pitcher-name="${r.pitcherName.replace(/"/g,'&quot;')}"
                   onclick="const d=this.dataset;checkMatchupAccess(+d.batterId,d.batterName,+d.pitcherId,d.pitcherName)"
-                >${matchupUnlocked ? '⚔' : '🔒'} PITCHER MATCHUP · vs ${r.pitcherName}</button>
+                >${matchupUnlocked ? '⚔' : '🔒'} PITCHER MATCHUP vs ${r.pitcherName}</button>
               </div>
             </div>
           </div>
