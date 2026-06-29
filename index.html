@@ -194,6 +194,7 @@
   .pr-table thead th:first-child, .pr-table thead th:nth-child(2), .pr-table thead th:nth-child(3) { text-align: left; }
   .pr-table thead th:first-child { min-width: 80px; }
   .pr-table thead th:nth-child(2) { min-width: 210px; }
+  .pr-table thead th:nth-child(4), .pr-table tbody td:nth-child(4) { min-width: 120px; text-align: center; }
   .pr-table thead th.sort-asc::after { content: ' ▲'; color: var(--accent); }
   .pr-table thead th.sort-desc::after { content: ' ▼'; color: var(--accent); }
   .pr-table thead th:hover { color: var(--text); }
@@ -1189,7 +1190,6 @@ function renderPRTable() {
             <span class="pr-pitcher-name">${p.name}</span>
             <div class="pr-pitcher-sub">
               <span class="pr-wl">${p.teamAbbr} · ${r.wl}</span>
-              ${kProjTag}
               <button class="btn-lineup${isExpanded?' active':''}" onclick="toggleLineup('${p.id}', '${p.name.replace(/'/g,"\\'")}', ${p.gamePk}, '${p.side}', ${p.oppTeamId}, ${r.rawHr9}, ${r.rawIp})">
                 ${isExpanded ? '▲ HIDE' : '▼ BATTING LINEUP & MATCHUPS'}
               </button>
@@ -1198,7 +1198,12 @@ function renderPRTable() {
         </div>
       </td>
       <td style="color:var(--muted);font-size:11px">@ ${p.oppAbbr}</td>
-      <td id="kprop-cell-${r.pitcher.id}"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${r.rawK9>=9?'var(--green)':r.rawK9>=7?'var(--accent2)':'var(--muted)'}">${r.kprop??'–'}</span></td>
+      <td id="kprop-cell-${r.pitcher.id}">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
+          ${kProjTag}
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${r.rawK9>=9?'var(--green)':r.rawK9>=7?'var(--accent2)':'var(--muted)'}">${r.kprop??'–'}</span>
+        </div>
+      </td>
       <td><span class="pr-plain">${r.ip!=null?r.ip.toFixed(1):'–'}</span></td>
       <td><span class="pr-plain">${r.bf!=null?r.bf:'–'}</span></td>
       <td>${pill(r.fip,  v=>v.toFixed(2), 3.25, 4.50)}</td>
