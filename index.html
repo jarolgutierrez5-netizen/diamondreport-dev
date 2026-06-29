@@ -382,6 +382,18 @@
   .kprop-chip.neu { border-color:var(--border); color:var(--muted); background:var(--surface2); }
   .kprop-summary { font-size:11px; color:#8fa3c8; line-height:1.45; }
 
+  /* K Props colored quick-read labels */
+  .kprop-chip.decision { border-color:#a78bfa; color:#c4b5fd; background:#1a1233; box-shadow:0 0 10px rgba(167,139,250,.12); }
+  .kprop-chip.matchup { border-color:#4a9eff; color:#60a5fa; background:#081a33; box-shadow:0 0 10px rgba(74,158,255,.10); }
+  .kprop-chip.matchup-good { border-color:#2ecc71; color:#2ecc71; background:#0d2a1a; }
+  .kprop-chip.matchup-bad { border-color:#e63946; color:#e63946; background:#2a0d0d; }
+  .kprop-chip.profile { border-color:#22d3ee; color:#67e8f9; background:#08242b; box-shadow:0 0 10px rgba(34,211,238,.10); }
+  .kprop-chip.profile-strong { border-color:#2ecc71; color:#2ecc71; background:#0d2a1a; }
+  .kprop-chip.profile-low { border-color:#e63946; color:#e63946; background:#2a0d0d; }
+  .kprop-chip.rate { border-color:#facc15; color:#facc15; background:#2a2300; box-shadow:0 0 10px rgba(250,204,21,.10); }
+  .kprop-chip.k9 { border-color:#4a9eff; color:#93c5fd; background:#07182c; }
+  .kprop-chip.projection { border-color:#818cf8; color:#a5b4fc; background:#111432; }
+
 
   /* HR Potential matchup button layout */
   .hrp-batter-sub { align-items:center; }
@@ -2823,10 +2835,12 @@ async function loadHRPotential() {
         const ydStr=yd.toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
         const dbStr=db2.toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
 
-        // Fetch all batters in parallel (with cache)
-        await Promise.all(batters.slice(0,9).map(async b => {
+        // Fetch all batters in parallel (with cache), then tag the same TOP HR THREAT
+        // batter that the Pitcher Report lineup would tag. This prevents the Props tab
+        // from depending on opening Pitcher Report first.
+        const batterRowsForPitcher = (await Promise.all(batters.slice(0,9).map(async b => {
           const pid = b.player.person?.id;
-          if (!pid) return;
+          if (!pid) return null;
           let s=b.player.seasonStats?.batting||{};
           let last10HR=null, todayHR=0, streakDays=1, hrVsPitcher=null, logs=[];
           try {
@@ -2858,15 +2872,24 @@ async function loadHRPotential() {
           const isDrought=!hrInLast8&&hr>0;
           const batterOPS=parseFloat(s.ops)||0;
           const isFavorable=batterOPS>=.800&&(pitcherWhip>=1.25||pitcherAvg>=.260);
-          addBatter({
+          return {
             id:pid, name:b.player.person?.fullName||'–', pos:b.player.position?.abbreviation||'–',
             teamAbbr, oppAbbr, pitcherName:pitcher.fullName, pitcherId:pitcher.id,
             timeLabel, timeColor, gameTimestamp:dt.getTime(), gamePk:g.gamePk,
             stats:s, last10HR, todayHR, hrProb, streakDays, hrVsPitcher,
             avg:parseFloat(s.avg)||0, hrSeason:hr, ops:batterOPS,
             iso:(parseFloat(s.slg)||0)-(parseFloat(s.avg)||0), isDrought, isFavorable,
+            topHrThreat:false,
+          };
+        }))).filter(Boolean);
+
+        if (batterRowsForPitcher.length) {
+          const topRow = batterRowsForPitcher.reduce((best, row) => row.hrProb > best.hrProb ? row : best, batterRowsForPitcher[0]);
+          batterRowsForPitcher.forEach(row => {
+            row.topHrThreat = row.id === topRow.id;
+            addBatter(row);
           });
-        }));
+        }
       }));
     }));
 
@@ -3315,18 +3338,18 @@ function renderKProps() {
       const predLabel = p.pred==='PUSH' && p.pushLean ? `PUSH (${p.pushLean} LEAN)` : p.pred;
 
       const reason = p.reasoning || {};
-      const matchupCls = reason.matchupTag?.includes('High') ? 'pos' : reason.matchupTag?.includes('Contact') ? 'neg' : 'neu';
-      const k9Cls = reason.k9Tag?.includes('Strong') ? 'pos' : reason.k9Tag?.includes('Lower') ? 'neg' : 'neu';
-      const decisionCls = reason.decisionTag?.includes('Over') ? 'pos' : reason.decisionTag?.includes('Under') ? 'neg' : 'neu';
+      const matchupCls = reason.matchupTag?.includes('High') ? 'matchup matchup-good' : reason.matchupTag?.includes('Contact') ? 'matchup matchup-bad' : 'matchup';
+      const k9Cls = reason.k9Tag?.includes('Strong') ? 'profile profile-strong' : reason.k9Tag?.includes('Lower') ? 'profile profile-low' : 'profile';
+      const decisionCls = 'decision';
       const reasonHTML = `
         <div class="kprop-reason-title">Quick Read</div>
         <div class="kprop-reason-list">
           <span class="kprop-chip ${decisionCls}">${reason.decisionTag || predLabel}</span>
           <span class="kprop-chip ${matchupCls}">${reason.matchupTag || 'Matchup check'}</span>
           <span class="kprop-chip ${k9Cls}">${reason.k9Tag || 'K profile'}</span>
-          <span class="kprop-chip">${reason.oppKpctLabel || 'Opp K rate'}</span>
-          <span class="kprop-chip">${reason.k9Label || `${p.k9} K/9`}</span>
-          <span class="kprop-chip">${reason.projectionLabel || `${p.projK} Ks projected`}</span>
+          <span class="kprop-chip rate">${reason.oppKpctLabel || 'Opp K rate'}</span>
+          <span class="kprop-chip k9">${reason.k9Label || `${p.k9} K/9`}</span>
+          <span class="kprop-chip projection">${reason.projectionLabel || `${p.projK} Ks projected`}</span>
         </div>
         <div class="kprop-summary">${reason.summary || ''}</div>`;
 
