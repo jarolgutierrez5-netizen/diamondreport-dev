@@ -599,7 +599,7 @@
     <!-- Game Props -->
     <div style="margin-top:28px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <p class="section-title" style="font-size:20px;margin-bottom:0">DR <span>PICK</span></p>
+        <p class="section-title" style="font-size:20px;margin-bottom:0">DR GAME <span>PICKS</span></p>
         <div id="gameprops-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)"></div>
       </div>
       <div id="gameprops-content" style="max-height:600px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px;background:var(--surface)"><div class="mu-empty"><span class="spin"></span>Loading game props…</div></div>
@@ -1401,11 +1401,17 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
     const tAbbr = teamAbbr || oppAbbr || '–';
     const pOppAbbr = prRow?.pitcher.oppAbbr || oppAbbr || '–';
 
-    withProbs.forEach(b => {
+    withProbs.forEach((b, i) => {
       if (!b.id) return;
-      // Only add if not already in hrpRows
-      const exists = hrpRows.some(r => r.id === b.id && r.pitcherId == pitcherId);
-      if (!exists) {
+      const isTopThreat = i === topIdx;
+      // Only add if not already in hrpRows; if it exists, preserve/upgrade TOP HR THREAT status
+      const existing = hrpRows.find(r => r.id === b.id && r.pitcherId == pitcherId);
+      if (existing) {
+        existing.topHrThreat = existing.topHrThreat || isTopThreat;
+        existing.hrProb = Math.max(existing.hrProb || 0, b.hrProb || 0);
+        return;
+      }
+      if (!existing) {
         const s = b.stats || {};
         hrpRows.push({
           id: b.id,
@@ -1423,6 +1429,7 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
           last10HR: b.last10HR ?? null,
           todayHR: b.todayHR || 0,
           hrProb: b.hrProb,
+          topHrThreat: isTopThreat,
           streakDays: 1,
           hrVsPitcher: null,
           avg: parseFloat(s.avg) || 0,
@@ -2852,10 +2859,11 @@ function renderHRPTable() {
   if (hrpFilter === 'drought') displayRows = displayRows.filter(r => r.isDrought);
   else if (hrpFilter === 'favorable') displayRows = displayRows.filter(r => r.isFavorable);
   else if (hrpFilter === 'top') {
-    // Top HR Threat: top 30% by hrProb, minimum 3 players shown
+    // Top HR Threat: include every batter tagged TOP HR THREAT from Pitcher Report,
+    // plus the top 30% by HR probability as a fallback when lineup tags are not available.
     const sorted0 = [...hrpRows].sort((a,b) => b.hrProb - a.hrProb);
     const threshold = sorted0.length > 0 ? sorted0[Math.max(0, Math.floor(sorted0.length * 0.3) - 1)]?.hrProb || 0 : 0;
-    displayRows = displayRows.filter(r => r.hrProb >= threshold);
+    displayRows = displayRows.filter(r => r.topHrThreat || r.hrProb >= threshold);
     if (displayRows.length === 0) displayRows = [...hrpRows]; // fallback to all if none qualify
   }
 
@@ -2898,7 +2906,7 @@ function renderHRPTable() {
             <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
               <span class="hrp-batter-name" style="color:${homerToday?'var(--accent2)':'var(--text)'}">${r.name}</span>
               ${homerToday?`<span style="background:#2a1500;color:#f4a261;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px;border:1px solid #f4a26166;white-space:nowrap">💥 HR TODAY${r.todayHR>1?' ×'+r.todayHR:''}</span>`:''}
-              ${r.hrProb>=8?`<span class="top-hr-badge">⚡ TOP HR THREAT</span>`:''}
+              ${(r.topHrThreat || r.hrProb>=8)?`<span class="top-hr-badge">⚡ TOP HR THREAT</span>`:''}
               ${r.isDrought?`<span style="background:#1a0505;color:#ff4444;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid #ff444466;white-space:nowrap">🔴 DROUGHT</span>`:''}
               ${r.isFavorable?`<span style="background:#0a1a0a;color:#2ecc71;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid #2ecc7166;white-space:nowrap">🟢 FAVORABLE MATCHUP FOR BATTER</span>`:''}
             </div>
