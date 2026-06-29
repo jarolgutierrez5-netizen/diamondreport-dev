@@ -1021,12 +1021,12 @@ const prevBannerHRCounts = {};  // batterId -> previous HR count
 let breakingHRActive = false;
 let breakingHRTimeout = null;
 let breakingHRNames = [];
-let hrpRows = [], hrpSortCol = 'hrProb', hrpSortDir = -1, hrpFilter = 'top';
+let hrpRows = [], hrpSortCol = 'hrProb', hrpSortDir = -1, hrpFilter = 'all';
 const prevHrpHRs = {};          // batterId -> todayHR count for diff detection
 let kPropsData = [];
 let kPropsLoadedAt = null;
 let hrpRetryTimer = null;
-let hrpFilterActive = 'top';
+let hrpFilterActive = 'all';
 let prSortCol = null, prSortDir = 1, prRows = [];
 const lineupCache = {};
 const lineupMeta  = {}; // pitcherId -> {pitcherName, gamePk, side, oppTeamId, pitcherHr9, pitcherIp}
@@ -1895,7 +1895,7 @@ async function loadSchedule() {
   try {
     const today = new Date();
     const dates = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 1; i <= 5; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
       dates.push(d.toLocaleDateString('en-CA', {timeZone:'America/Chicago'}));
@@ -1914,7 +1914,7 @@ async function loadSchedule() {
       if (!games.length) return '';
       const dt = new Date(date + 'T12:00:00');
       const dayLabel = dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
-      const isToday = date === new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+      const isToday = false;
 
       const cards = games.map(g => {
         const away = g.teams.away, home = g.teams.home;
@@ -2936,10 +2936,18 @@ function renderHRPTable() {
   });
 
   const sorted = [...displayRows].sort((a,b) => {
+    // Default priority: TOP HR THREAT rows first, then highest HR probability.
+    // This keeps the most important bats at the top without requiring the user to open Pitcher Report first.
+    const aTop = (a.topHrThreat || a.hrProb >= 8) ? 1 : 0;
+    const bTop = (b.topHrThreat || b.hrProb >= 8) ? 1 : 0;
+    if (aTop !== bTop) return bTop - aTop;
+
     const av = a[hrpSortCol], bv = b[hrpSortCol];
     if (av==null&&bv==null) return 0;
     if (av==null) return 1; if (bv==null) return -1;
-    return (av-bv)*hrpSortDir;
+    const primary = (av-bv)*hrpSortDir;
+    if (primary !== 0) return primary;
+    return (b.hrProb || 0) - (a.hrProb || 0);
   });
 
   const hs = id => `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_34,q_auto:best/v1/people/${id}/headshot/67/current`;
