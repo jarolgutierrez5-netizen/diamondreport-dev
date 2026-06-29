@@ -412,43 +412,6 @@
     .lineup-matchup-action { justify-content:flex-start; }
   }
 
-
-
-  /* Tracker Tab */
-  .tracker-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
-  .tracker-card { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:14px; }
-  .tracker-card-title { font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
-  .tracker-card-value { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1px; line-height:1; }
-  .tracker-card-sub { font-size:10px; color:var(--muted); margin-top:5px; }
-  .tracker-section { margin-top:22px; }
-  .tracker-table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:auto; max-height:460px; }
-  .tracker-table th { position:sticky; top:0; background:var(--surface); z-index:2; }
-  .tracker-badge { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:800; letter-spacing:.5px; border-radius:999px; padding:2px 7px; white-space:nowrap; }
-  .tracker-hit { background:#0d2a1a; border:1px solid #2ecc71; color:#2ecc71; }
-  .tracker-miss { background:#2a0d0d; border:1px solid #e63946; color:#e63946; }
-  .tracker-pending { background:var(--surface2); border:1px solid var(--border); color:var(--muted); }
-  .tracker-pick-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border); }
-  .tracker-pick-row:last-child { border-bottom:none; }
-  .tracker-pick-main { min-width:0; }
-  .tracker-pick-title { font-weight:800; font-size:13px; }
-  .tracker-pick-sub { color:var(--muted); font-size:10px; margin-top:2px; }
-  .tracker-pct { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:1px; white-space:nowrap; }
-  .tracker-source-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
-  .tracker-source-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 12px; min-height:82px; }
-  .tracker-source-name { font-size:10px; font-weight:900; letter-spacing:.8px; text-transform:uppercase; color:var(--text); }
-  .tracker-source-status { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:800; margin-top:7px; padding:2px 7px; border-radius:999px; border:1px solid var(--border); color:var(--muted); background:var(--bg); }
-  .tracker-source-status.live { color:#2ecc71; border-color:#2ecc7166; background:#0d2a1a; }
-  .tracker-source-status.proxy { color:#f4a261; border-color:#f4a26166; background:#2a1800; }
-  .tracker-source-status.manual { color:#a78bfa; border-color:#a78bfa66; background:#1a1233; }
-  .tracker-source-desc { color:var(--muted); font-size:10px; line-height:1.4; margin-top:7px; }
-  .tracker-intel-row { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
-  .tracker-intel-chip { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:800; padding:2px 7px; border-radius:999px; border:1px solid var(--border); color:var(--muted); background:var(--bg); }
-  .tracker-intel-chip.good { color:#2ecc71; border-color:#2ecc7166; background:#0d2a1a; }
-  .tracker-intel-chip.warn { color:#f4a261; border-color:#f4a26166; background:#2a1800; }
-  .tracker-intel-chip.bad { color:#e63946; border-color:#e6394666; background:#2a0d0d; }
-  .tracker-model-note { color:var(--muted); font-size:11px; line-height:1.55; margin-top:8px; }
-  @media (max-width:768px){ .tracker-grid{grid-template-columns:1fr 1fr;} .tracker-source-grid{grid-template-columns:1fr 1fr;} .tracker-pick-row{align-items:flex-start; flex-direction:column;} }
-
   /* Live Alert Banner */
   @keyframes marquee {
     0%   { transform: translateX(0); }
@@ -509,6 +472,588 @@
   .gp-factor.neu { border-color:var(--border); color:var(--muted); }
   .gp-confidence { height:4px; border-radius:2px; background:var(--border); overflow:hidden; margin-top:8px; }
   .gp-confidence-fill { height:100%; border-radius:2px; }
+
+
+  /* ── MOBILE PROPS: independent scroll panels ─────────────────────
+     Keeps each Props section usable without scrolling through the full page. */
+  @media (max-width: 768px) {
+    #props {
+      overflow: visible !important;
+    }
+
+    #hr-potential-content,
+    #ks-today-props,
+    #hrs-today-content,
+    #proj-hits-content,
+    #gameprops-content,
+    #kprops-content {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      border-radius: 10px !important;
+    }
+
+    /* Main HR projection panel gets the most space. */
+    #hr-potential-content {
+      max-height: 58vh !important;
+      min-height: 340px;
+    }
+
+    /* Smaller side/support panels. */
+    #ks-today-props,
+    #hrs-today-content,
+    #proj-hits-content {
+      max-height: 38vh !important;
+      min-height: 120px;
+    }
+
+    /* Game picks and K props need more room but should still scroll internally. */
+    #gameprops-content,
+    #kprops-content {
+      max-height: 56vh !important;
+      min-height: 320px;
+    }
+
+    /* Make each Props block feel like a contained mobile module. */
+    #props .props-grid > div,
+    #props .hrs-today-grid > div,
+    #props > div[style*="margin-top:28px"] {
+      margin-bottom: 18px !important;
+    }
+
+    #props .section-title {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--bg);
+      padding: 4px 0 8px;
+    }
+  }
+
+  @media (max-width: 430px) {
+    #hr-potential-content { max-height: 55vh !important; min-height: 320px; }
+    #gameprops-content, #kprops-content { max-height: 52vh !important; min-height: 300px; }
+    #ks-today-props, #hrs-today-content, #proj-hits-content { max-height: 34vh !important; }
+  }
+
+
+  /* ── MOBILE HOTFIX: prevent horizontal bleed, ad gaps, and banner overlay ── */
+  html, body { width:100%; max-width:100%; overflow-x:hidden; }
+  img, svg, video, canvas { max-width:100%; }
+
+  @media (max-width: 768px) {
+    html, body { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
+    body { position:relative; }
+
+    /* Hide mobile ad/banner spaces that were creating the large blank area and red overlay. */
+    #ad-container,
+    #scores-alert-banner {
+      display:none !important;
+      visibility:hidden !important;
+      max-height:0 !important;
+      height:0 !important;
+      min-height:0 !important;
+      margin:0 !important;
+      padding:0 !important;
+      border:0 !important;
+      overflow:hidden !important;
+    }
+
+    .header {
+      width:100% !important;
+      max-width:100% !important;
+      padding:0 12px !important;
+      height:64px !important;
+      overflow:hidden !important;
+      position:sticky;
+      top:0;
+    }
+    .header .logo svg {
+      height:48px !important;
+      width:auto !important;
+      max-width:150px !important;
+      display:block !important;
+    }
+    .date-badge {
+      max-width:50vw;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .nav {
+      width:100% !important;
+      max-width:100% !important;
+      padding:0 10px !important;
+      height:50px !important;
+      align-items:flex-end !important;
+      overflow-x:auto !important;
+      overflow-y:hidden !important;
+      -webkit-overflow-scrolling:touch;
+      white-space:nowrap;
+      position:sticky;
+      top:64px;
+      z-index:90;
+    }
+    .tab {
+      flex:0 0 auto;
+      padding:14px 12px 10px !important;
+      font-size:11px !important;
+      line-height:1 !important;
+    }
+
+    main, .section, #scores, #matchups, #props, #schedule {
+      width:100% !important;
+      max-width:100% !important;
+      overflow-x:hidden !important;
+    }
+    main { padding:12px !important; }
+
+    /* Keep cards from forcing the page wider than the viewport. */
+    .games-grid,
+    #live-games,
+    #scheduled-games,
+    #final-games,
+    #gameprops-content,
+    #kprops-content,
+    #hr-potential-content,
+    #hrs-today-content,
+    #proj-hits-content {
+      width:100% !important;
+      max-width:100% !important;
+    }
+
+    .game-card, .gp-card, .kprop-row, .stat-row {
+      width:100% !important;
+      max-width:100% !important;
+    }
+
+    /* Make live-score cards breathe on phones. */
+    .game-card { padding:14px 12px !important; }
+    .matchup { gap:8px; }
+    .team-block { min-width:0; }
+    .team-name, .standings-badge { white-space:normal; }
+
+    /* Props filters: allow wrapping instead of pushing page sideways. */
+    #props button { max-width:100%; white-space:normal; }
+  }
+
+
+
+  /* ── PRODUCTION LAYOUT: header + live banner ───────────────────── */
+  body {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(230,57,70,.10), transparent 24rem),
+      linear-gradient(180deg, #070b14 0%, #0a0e1a 42%, #070b14 100%);
+  }
+  .header { display:none !important; }
+  .app-topbar {
+    height:78px;
+    width:100%;
+    position:sticky;
+    top:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    gap:28px;
+    padding:0 40px;
+    background:rgba(7,11,20,.94);
+    backdrop-filter: blur(14px);
+    border-bottom:1px solid rgba(142,160,198,.18);
+    box-shadow:0 12px 34px rgba(0,0,0,.28);
+  }
+  .brand-lockup {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:220px;
+    cursor:pointer;
+  }
+  .mlb-mark {
+    width:58px;
+    height:36px;
+    border:2px solid rgba(255,255,255,.92);
+    border-radius:6px;
+    background:linear-gradient(90deg,#123b73 0 50%,#e63946 50%);
+    position:relative;
+    box-shadow:0 0 22px rgba(230,57,70,.18);
+  }
+  .mlb-dot {
+    position:absolute;
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:white;
+    left:15px;
+    top:13px;
+  }
+  .brand-main {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:30px;
+    line-height:.86;
+    letter-spacing:1px;
+    color:#fff;
+    white-space:nowrap;
+  }
+  .brand-sub {
+    margin-top:2px;
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:2px;
+    color:var(--accent);
+    text-transform:uppercase;
+  }
+  .app-nav.nav {
+    flex:1;
+    display:flex;
+    align-items:stretch;
+    gap:22px;
+    height:100%;
+    padding:0;
+    background:transparent;
+    border:0;
+    overflow:visible;
+  }
+  .app-nav .tab {
+    appearance:none;
+    border:0;
+    border-bottom:3px solid transparent;
+    background:transparent;
+    color:#a7b1c8;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    height:100%;
+    padding:0 4px;
+    font-size:14px;
+    font-weight:900;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    cursor:pointer;
+    white-space:nowrap;
+    font-family:'Inter',sans-serif;
+  }
+  .app-nav .tab:hover { color:#fff; }
+  .app-nav .tab.active {
+    color:#ff3b48;
+    border-bottom-color:#ff3b48;
+    text-shadow:0 0 16px rgba(255,59,72,.25);
+  }
+  .topbar-actions {
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:12px;
+    min-width:210px;
+  }
+  .topbar-actions .date-badge {
+    background:transparent;
+    border:0;
+    color:#a7b1c8;
+    font-size:12px;
+    letter-spacing:.4px;
+  }
+  .icon-btn {
+    width:38px;
+    height:38px;
+    border:1px solid rgba(142,160,198,.22);
+    color:#a7b1c8;
+    background:rgba(17,24,39,.6);
+    border-radius:999px;
+    cursor:pointer;
+    font-size:20px;
+    line-height:1;
+  }
+  .icon-btn:hover { color:white; border-color:rgba(255,255,255,.35); }
+  main {
+    max-width:1520px;
+    padding:36px 26px 28px;
+  }
+  #scores > div:first-child { margin-bottom:22px !important; }
+  .section-title {
+    font-size:34px;
+    letter-spacing:2px;
+    text-shadow:0 2px 18px rgba(0,0,0,.35);
+  }
+  .hero-live-banner {
+    display:none;
+    align-items:center;
+    gap:26px;
+    width:100%;
+    min-height:106px;
+    padding:14px 16px;
+    margin:0 0 26px;
+    border:1px solid rgba(85,115,158,.34);
+    border-radius:10px;
+    background:linear-gradient(180deg,rgba(15,26,45,.92),rgba(9,16,29,.96));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.035), 0 18px 44px rgba(0,0,0,.22);
+    overflow:hidden;
+    position:relative;
+  }
+  .hero-live-banner::before,
+  .hero-live-banner::after {
+    content:'';
+    position:absolute;
+    top:0;
+    bottom:0;
+    width:72px;
+    pointer-events:none;
+    z-index:2;
+  }
+  .hero-live-banner::before { left:180px; background:linear-gradient(90deg,#0d1728,transparent); }
+  .hero-live-banner::after { right:0; background:linear-gradient(270deg,#0d1728,transparent); }
+  .hero-live-card {
+    flex:0 0 auto;
+    min-width:198px;
+    min-height:74px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px 20px;
+    border-radius:8px;
+    background:linear-gradient(135deg,#b91c2a,#7f111c);
+    box-shadow:0 10px 24px rgba(230,57,70,.24);
+    color:#fff;
+    z-index:3;
+  }
+  .hero-live-icon { font-size:24px; animation:pulse 1.2s infinite; }
+  .hero-live-title { font-family:'Bebas Neue',sans-serif; font-size:32px; line-height:.9; letter-spacing:2px; }
+  .hero-live-sub { font-size:12px; font-weight:900; letter-spacing:1px; text-transform:uppercase; opacity:.95; white-space:nowrap; }
+  .hero-alert-rail { min-width:0; flex:1; overflow:hidden; z-index:1; }
+  .hero-alert-track {
+    display:inline-flex;
+    align-items:center;
+    gap:24px;
+    padding:6px 10px;
+    white-space:nowrap;
+  }
+  .alert-chip {
+    margin:0;
+    min-height:54px;
+    padding:0 26px;
+    border-radius:999px;
+    font-size:16px;
+    letter-spacing:.1px;
+  }
+  .alert-hr {
+    background:linear-gradient(180deg,#9a4217,#82300c);
+    border:1px solid #ff8c24;
+    box-shadow:0 0 20px rgba(249,115,22,.62), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .alert-k {
+    background:linear-gradient(180deg,#116231,#0f4727);
+    border:1px solid #4ade80;
+    box-shadow:0 0 18px rgba(34,197,94,.46), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .alert-sep { color:#53617c; padding:0 2px; }
+  .hero-next {
+    flex:0 0 auto;
+    color:#dce5f6;
+    font-size:52px;
+    line-height:1;
+    z-index:3;
+    opacity:.95;
+  }
+  .games-grid {
+    grid-template-columns:repeat(3,minmax(290px,1fr));
+    gap:20px;
+  }
+  .game-card {
+    border-radius:9px;
+    padding:20px 22px 16px;
+    background:linear-gradient(180deg,rgba(16,28,49,.96),rgba(10,18,32,.98));
+    box-shadow:0 14px 30px rgba(0,0,0,.25);
+  }
+  .game-card::before { height:3px; }
+
+
+  .score-alert-chip {
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    min-height:54px;
+    padding:0 24px;
+    border-radius:999px;
+    background:rgba(17,24,39,.82);
+    border:1px solid rgba(85,115,158,.55);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 0 16px rgba(74,158,255,.08);
+    white-space:nowrap;
+  }
+  .score-alert-team {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:20px;
+    letter-spacing:1px;
+    color:#a7b1c8;
+  }
+  .score-alert-score {
+    font-family:'JetBrains Mono',monospace;
+    font-size:20px;
+    font-weight:900;
+    color:#8c98b3;
+  }
+  .score-alert-team.winning,
+  .score-alert-score.winning { color:var(--green); }
+  .score-alert-dash { color:#334155; }
+  .score-alert-inning {
+    font-size:10px;
+    color:var(--live);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:900;
+    margin-left:4px;
+  }
+
+  @media (max-width: 900px) {
+    .app-topbar {
+      height:116px;
+      padding:10px 12px 0;
+      flex-wrap:wrap;
+      gap:8px 12px;
+      align-content:flex-start;
+    }
+    .brand-lockup { min-width:0; flex:1; }
+    .brand-main { font-size:24px; }
+    .brand-sub { font-size:9px; }
+    .mlb-mark { width:44px; height:28px; }
+    .mlb-dot { left:11px; top:9px; }
+    .topbar-actions { min-width:0; gap:4px; }
+    .topbar-actions .date-badge { max-width:130px; font-size:10px; }
+    .icon-btn { width:32px; height:32px; font-size:17px; }
+    .app-nav.nav {
+      order:3;
+      width:100%;
+      height:48px;
+      flex:0 0 100%;
+      gap:20px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .app-nav.nav::-webkit-scrollbar { display:none; }
+    .app-nav .tab { font-size:11px; flex:0 0 auto; }
+    main { padding:18px 12px; }
+    .section-title { font-size:26px; }
+    .hero-live-banner {
+      min-height:auto;
+      gap:10px;
+      padding:10px;
+      margin-bottom:18px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .hero-live-banner::before,
+    .hero-live-banner::after { display:none; }
+    .hero-live-card { min-width:118px; min-height:56px; padding:10px 12px; gap:8px; }
+    .hero-live-icon { font-size:16px; }
+    .hero-live-title { font-size:24px; }
+    .hero-live-sub { font-size:9px; white-space:normal; }
+    .hero-alert-rail { overflow:visible; }
+    .hero-alert-track { gap:10px; animation:none !important; flex-wrap:nowrap; }
+    .alert-chip, .score-alert-chip { min-height:42px; padding:0 14px; font-size:12px; }
+    .score-alert-team, .score-alert-score { font-size:15px; }
+    .hero-next { display:none; }
+    .games-grid { grid-template-columns:1fr; gap:12px; }
+  }
+
+
+  /* ── FINAL FIX: Scores live/breaking banner alignment ─────────────── */
+  .hero-live-banner {
+    display:none;
+    grid-template-columns: 180px minmax(0, 1fr) 42px;
+    align-items:center;
+    gap:18px;
+    min-height:118px;
+    padding:16px;
+    background:linear-gradient(180deg,rgba(11,18,32,.96),rgba(7,13,24,.98)) !important;
+    border:1px solid #ff7a1a !important;
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .hero-live-banner::before,
+  .hero-live-banner::after { display:none !important; }
+  .hero-live-card {
+    width:100%;
+    min-width:0;
+    min-height:74px;
+    justify-content:center;
+    background:linear-gradient(135deg,#ff841f,#ef233c) !important;
+    box-shadow:0 12px 34px rgba(249,115,22,.25);
+  }
+  .hero-alert-rail {
+    width:100%;
+    min-width:0;
+    overflow:hidden;
+    align-self:stretch;
+    display:flex;
+    align-items:center;
+  }
+  .hero-alert-track {
+    display:flex !important;
+    align-items:center !important;
+    gap:22px;
+    min-width:0;
+    padding:0 8px !important;
+    white-space:nowrap;
+  }
+  .breaking-alert-item {
+    display:inline-flex;
+    align-items:center;
+    gap:14px;
+    min-height:42px;
+    white-space:nowrap;
+    font-family:'Bebas Neue',sans-serif;
+    letter-spacing:2px;
+    line-height:1;
+  }
+  .breaking-alert-label {
+    color:#f8fafc;
+    font-size:26px;
+    opacity:.9;
+    text-shadow:0 0 12px rgba(255,255,255,.12);
+  }
+  .breaking-alert-player {
+    color:#ff7a1a;
+    font-size:27px;
+    text-shadow:0 0 16px rgba(249,115,22,.55);
+  }
+  .breaking-alert-copy {
+    color:#f8fafc;
+    font-size:27px;
+  }
+  .breaking-alert-icon { font-size:22px; }
+  .hero-next {
+    justify-self:end;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:36px;
+    height:100%;
+    font-size:56px;
+    color:#dbe4f3;
+    opacity:.95;
+  }
+
+  @media (max-width: 900px) {
+    .hero-live-banner {
+      display:none;
+      grid-template-columns: 112px minmax(0, 1fr);
+      gap:10px;
+      min-height:78px;
+      padding:10px;
+      overflow:hidden;
+    }
+    .hero-live-card { min-height:56px; }
+    .hero-alert-rail { overflow-x:auto; }
+    .hero-alert-track { gap:12px; }
+    .breaking-alert-label,
+    .breaking-alert-player,
+    .breaking-alert-copy { font-size:18px; }
+    .breaking-alert-icon { font-size:16px; }
+    .hero-next { display:none; }
+  }
+
 </style>
 <meta name="google-adsense-account" content="ca-pub-6433797533342090">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6433797533342090"
@@ -516,70 +1061,39 @@
 </head>
 <body>
 
-<header class="header">
-  <div class="logo" style="padding:0;background:none;border:none;display:flex;align-items:center">
-    <svg height="44" viewBox="0 0 680 340" style="width:auto;display:block" role="img" aria-label="Diamond Report">
-      <rect width="680" height="340" fill="#07090f"/>
-      <polygon points="0,0 420,0 320,340 0,340" fill="#0d1020"/>
-      <polygon points="640,0 680,0 680,340 580,340" fill="#0d1020"/>
-      <polygon points="580,0 620,0 510,340 470,340" fill="#e63946" opacity="0.9"/>
-      <polygon points="625,0 638,0 528,340 515,340" fill="#ffffff" opacity="0.07"/>
-      <g transform="translate(140,170)">
-        <polygon points="0,-88 88,0 0,88 -88,0" fill="#e63946" opacity="0.15"/>
-        <polygon points="0,-82 82,0 0,82 -82,0" fill="none" stroke="#e63946" stroke-width="4"/>
-        <rect x="-7"  y="-89" width="14" height="14" rx="2" fill="#e63946"/>
-        <rect x="75"  y="-7"  width="14" height="14" rx="2" fill="#e63946"/>
-        <rect x="-7"  y="75"  width="14" height="14" rx="2" fill="#ffffff" opacity="0.8"/>
-        <rect x="-89" y="-7"  width="14" height="14" rx="2" fill="#e63946"/>
-        <circle cx="0" cy="0" r="8" fill="#e63946"/>
-        <circle cx="0" cy="0" r="4" fill="#ffffff"/>
-      </g>
-      <g transform="skewX(-4)">
-        <text x="278" y="178" font-family="Impact,Arial Black,sans-serif" font-weight="900" font-size="108" fill="#ffffff" letter-spacing="-2">DIAMOND</text>
-      </g>
-      <g transform="skewX(-4)">
-        <text x="284" y="247" font-family="Impact,Arial Black,sans-serif" font-weight="900" font-size="72" fill="#07090f" opacity="0.6" letter-spacing="18">REPORT</text>
-        <text x="282" y="244" font-family="Impact,Arial Black,sans-serif" font-weight="900" font-size="72" fill="#e63946" letter-spacing="18">REPORT</text>
-      </g>
-      <rect x="278" y="256" width="355" height="26" rx="3" fill="#e63946"/>
-      <text x="455" y="273" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="12" fill="#ffffff" letter-spacing="5">MLB ANALYTICS</text>
-      <line x1="0" y1="336" x2="680" y2="336" stroke="#e63946" stroke-width="2.5"/>
-    </svg>
+<header class="app-topbar">
+  <div class="brand-lockup" onclick="showTab('scores', document.querySelector('[data-tab=scores]'))" title="Diamond Report">
+    <div class="mlb-mark" aria-hidden="true">
+      <span class="mlb-dot"></span>
+    </div>
+    <div class="brand-text">
+      <div class="brand-main">Diamond Report</div>
+      <div class="brand-sub">MLB Analytics</div>
+    </div>
   </div>
-  <div class="date-badge" id="header-date"></div>
+
+  <nav class="nav app-nav" aria-label="Primary">
+    <button class="tab active" onclick="showTab('scores', this)" data-tab="scores" type="button"><span>◉</span> Live Scores</button>
+    <button class="tab" onclick="showTab('matchups', this)" data-tab="matchups" type="button"><span>▣</span> Pitcher Report</button>
+    <button class="tab" onclick="showTab('props', this)" data-tab="props" type="button"><span>♕</span> Props</button>
+    <button class="tab" onclick="showTab('schedule', this)" data-tab="schedule" type="button"><span>▤</span> Upcoming Games</button>
+  </nav>
+
+  <div class="topbar-actions">
+    <div class="date-badge" id="header-date"></div>
+    <button class="icon-btn" type="button" onclick="loadScores()" title="Refresh scores">↻</button>
+  </div>
 </header>
 
 <!-- Horizontal Ad -->
-<div id="ad-container" style="background:var(--surface);border-bottom:1px solid var(--border);text-align:center;overflow:hidden;max-height:0;transition:max-height 0.3s ease">
+<div id="ad-container" style="display:none!important;background:var(--surface);border-bottom:1px solid var(--border);text-align:center;overflow:hidden;max-height:0;transition:max-height 0.3s ease">
   <ins class="adsbygoogle"
        style="display:block"
        data-ad-client="ca-pub-6433797533342090"
        data-ad-slot="4578437627"
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
-  <script>
-       (adsbygoogle = window.adsbygoogle || []).push({});
-       // Expand container once ad loads
-       window.addEventListener('load', function() {
-         setTimeout(function() {
-           var ad = document.querySelector('#ad-container .adsbygoogle[data-ad-status]');
-           if (ad && ad.getAttribute('data-ad-status') !== 'unfilled') {
-             document.getElementById('ad-container').style.maxHeight = '120px';
-           }
-         }, 2000);
-       });
-  </script>
 </div>
-
-<nav class="nav">
-  <div class="tab active" onclick="showTab('scores', this)" data-tab="scores">Live Scores</div>
-  <div class="tab" onclick="showTab('matchups', this)" data-tab="matchups">Pitcher Report</div>
-  <div class="tab" onclick="showTab('props', this)" data-tab="props">Props</div>
-  <div class="tab" onclick="showTab('tracker', this)" data-tab="tracker">Tracker</div>
-  <div class="tab" onclick="showTab('schedule', this)" data-tab="schedule">Upcoming Games</div>
-</nav>
-
-
 <main>
   <section class="section active" id="scores">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -587,19 +1101,18 @@
       <div id="scores-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
     </div>
 
-    <!-- Banner temporarily removed -->
-    <div id="scores-alert-banner" style="display:none!important" hidden style="display:none;background:linear-gradient(90deg,#0a0e1a 0%,#0f172a 40%,#0a0e1a 100%);border:1px solid #1e3a5f;border-radius:8px;overflow:hidden;position:relative;margin-bottom:16px">
-      <div style="position:absolute;left:0;top:0;bottom:0;width:50px;background:linear-gradient(90deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="position:absolute;right:0;top:0;bottom:0;width:50px;background:linear-gradient(270deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="display:flex;align-items:center">
-        <div style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;padding:10px 16px;flex-shrink:0;display:flex;align-items:center;gap:6px;border-right:1px solid #7f1d1d;z-index:3;animation:shimmer 1.5s infinite">
-          <span style="display:inline-block;width:8px;height:8px;background:#fff;border-radius:50%;animation:pulse 1s infinite;flex-shrink:0"></span>
-          LIVE
-        </div>
-        <div style="overflow:hidden;flex:1">
-          <div id="scores-alert-track" style="display:inline-flex;align-items:center;gap:0;padding:8px 20px;animation:marquee 30s linear infinite"></div>
+    <div id="scores-alert-banner" class="hero-live-banner">
+      <div class="hero-live-card">
+        <div class="hero-live-icon">◉</div>
+        <div>
+          <div class="hero-live-title">LIVE</div>
+          <div class="hero-live-sub" id="hero-live-count">Tracking games now</div>
         </div>
       </div>
+      <div class="hero-alert-rail">
+        <div id="scores-alert-track" class="hero-alert-track"></div>
+      </div>
+      <div class="hero-next">›</div>
     </div>
 
     <div class="live-badge"><div class="live-dot"></div>LIVE NOW</div>
@@ -704,47 +1217,6 @@
       <div id="kprops-content" style="max-height:500px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px;background:var(--surface)"><div class="mu-empty"><span class="spin"></span>Loading K props…</div></div>
     </div>
 
-  </section>
-
-
-  <section class="section" id="tracker">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
-      <p class="section-title" style="margin-bottom:0">TOP HR THREAT <span>TRACKER</span></p>
-      <div id="tracker-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
-    </div>
-
-    <div class="tracker-grid">
-      <div class="tracker-card"><div class="tracker-card-title">Today Hit Rate</div><div class="tracker-card-value" id="tracker-today-pct">–</div><div class="tracker-card-sub" id="tracker-today-sub">Pending today's games</div></div>
-      <div class="tracker-card"><div class="tracker-card-title">All-Time Hit Rate</div><div class="tracker-card-value" id="tracker-alltime-pct">–</div><div class="tracker-card-sub" id="tracker-alltime-sub">Stored locally in this browser</div></div>
-      <div class="tracker-card"><div class="tracker-card-title">Best Favorite</div><div class="tracker-card-value" id="tracker-favorite-pick">–</div><div class="tracker-card-sub" id="tracker-favorite-sub">Today's strongest favorite</div></div>
-      <div class="tracker-card"><div class="tracker-card-title">Best Underdog</div><div class="tracker-card-value" id="tracker-underdog-pick">–</div><div class="tracker-card-sub" id="tracker-underdog-sub">Today's best dog angle</div></div>
-    </div>
-
-    <div class="tracker-section">
-      <p class="section-title" style="font-size:18px;margin-bottom:10px">DATA SOURCE <span>INTELLIGENCE</span></p>
-      <div id="tracker-source-intel" class="tracker-source-grid"><div class="mu-empty"><span class="spin"></span>Checking source availability…</div></div>
-      <div class="tracker-model-note">Tracker uses every source that is reachable from the browser. Sites that block browser scraping, require subscriptions, or require API keys are marked as backend/proxy inputs so you can wire them into your server without breaking the public page.</div>
-    </div>
-
-    <div class="tracker-section">
-      <p class="section-title" style="font-size:18px;margin-bottom:10px">MODEL INPUT <span>BLEND</span></p>
-      <div class="tracker-table-wrap"><div id="tracker-model-blend"><div class="mu-empty">Waiting for Top HR Threat data…</div></div></div>
-    </div>
-
-    <div class="tracker-section">
-      <p class="section-title" style="font-size:18px;margin-bottom:10px">TODAY'S <span>TOP HR THREATS</span></p>
-      <div class="tracker-table-wrap"><div id="tracker-today-table"><div class="mu-empty"><span class="spin"></span>Loading tracker…</div></div></div>
-    </div>
-
-    <div class="tracker-section">
-      <p class="section-title" style="font-size:18px;margin-bottom:10px">PLAYER HR <span>PREDICTIONS</span></p>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden" id="tracker-player-predictions"><div class="mu-empty">Waiting for Top HR Threat data…</div></div>
-    </div>
-
-    <div class="tracker-section">
-      <p class="section-title" style="font-size:18px;margin-bottom:10px">TEAM LEARNING <span>SUMMARY</span></p>
-      <div class="tracker-table-wrap"><div id="tracker-team-summary"><div class="mu-empty">No stored team results yet.</div></div></div>
-    </div>
   </section>
 
   <section class="section" id="schedule">
@@ -1062,7 +1534,9 @@ async function loadScores() {
 
     const now = new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
     const srEl = document.getElementById('scores-refresh'); if(srEl) srEl.textContent = `Last updated ${now}`;
+    window.currentLiveGamesForBanner = live;
     updatePropsLiveBanner(live);
+    renderBanner();
     // Load HR/K data for the Today's Games banner — defer slightly to ensure DOM is ready
     setTimeout(() => { loadHRsToday(); loadKsToday(); }, 0);
   } catch(e) {
@@ -2715,7 +3189,7 @@ function updatePropsLiveBanner(liveGames) {
   container.style.justifyContent = shouldScroll ? 'flex-start' : 'center';
   container.style.flexWrap = shouldScroll ? 'nowrap' : 'wrap';
   container.style.width = shouldScroll ? 'max-content' : '100%';
-  banner.style.display = 'block';
+  banner.style.display = 'grid';
 }
 
 
@@ -2740,28 +3214,33 @@ function renderBanner() {
 
   if (breakingHRActive && breakingHRNames.length) {
     const breakingHTML = breakingHRNames.map(n =>
-      `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 20px">
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#ffffff;animation:pulse 0.6s infinite">🚨 BREAKING</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#f97316;text-shadow:0 0 12px #f97316">${n} HIT A HOME RUN!</span>
-        <span style="font-size:20px">💥</span>
+      `<span class="breaking-alert-item">
+        <span class="breaking-alert-label">🚨 BREAKING:</span>
+        <span class="breaking-alert-player">${n}</span>
+        <span class="breaking-alert-copy">HIT A HOME RUN!</span>
+        <span class="breaking-alert-icon">💥</span>
       </span>`
-    ).join('<span style="color:#334155;padding:0 10px;font-size:20px">·</span>');
+    ).join('<span class="alert-sep">·</span>');
+
     scoresTrack.innerHTML = breakingHTML;
-    scoresTrack.style.cssText = 'display:inline-flex;align-items:center;padding:8px 20px;animation:none;justify-content:center;flex-wrap:wrap;width:100%';
-    scoresBanner.style.background = 'linear-gradient(90deg,#1a0000,#2a0500,#1a0000)';
-    scoresBanner.style.borderColor = '#f97316';
-    const liveBadge = scoresBanner.querySelector('div > div:first-child');
-    if (liveBadge) liveBadge.style.background = 'linear-gradient(135deg,#f97316,#dc2626)';
-    // Banner is inside #scores so always set display block — section visibility handles the rest
-    scoresBanner.style.display = 'block';
+    scoresTrack.style.animation = 'none';
+    scoresTrack.style.justifyContent = 'center';
+    scoresTrack.style.flexWrap = breakingHRNames.length > 3 ? 'nowrap' : 'wrap';
+    scoresTrack.style.width = '100%';
+
+    scoresBanner.style.background = '';
+    scoresBanner.style.borderColor = '';
+    const liveBadge = scoresBanner.querySelector('.hero-live-card');
+    if (liveBadge) liveBadge.style.background = '';
+    scoresBanner.style.display = 'grid';
     return;
   }
 
   // Reset banner style
-  scoresBanner.style.background = 'linear-gradient(90deg,#0a0e1a 0%,#0f172a 40%,#0a0e1a 100%)';
-  scoresBanner.style.borderColor = '#1e3a5f';
+  scoresBanner.style.background = '';
+  scoresBanner.style.borderColor = '';
   const liveBadge2 = scoresBanner.querySelector('div > div:first-child');
-  if (liveBadge2) liveBadge2.style.background = 'linear-gradient(135deg,#dc2626,#991b1b)';
+  if (liveBadge2) liveBadge2.style.background = '';
 
   const chips = [];
   Object.values(bannerHRs).forEach(h => {
@@ -2773,12 +3252,31 @@ function renderBanner() {
     }
   });
 
-  if (!chips.length) { scoresBanner.style.display = 'none'; return; }
+  let displayChips = chips;
+  let chipMode = 'alerts';
+  if (!displayChips.length && Array.isArray(window.currentLiveGamesForBanner) && window.currentLiveGamesForBanner.length) {
+    chipMode = 'games';
+    displayChips = window.currentLiveGamesForBanner.map(g => {
+      const awayW = Number(g.awayScore || 0) > Number(g.homeScore || 0);
+      const homeW = Number(g.homeScore || 0) > Number(g.awayScore || 0);
+      return `<span class="score-alert-chip">
+        <span class="score-alert-team ${awayW ? 'winning' : ''}">${g.awayAbbr}</span>
+        <span class="score-alert-score ${awayW ? 'winning' : ''}">${g.awayScore ?? 0}</span>
+        <span class="score-alert-dash">–</span>
+        <span class="score-alert-score ${homeW ? 'winning' : ''}">${g.homeScore ?? 0}</span>
+        <span class="score-alert-team ${homeW ? 'winning' : ''}">${g.homeAbbr}</span>
+        <span class="score-alert-inning">${g.inning || 'LIVE'}</span>
+      </span>`;
+    });
+  }
+  const liveCountEl = document.getElementById('hero-live-count');
+  if (liveCountEl) liveCountEl.textContent = chipMode === 'games' ? `${displayChips.length} games live now` : (displayChips.length ? `${displayChips.length} live alerts now` : 'No live alerts yet');
+  if (!displayChips.length) { scoresBanner.style.display = 'none'; return; }
 
-  const content = chips.join('<span class="alert-sep">·</span>');
-  const shouldScroll = chips.length >= 3;
+  const content = displayChips.join('<span class="alert-sep">·</span>');
+  const shouldScroll = displayChips.length >= 3;
   const looped = shouldScroll ? content + '<span class="alert-sep" style="padding:0 30px">·</span>' + content : content;
-  const duration = Math.max(15, chips.length * 5);
+  const duration = Math.max(15, displayChips.length * 5);
 
   scoresTrack.innerHTML = looped;
   scoresTrack.style.animation = shouldScroll ? `marquee ${duration}s linear infinite` : 'none';
@@ -2788,7 +3286,7 @@ function renderBanner() {
 
   // Always show the banner — visibility is controlled by the section being active
   // The banner sits INSIDE #scores so it's naturally hidden when scores is hidden
-  scoresBanner.style.display = 'block';
+  scoresBanner.style.display = 'grid';
 }
 
 function updateLiveBanner() {
@@ -3501,333 +3999,9 @@ setInterval(() => {
   if (propsInitDone) {
     triggerHRPotentialRefresh();
     loadHRsToday();
-    if (trackerLoaded) initTrackerTab();
   }
 }, 60000);
 
-
-
-// ── TRACKER TAB ──────────────────────────────────────────────────────
-let trackerLoaded = false;
-const TRACKER_STORE_KEY = 'diamondReportTopHrThreatTrackerV1';
-
-function trackerTodayKey() {
-  return new Date().toLocaleDateString('en-CA', {timeZone:'America/Chicago'});
-}
-function getTrackerStore() {
-  try { return JSON.parse(localStorage.getItem(TRACKER_STORE_KEY) || '{}'); }
-  catch { return {}; }
-}
-function saveTrackerStore(store) {
-  try { localStorage.setItem(TRACKER_STORE_KEY, JSON.stringify(store)); } catch {}
-}
-function pctText(hits, total) {
-  return total > 0 ? `${Math.round((hits/total)*100)}%` : '–';
-}
-function normalizeNameKey(name) {
-  return String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-}
-
-async function ensureTrackerDataReady() {
-  if (!propsInitDone) initPropsTab();
-  // If HR Potential has not populated yet, call the loader directly and give async lineup data a moment.
-  if (!hrpRows.length) {
-    try { await loadHRPotential(); } catch {}
-  }
-  if (!Object.keys(bannerHRs).length) {
-    try { await loadHRsToday(); } catch {}
-  }
-  await new Promise(r => setTimeout(r, 350));
-}
-
-function getTodayTopThreatRows() {
-  const byKey = new Map();
-  (hrpRows || []).forEach(r => {
-    if (!(r.topHrThreat || r.hrProb >= 8)) return;
-    const key = `${r.id || normalizeNameKey(r.name)}-${r.pitcherId || r.gamePk || r.oppAbbr}`;
-    const prev = byKey.get(key);
-    if (!prev || (r.hrProb || 0) > (prev.hrProb || 0)) byKey.set(key, r);
-  });
-  return [...byKey.values()].sort((a,b) => {
-    const aHit = (a.todayHR || 0) > 0 ? 1 : 0;
-    const bHit = (b.todayHR || 0) > 0 ? 1 : 0;
-    return bHit-aHit || (b.hrProb||0)-(a.hrProb||0) || String(a.name).localeCompare(String(b.name));
-  });
-}
-
-function updateTrackerStoreFromRows(rows) {
-  const today = trackerTodayKey();
-  const store = getTrackerStore();
-  store.days ||= {};
-  store.players ||= {};
-  store.teams ||= {};
-  store.days[today] ||= {};
-
-  rows.forEach(r => {
-    const playerKey = String(r.id || normalizeNameKey(r.name));
-    const rowKey = `${playerKey}|${r.teamAbbr||''}|${r.oppAbbr||''}|${r.pitcherId||''}`;
-    const hit = (r.todayHR || 0) > 0;
-    store.days[today][rowKey] = {
-      date: today,
-      playerId: r.id || null,
-      name: r.name,
-      teamAbbr: r.teamAbbr || '–',
-      oppAbbr: r.oppAbbr || '–',
-      pitcherName: r.pitcherName || '–',
-      hrProb: +(r.hrProb || 0).toFixed(1),
-      hit,
-      hrs: r.todayHR || 0
-    };
-  });
-
-  // Rebuild all-time totals from stored day records so corrections don't double-count.
-  store.players = {};
-  store.teams = {};
-  Object.values(store.days).forEach(day => {
-    Object.values(day).forEach(rec => {
-      const pKey = String(rec.playerId || normalizeNameKey(rec.name));
-      store.players[pKey] ||= {name:rec.name, playerId:rec.playerId, hits:0, misses:0, total:0, teams:{}};
-      store.players[pKey].total += 1;
-      if (rec.hit) store.players[pKey].hits += 1; else store.players[pKey].misses += 1;
-      store.players[pKey].teams[rec.teamAbbr] = (store.players[pKey].teams[rec.teamAbbr] || 0) + (rec.hit ? 1 : 0);
-
-      const tKey = rec.teamAbbr || '–';
-      store.teams[tKey] ||= {teamAbbr:tKey, hits:0, misses:0, total:0};
-      store.teams[tKey].total += 1;
-      if (rec.hit) store.teams[tKey].hits += 1; else store.teams[tKey].misses += 1;
-    });
-  });
-  saveTrackerStore(store);
-  return store;
-}
-
-function renderTrackerSummary(rows, store) {
-  const todayHits = rows.filter(r => (r.todayHR||0) > 0).length;
-  const todayTotal = rows.length;
-  const allHits = Object.values(store.players||{}).reduce((s,p)=>s+(p.hits||0),0);
-  const allTotal = Object.values(store.players||{}).reduce((s,p)=>s+(p.total||0),0);
-  const setText = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-  setText('tracker-today-pct', pctText(todayHits, todayTotal));
-  setText('tracker-today-sub', `${todayHits} right / ${Math.max(todayTotal-todayHits,0)} wrong today`);
-  setText('tracker-alltime-pct', pctText(allHits, allTotal));
-  setText('tracker-alltime-sub', `${allHits} right / ${Math.max(allTotal-allHits,0)} wrong all-time`);
-  setText('tracker-refresh', `Last updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`);
-}
-
-function renderTrackerTodayTable(rows) {
-  const el = document.getElementById('tracker-today-table');
-  if (!el) return;
-  if (!rows.length) { el.innerHTML = `<div class="mu-empty">No Top HR Threats available yet. Open Props or Pitcher Report once data loads.</div>`; return; }
-  el.innerHTML = `<table class="tracker-table"><thead><tr><th>Player</th><th>Team</th><th>Vs Pitcher</th><th class="r">HR Prob</th><th class="r">Result</th></tr></thead><tbody>${rows.map(r=>{
-    const hit = (r.todayHR||0)>0;
-    const played = r.timeLabel === 'FINAL' || hit;
-    const badge = hit ? `<span class="tracker-badge tracker-hit">✓ RIGHT${r.todayHR>1?' ×'+r.todayHR:''}</span>` : played ? `<span class="tracker-badge tracker-miss">✗ WRONG</span>` : `<span class="tracker-badge tracker-pending">PENDING</span>`;
-    return `<tr><td><strong>${r.name}</strong><div style="font-size:10px;color:var(--muted)">${r.pos||''}</div></td><td>${r.teamAbbr||'–'} vs ${r.oppAbbr||'–'}</td><td>${r.pitcherName||'–'}</td><td class="r">${(r.hrProb||0).toFixed(1)}%</td><td class="r">${badge}</td></tr>`;
-  }).join('')}</tbody></table>`;
-}
-
-function getTrackerSignalBoost(row, store, signalsByKey={}) {
-  const playerKey = String(row.id || normalizeNameKey(row.name));
-  const p = store.players?.[playerKey];
-  const historicalPct = p && p.total ? (p.hits / p.total) : 0;
-  const team = store.teams?.[row.teamAbbr];
-  const teamPct = team && team.total ? (team.hits / team.total) : 0;
-  const signal = signalsByKey[playerKey] || {};
-  let boost = 0;
-  const chips = [];
-  if (historicalPct >= 0.34 && (p?.total||0) >= 3) { boost += 5; chips.push(`<span class="tracker-intel-chip good">History ${Math.round(historicalPct*100)}%</span>`); }
-  else if ((p?.total||0) > 0) chips.push(`<span class="tracker-intel-chip warn">History ${Math.round(historicalPct*100)}%</span>`);
-  if (teamPct >= 0.30 && (team?.total||0) >= 3) { boost += 3; chips.push(`<span class="tracker-intel-chip good">Team trend ${Math.round(teamPct*100)}%</span>`); }
-  if (signal.avgEV >= 91) { boost += 4; chips.push(`<span class="tracker-intel-chip good">EV ${signal.avgEV.toFixed(1)}</span>`); }
-  if (signal.maxEV >= 108) { boost += 3; chips.push(`<span class="tracker-intel-chip good">Max EV ${signal.maxEV.toFixed(1)}</span>`); }
-  if (signal.xslg >= .480) { boost += 4; chips.push(`<span class="tracker-intel-chip good">xSLG ${signal.xslg.toFixed(3)}</span>`); }
-  if (signal.pitcherHR9 >= 1.25) { boost += 3; chips.push(`<span class="tracker-intel-chip warn">Pitcher HR/9 ${signal.pitcherHR9.toFixed(2)}</span>`); }
-  if (signal.pitcherERA && signal.pitcherERA >= 4.50) { boost += 2; chips.push(`<span class="tracker-intel-chip warn">Pitcher ERA ${signal.pitcherERA.toFixed(2)}</span>`); }
-  if (!chips.length) chips.push(`<span class="tracker-intel-chip">Baseline model only</span>`);
-  return {boost, chips:chips.join(''), historicalPct, teamPct, signal};
-}
-
-function renderTrackerPlayerPredictions(rows, store, signalsByKey={}) {
-  const el = document.getElementById('tracker-player-predictions');
-  if (!el) return;
-  const picks = rows.map(r => {
-    const intel = getTrackerSignalBoost(r, store, signalsByKey);
-    const score = Math.round(((r.hrProb || 0) * 0.64) + (intel.historicalPct * 100 * 0.18) + (intel.teamPct * 100 * 0.08) + intel.boost);
-    return {...r, trackerScore: Math.min(99, Math.max(1, score)), ...intel};
-  }).sort((a,b)=>b.trackerScore-a.trackerScore).slice(0,10);
-  if (!picks.length) { el.innerHTML = `<div class="mu-empty">No player HR predictions available yet.</div>`; return; }
-  el.innerHTML = picks.map(p => `<div class="tracker-pick-row"><div class="tracker-pick-main"><div class="tracker-pick-title">${p.name} <span class="top-hr-badge">⚡ TOP HR THREAT</span></div><div class="tracker-pick-sub">${p.teamAbbr} vs ${p.oppAbbr} · Pitcher: ${p.pitcherName} · Base ${(p.hrProb||0).toFixed(1)}% · Learned ${Math.round((p.historicalPct||0)*100)}%</div><div class="tracker-intel-row">${p.chips}</div></div><div class="tracker-pct">${p.trackerScore}%</div></div>`).join('');
-}
-
-function renderTrackerTeamSummary(store) {
-  const el = document.getElementById('tracker-team-summary');
-  if (!el) return;
-  const teams = Object.values(store.teams||{}).filter(t=>t.total>0).sort((a,b)=>(b.hits/b.total)-(a.hits/a.total) || b.total-a.total).slice(0,12);
-  if (!teams.length) { el.innerHTML = `<div class="mu-empty">No stored team results yet.</div>`; return; }
-  el.innerHTML = `<table class="tracker-table"><thead><tr><th>Team</th><th class="r">Right</th><th class="r">Wrong</th><th class="r">Hit Rate</th></tr></thead><tbody>${teams.map(t=>`<tr><td><strong>${t.teamAbbr}</strong></td><td class="r">${t.hits}</td><td class="r">${t.misses}</td><td class="r">${pctText(t.hits,t.total)}</td></tr>`).join('')}</tbody></table>`;
-}
-
-const TRACKER_SIGNAL_SOURCES = [
-  {name:'Baseball Savant', status:'live', desc:'Best-effort Statcast CSV: exit velocity, max EV, xSLG / quality of contact.'},
-  {name:'MLB Stats API', status:'live', desc:'Probable pitchers, game state, batter/pitcher season stats and HR results.'},
-  {name:'FanGraphs', status:'proxy', desc:'Use backend/API feed for wRC+, ISO, barrel profile, plate discipline and pitcher skill metrics.'},
-  {name:'Baseball-Reference', status:'proxy', desc:'Use backend scraper/API feed for splits, game logs and historical matchup context.'},
-  {name:'StatMuse', status:'manual', desc:'Trend-query input. Best added by backend prompt/search endpoint to avoid CORS.'},
-  {name:'Brooks Baseball', status:'proxy', desc:'Pitch arsenal and movement profile. Best integrated with server-side cached extraction.'},
-  {name:'Baseball Prospectus', status:'proxy', desc:'PECOTA/projection input; requires licensed/subscription data feed.'},
-  {name:'RotoWire', status:'proxy', desc:'Lineups and injury news; requires API/subscription or backend ingestion.'},
-  {name:'Sportsbook Odds', status:'proxy', desc:'Moneyline, HR props, market movement and implied probability from odds API.'},
-  {name:'Weather / Umpire', status:'proxy', desc:'Park weather, wind, roof, umpire K/BB/HR tendencies and game environment.'}
-];
-
-function renderTrackerSourceIntel(sourceStatus={}) {
-  const el = document.getElementById('tracker-source-intel');
-  if (!el) return;
-  el.innerHTML = TRACKER_SIGNAL_SOURCES.map(s => {
-    const liveCount = sourceStatus[s.name]?.count || 0;
-    const extra = liveCount ? ` · ${liveCount} rows` : '';
-    const label = s.status === 'live' ? 'LIVE / BEST-EFFORT' : s.status === 'proxy' ? 'BACKEND / API NEEDED' : 'MANUAL / QUERY INPUT';
-    return `<div class="tracker-source-card"><div class="tracker-source-name">${s.name}</div><span class="tracker-source-status ${s.status}">${label}${extra}</span><div class="tracker-source-desc">${s.desc}</div></div>`;
-  }).join('');
-}
-
-function parseCSVLine(line) {
-  const out=[]; let cur='', quote=false;
-  for (let i=0;i<line.length;i++) {
-    const ch=line[i], next=line[i+1];
-    if (ch === '"' && quote && next === '"') { cur+='"'; i++; }
-    else if (ch === '"') quote = !quote;
-    else if (ch === ',' && !quote) { out.push(cur); cur=''; }
-    else cur += ch;
-  }
-  out.push(cur);
-  return out;
-}
-function parseCSV(text) {
-  const lines = String(text||'').trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return [];
-  const headers = parseCSVLine(lines[0]).map(h=>h.trim());
-  return lines.slice(1).map(line => {
-    const vals = parseCSVLine(line); const row={};
-    headers.forEach((h,i)=>row[h]=vals[i]);
-    return row;
-  });
-}
-function avg(nums) { const arr=nums.filter(n=>Number.isFinite(n)); return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
-function trackerSeason() { return new Date().getFullYear(); }
-async function fetchStatcastBatterSignal(playerId) {
-  if (!playerId) return {};
-  const now = new Date();
-  const start = new Date(now); start.setDate(start.getDate()-45);
-  const fmt = d => d.toISOString().slice(0,10);
-  const url = `https://baseballsavant.mlb.com/statcast_search/csv?all=true&type=batter&player_id=${playerId}&player_event_sort=h_launch_speed&hfSea=${trackerSeason()}%7C&game_date_gt=${fmt(start)}&game_date_lt=${fmt(now)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Statcast unavailable');
-  const rows = parseCSV(await res.text()).slice(0,250);
-  const evs = rows.map(r=>parseFloat(r.launch_speed));
-  const xslgs = rows.map(r=>parseFloat(r.estimated_slg_using_speedangle));
-  return {
-    sourceCount: rows.length,
-    avgEV: avg(evs) || null,
-    maxEV: Math.max(...evs.filter(n=>Number.isFinite(n)), 0) || null,
-    xslg: avg(xslgs) || null
-  };
-}
-async function fetchPitcherSeasonSignal(pitcherId) {
-  if (!pitcherId) return {};
-  try {
-    const data = await fetchJSON(`https://diamondreport.app/api/v1/people/${pitcherId}?hydrate=stats(group=pitching,type=season,season=${trackerSeason()})`);
-    const s = data.people?.[0]?.stats?.[0]?.splits?.[0]?.stat || {};
-    return {pitcherERA: parseFloat(s.era)||null, pitcherWHIP: parseFloat(s.whip)||null, pitcherHR9: parseFloat(s.homeRunsPer9)||null, pitcherK9: parseFloat(s.strikeoutsPer9Inn)||null};
-  } catch { return {}; }
-}
-async function loadTrackerExternalSignals(rows) {
-  renderTrackerSourceIntel();
-  const top = rows.slice(0,12);
-  const signalsByKey = {};
-  const status = {};
-  await Promise.allSettled(top.map(async r => {
-    const key = String(r.id || normalizeNameKey(r.name));
-    const [sav, pit] = await Promise.allSettled([fetchStatcastBatterSignal(r.id), fetchPitcherSeasonSignal(r.pitcherId)]);
-    const savVal = sav.status === 'fulfilled' ? sav.value : {};
-    const pitVal = pit.status === 'fulfilled' ? pit.value : {};
-    signalsByKey[key] = {...savVal, ...pitVal};
-    if (savVal.sourceCount) status['Baseball Savant'] = {count:(status['Baseball Savant']?.count||0)+savVal.sourceCount};
-    if (Object.keys(pitVal).length) status['MLB Stats API'] = {count:(status['MLB Stats API']?.count||0)+1};
-  }));
-  renderTrackerSourceIntel(status);
-  return signalsByKey;
-}
-function renderTrackerModelBlend(rows, store, signalsByKey={}) {
-  const el = document.getElementById('tracker-model-blend');
-  if (!el) return;
-  if (!rows.length) { el.innerHTML = `<div class="mu-empty">No model blend available yet.</div>`; return; }
-  const display = rows.slice(0,12).map(r => ({...r, ...getTrackerSignalBoost(r, store, signalsByKey)}));
-  el.innerHTML = `<table class="tracker-table"><thead><tr><th>Player</th><th>Source Signals</th><th class="r">Base HR%</th><th class="r">Blend Boost</th></tr></thead><tbody>${display.map(r=>`<tr><td><strong>${r.name}</strong><div style="font-size:10px;color:var(--muted)">${r.teamAbbr} vs ${r.oppAbbr} · ${r.pitcherName||'–'}</div></td><td><div class="tracker-intel-row">${r.chips}</div></td><td class="r">${(r.hrProb||0).toFixed(1)}%</td><td class="r">+${Math.max(0,Math.round(r.boost||0))}</td></tr>`).join('')}</tbody></table>`;
-}
-
-async function loadTrackerGamePicks() {
-  const favEl = document.getElementById('tracker-favorite-pick');
-  const favSub = document.getElementById('tracker-favorite-sub');
-  const dogEl = document.getElementById('tracker-underdog-pick');
-  const dogSub = document.getElementById('tracker-underdog-sub');
-  try {
-    const today = trackerTodayKey();
-    const data = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${today}&hydrate=team,probablePitcher,linescore&language=en`);
-    const games = (data.dates?.find(d=>d.date===today)||data.dates?.[0])?.games || [];
-    const picks = await Promise.all(games.map(async g => {
-      const awayAbbr = g.teams.away.team.abbreviation, homeAbbr = g.teams.home.team.abbreviation;
-      const awayP = g.teams.away.probablePitcher, homeP = g.teams.home.probablePitcher;
-      const [as, hs] = await Promise.all([
-        awayP ? fetchJSON(`https://diamondreport.app/api/v1/people/${awayP.id}?hydrate=stats(group=pitching,type=season,season=2026)`).then(d=>d.people?.[0]?.stats?.[0]?.splits?.[0]?.stat||{}).catch(()=>({})) : Promise.resolve({}),
-        homeP ? fetchJSON(`https://diamondreport.app/api/v1/people/${homeP.id}?hydrate=stats(group=pitching,type=season,season=2026)`).then(d=>d.people?.[0]?.stats?.[0]?.splits?.[0]?.stat||{}).catch(()=>({})) : Promise.resolve({})
-      ]);
-      let awayScore = 50, homeScore = 53; // home-field baseline
-      const awayERA=parseFloat(as.era)||4.50, homeERA=parseFloat(hs.era)||4.50;
-      const awayWHIP=parseFloat(as.whip)||1.30, homeWHIP=parseFloat(hs.whip)||1.30;
-      const awayK9=parseFloat(as.strikeoutsPer9Inn)||8, homeK9=parseFloat(hs.strikeoutsPer9Inn)||8;
-      awayScore += Math.max(-8, Math.min(8, (homeERA-awayERA)*3));
-      homeScore += Math.max(-8, Math.min(8, (awayERA-homeERA)*3));
-      awayScore += Math.max(-5, Math.min(5, (homeWHIP-awayWHIP)*10));
-      homeScore += Math.max(-5, Math.min(5, (awayWHIP-homeWHIP)*10));
-      awayScore += Math.max(-4, Math.min(4, (awayK9-homeK9)*1.2));
-      homeScore += Math.max(-4, Math.min(4, (homeK9-awayK9)*1.2));
-      const total=awayScore+homeScore;
-      const awayPct=Math.round((awayScore/total)*100), homePct=100-awayPct;
-      const favorite = awayPct>=homePct ? awayAbbr : homeAbbr;
-      const favoritePct = Math.max(awayPct,homePct);
-      const underdog = awayPct<homePct ? awayAbbr : homeAbbr;
-      const dogPct = Math.min(awayPct,homePct);
-      return {game:`${awayAbbr} @ ${homeAbbr}`, favorite, favoritePct, underdog, dogPct};
-    }));
-    const fav = picks.sort((a,b)=>b.favoritePct-a.favoritePct)[0];
-    const dog = picks.filter(p=>p.dogPct>=43).sort((a,b)=>b.dogPct-a.dogPct)[0] || picks.sort((a,b)=>b.dogPct-a.dogPct)[0];
-    if (favEl && fav) favEl.textContent = fav.favorite;
-    if (favSub && fav) favSub.textContent = `${fav.favoritePct}% vs ${fav.game}`;
-    if (dogEl && dog) dogEl.textContent = dog.underdog;
-    if (dogSub && dog) dogSub.textContent = `${dog.dogPct}% upset angle vs ${dog.game}`;
-  } catch(e) {
-    if (favSub) favSub.textContent = 'Unable to load game picks';
-    if (dogSub) dogSub.textContent = 'Unable to load game picks';
-  }
-}
-
-async function initTrackerTab() {
-  trackerLoaded = true;
-  await ensureTrackerDataReady();
-  const rows = getTodayTopThreatRows();
-  const store = updateTrackerStoreFromRows(rows);
-  renderTrackerSummary(rows, store);
-  renderTrackerTodayTable(rows);
-  renderTrackerTeamSummary(store);
-  renderTrackerSourceIntel();
-  renderTrackerModelBlend(rows, store, {});
-  renderTrackerPlayerPredictions(rows, store, {});
-  const signalsByKey = await loadTrackerExternalSignals(rows).catch(()=>({}));
-  renderTrackerModelBlend(rows, store, signalsByKey);
-  renderTrackerPlayerPredictions(rows, store, signalsByKey);
-  loadTrackerGamePicks();
-}
 
 function showTab(id, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -3841,7 +4015,6 @@ function showTab(id, el) {
   }
   if (id === 'schedule' && !scheduleLoaded) loadSchedule();
   if (id === 'props') initPropsTab();
-  if (id === 'tracker') initTrackerTab();
 }
 
 // Restore last active tab on page load
@@ -3857,7 +4030,6 @@ function showTab(id, el) {
   tabEl.classList.add('active');
   if (saved === 'matchups' && !matchupLoaded) { matchupLoaded = true; loadPitcherReport(); }
   if (saved === 'props') initPropsTab();
-  if (saved === 'tracker') initTrackerTab();
 })();
 
 </script>
