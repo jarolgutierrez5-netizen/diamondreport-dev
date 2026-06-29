@@ -368,6 +368,18 @@
   .kprop-chip.neg { border-color:#e6394666; color:#e63946; }
   .kprop-chip.neu { border-color:#f4a26166; color:#f4a261; }
   .kprop-summary { margin-top:5px; color:var(--muted); font-size:10px; line-height:1.45; }
+
+  /* K Props readability cleanup */
+  .kprop-row { align-items:center; }
+  .kprop-pitcher { flex:1.4; }
+  .kprop-reasoning { flex:1.8; min-width:260px; color:#8fa3c8; }
+  .kprop-reason-title { font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .kprop-reason-list { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px; }
+  .kprop-chip { display:inline-flex; align-items:center; border:1px solid var(--border); background:var(--bg); border-radius:999px; padding:2px 7px; font-size:9px; font-weight:700; letter-spacing:.2px; color:var(--muted); line-height:1.4; }
+  .kprop-chip.pos { border-color:#2ecc7166; color:#2ecc71; background:#0d2a1a; }
+  .kprop-chip.neg { border-color:#e6394666; color:#e63946; background:#2a0d0d; }
+  .kprop-chip.neu { border-color:var(--border); color:var(--muted); background:var(--surface2); }
+  .kprop-summary { font-size:11px; color:#8fa3c8; line-height:1.45; }
   /* Live Alert Banner */
   @keyframes marquee {
     0%   { transform: translateX(0); }
@@ -3178,41 +3190,7 @@ async function loadKProps() {
     const entry = schedData.dates?.find(d=>d.date===today)||schedData.dates?.[0];
     const games = entry?.games||[];
 
-    // ── Fetch DraftKings pitcher strikeout props from The Odds API ──
-    const ODDS_KEY = '5977e11fd23bea467834cc76502612b2';
-    const dkLines = {}; // pitcherName (lowercase) -> { line, overOdds, underOdds }
-    try {
-      const oddsData = await fetchJSON(
-        `https://api.the-odds-api.com/v4/sports/baseball_mlb/player-props?apiKey=${ODDS_KEY}&regions=us&markets=pitcher_strikeouts&bookmakers=draftkings&oddsFormat=american`
-      );
-      if (Array.isArray(oddsData)) {
-        oddsData.forEach(event => {
-          event.bookmakers?.forEach(bm => {
-            if (bm.key !== 'draftkings') return;
-            bm.markets?.forEach(mkt => {
-              if (mkt.key !== 'pitcher_strikeouts') return;
-              // Group outcomes by player description
-              const byPlayer = {};
-              mkt.outcomes?.forEach(o => {
-                const key = o.description?.toLowerCase().trim();
-                if (!key) return;
-                if (!byPlayer[key]) byPlayer[key] = {};
-                if (o.name === 'Over') {
-                  byPlayer[key].line = o.point;
-                  byPlayer[key].overOdds = o.price;
-                } else if (o.name === 'Under') {
-                  byPlayer[key].underOdds = o.price;
-                  byPlayer[key].line = byPlayer[key].line ?? o.point;
-                }
-              });
-              Object.assign(dkLines, byPlayer);
-            });
-          });
-        });
-      }
-    } catch(e) {
-      console.warn('DraftKings odds fetch failed:', e.message);
-    }
+    // K Props now use DR projections only. External sportsbook line cards have been removed.
 
     const props = [];
 
@@ -3277,17 +3255,7 @@ async function loadKProps() {
             : `Projection is close to the DR line, so treat this as a lean instead of a strong edge.`
         };
 
-        // Match DraftKings line — try full name, then last name
-        const nameKey = pitcher.fullName.toLowerCase().trim();
-        const lastNameKey = pitcher.fullName.split(' ').slice(1).join(' ').toLowerCase().trim();
-        const dkData = dkLines[nameKey] || dkLines[lastNameKey] || null;
 
-        // DR vs DK comparison
-        let dkVsDR = null;
-        if (dkData?.line != null) {
-          const drDiff = projK - dkData.line;
-          dkVsDR = drDiff >= 0.3 ? 'OVER' : drDiff <= -0.3 ? 'UNDER' : 'PUSH';
-        }
 
         props.push({
           pitcherName: pitcher.fullName, pitcherId: pitcher.id,
@@ -3296,10 +3264,6 @@ async function loadKProps() {
           wl:`${wins}-${losses}`, era: era.toFixed(2), k9: k9.toFixed(1),
           ouLine, projK: projK.toFixed(1), pred, pushLean, reasoning,
           timeStr, gameTimestamp: dt.getTime(),
-          dkLine: dkData?.line ?? null,
-          dkOverOdds: dkData?.overOdds ?? null,
-          dkUnderOdds: dkData?.underOdds ?? null,
-          dkVsDR,
         });
       }
     }
