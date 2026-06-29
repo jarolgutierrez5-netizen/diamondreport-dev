@@ -127,6 +127,7 @@
     .kprop-line, .kprop-pred { min-width: 65px; padding: 6px 8px; }
     .kprop-line-val, .kprop-pred-val { font-size: 18px; }
     .kprop-reasoning { font-size: 9px; min-width: 100%; }
+    .kprop-chip { font-size:8px; padding:2px 6px; }
     .kprop-meta { font-size: 8px; }
     /* Stat rows (HRs Today) */
     .stat-row { padding: 8px 10px; gap: 8px; }
@@ -180,7 +181,7 @@
     .team-logo { width: 22px; height: 22px; }
     .pr-headshot { width: 24px; height: 24px; }
     .h2h-grid { grid-template-columns: repeat(2, 1fr); }
-    .kprop-reasoning { display: none; }
+    .kprop-reasoning { display:block; min-width:100%; }
     .zone-legend { display: none; }
     .btn-matchup { font-size: 8px; padding: 3px 5px; }
     .hrp-matchup-btn { font-size: 7px; }
@@ -359,7 +360,14 @@
   .kprop-push-under { border-color:#e6394688 !important; color:#e63946cc !important; }
   .kprop-pred-val { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:1px; }
   .kprop-pred-lbl { font-size:9px; letter-spacing:1px; text-transform:uppercase; margin-top:1px; opacity:.8; }
-  .kprop-reasoning { font-size:10px; color:var(--muted); line-height:1.5; flex:1; min-width:180px; }
+  .kprop-reasoning { font-size:10px; color:var(--muted); line-height:1.5; flex:1.35; min-width:240px; }
+  .kprop-reason-title { font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--text); margin-bottom:5px; }
+  .kprop-reason-list { display:flex; flex-wrap:wrap; gap:5px; }
+  .kprop-chip { display:inline-flex; align-items:center; gap:4px; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:3px 8px; font-size:10px; color:var(--muted); white-space:nowrap; }
+  .kprop-chip.pos { border-color:#2ecc7166; color:#2ecc71; }
+  .kprop-chip.neg { border-color:#e6394666; color:#e63946; }
+  .kprop-chip.neu { border-color:#f4a26166; color:#f4a261; }
+  .kprop-summary { margin-top:5px; color:var(--muted); font-size:10px; line-height:1.45; }
   /* Live Alert Banner */
   @keyframes marquee {
     0%   { transform: translateX(0); }
@@ -3251,11 +3259,23 @@ async function loadKProps() {
         const pred = diff >= 0.3 ? 'OVER' : diff <= -0.3 ? 'UNDER' : 'PUSH';
         const pushLean = diff > 0 ? 'OVER' : diff < 0 ? 'UNDER' : null;
 
-        const reasoning = pred==='OVER'
-          ? `${pitcher.fullName} averages ${k9.toFixed(1)} K/9. Opp lineup strikes out at ${(oppKpct*100).toFixed(0)}% — projects ${projK.toFixed(1)} Ks.`
-          : pred==='UNDER'
-          ? `Opposing lineup makes contact (${(oppKpct*100).toFixed(0)}% K%). Projects ${projK.toFixed(1)} Ks vs line of ${ouLine}.`
-          : `Projected ${projK.toFixed(1)} Ks closely matches the ${ouLine} line — lean based on live lineup.`;
+        const oppKpctLabel = `${(oppKpct*100).toFixed(0)}% opp K rate`;
+        const k9Label = `${k9.toFixed(1)} K/9`;
+        const workloadLabel = `${projIP.toFixed(1)} proj IP`;
+        const projectionLabel = `${projK.toFixed(1)} Ks projected`;
+        const lineLabel = `${ouLine} DR line`;
+        const matchupTag = oppKpct >= 0.245 ? 'High-K matchup' : oppKpct <= 0.195 ? 'Contact-heavy matchup' : 'Average K matchup';
+        const k9Tag = k9 >= 9 ? 'Strong K pitcher' : k9 <= 7 ? 'Lower K profile' : 'Solid K profile';
+        const decisionTag = pred==='OVER' ? 'Over lean' : pred==='UNDER' ? 'Under lean' : (pushLean ? `Push / ${pushLean} lean` : 'Push');
+        const reasoning = {
+          matchupTag, k9Tag, decisionTag,
+          oppKpctLabel, k9Label, workloadLabel, projectionLabel, lineLabel,
+          summary: pred==='OVER'
+            ? `Lineup swing-and-miss plus pitcher K profile point above the DR line.`
+            : pred==='UNDER'
+            ? `Contact profile and projection sit below the DR line.`
+            : `Projection is close to the DR line, so treat this as a lean instead of a strong edge.`
+        };
 
         // Match DraftKings line — try full name, then last name
         const nameKey = pitcher.fullName.toLowerCase().trim();
@@ -3311,32 +3331,21 @@ function renderKProps() {
       const predCls = p.pred==='OVER' ? 'kprop-over' : p.pred==='UNDER' ? 'kprop-under' : p.pushLean==='OVER' ? 'kprop-push kprop-push-over' : p.pushLean==='UNDER' ? 'kprop-push kprop-push-under' : 'kprop-push';
       const predLabel = p.pred==='PUSH' && p.pushLean ? `PUSH (${p.pushLean} LEAN)` : p.pred;
 
-      // DraftKings block
-      let dkBlock = '';
-      if (p.dkLine != null) {
-        const dkOverCls  = p.dkVsDR==='OVER'  ? 'color:#2ecc71;font-weight:700' : 'color:var(--muted)';
-        const dkUnderCls = p.dkVsDR==='UNDER' ? 'color:#e63946;font-weight:700' : 'color:var(--muted)';
-        const fmtOdds = o => o == null ? '' : (o > 0 ? `+${o}` : `${o}`);
-        // DR pick vs DK line
-        const dkPickCls = p.dkVsDR==='OVER' ? 'kprop-over' : p.dkVsDR==='UNDER' ? 'kprop-under' : 'kprop-push';
-        const dkPickLabel = p.dkVsDR || 'PUSH';
-        dkBlock = `
-          <div class="kprop-line" style="border-color:#1a3a5e;background:#060e1a">
-            <div class="kprop-line-val" style="color:#4a9eff">${p.dkLine}</div>
-            <div class="kprop-line-lbl" style="color:#4a9eff">DK LINE</div>
-            <div style="display:flex;gap:4px;margin-top:4px;font-size:9px;font-family:'JetBrains Mono',monospace">
-              <span style="${dkOverCls}">O ${fmtOdds(p.dkOverOdds)}</span>
-              <span style="color:var(--border)">|</span>
-              <span style="${dkUnderCls}">U ${fmtOdds(p.dkUnderOdds)}</span>
-            </div>
-          </div>
-          <div class="kprop-pred ${dkPickCls}" style="min-width:70px">
-            <div class="kprop-pred-val" style="font-size:14px">DR: ${dkPickLabel}</div>
-            <div class="kprop-pred-lbl">vs DK LINE</div>
-          </div>`;
-      } else {
-        dkBlock = `<div class="kprop-line" style="border-color:var(--border);opacity:.4"><div class="kprop-line-val" style="font-size:14px;color:var(--muted)">–</div><div class="kprop-line-lbl">DK LINE</div></div>`;
-      }
+      const reason = p.reasoning || {};
+      const matchupCls = reason.matchupTag?.includes('High') ? 'pos' : reason.matchupTag?.includes('Contact') ? 'neg' : 'neu';
+      const k9Cls = reason.k9Tag?.includes('Strong') ? 'pos' : reason.k9Tag?.includes('Lower') ? 'neg' : 'neu';
+      const decisionCls = reason.decisionTag?.includes('Over') ? 'pos' : reason.decisionTag?.includes('Under') ? 'neg' : 'neu';
+      const reasonHTML = `
+        <div class="kprop-reason-title">Quick Read</div>
+        <div class="kprop-reason-list">
+          <span class="kprop-chip ${decisionCls}">${reason.decisionTag || predLabel}</span>
+          <span class="kprop-chip ${matchupCls}">${reason.matchupTag || 'Matchup check'}</span>
+          <span class="kprop-chip ${k9Cls}">${reason.k9Tag || 'K profile'}</span>
+          <span class="kprop-chip">${reason.oppKpctLabel || 'Opp K rate'}</span>
+          <span class="kprop-chip">${reason.k9Label || `${p.k9} K/9`}</span>
+          <span class="kprop-chip">${reason.projectionLabel || `${p.projK} Ks projected`}</span>
+        </div>
+        <div class="kprop-summary">${reason.summary || ''}</div>`;
 
       return `<div class="kprop-row">
         <img src="${hs(p.pitcherId)}" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);flex-shrink:0" onerror="this.style.visibility='hidden'" alt="">
@@ -3352,8 +3361,7 @@ function renderKProps() {
           <div class="kprop-pred-val" style="font-size:${p.pred==='PUSH'?'16px':'24px'}">${predLabel}</div>
           <div class="kprop-pred-lbl">${p.projK} PROJ</div>
         </div>
-        ${dkBlock}
-        <div class="kprop-reasoning">${p.reasoning}</div>
+        <div class="kprop-reasoning">${reasonHTML}</div>
       </div>`;
     }).join('')}</div>`;
 }
