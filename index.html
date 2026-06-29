@@ -950,7 +950,7 @@
     .hero-live-title { font-size:24px; }
     .hero-live-sub { font-size:9px; white-space:normal; }
     .hero-alert-rail { overflow:visible; }
-    .hero-alert-track { gap:10px; animation:none !important; flex-wrap:nowrap; }
+    .hero-alert-track { gap:10px; flex-wrap:nowrap; }
     .alert-chip, .score-alert-chip { min-height:42px; padding:0 14px; font-size:12px; }
     .score-alert-team, .score-alert-score { font-size:15px; }
     .hero-next { display:none; }
@@ -1033,6 +1033,15 @@
     font-size:56px;
     color:#dbe4f3;
     opacity:.95;
+  }
+
+
+  /* Moving ticker fix */
+  .hero-alert-track {
+    will-change: transform;
+  }
+  .hero-alert-rail:hover .hero-alert-track {
+    animation-play-state: running;
   }
 
   @media (max-width: 900px) {
@@ -1571,6 +1580,7 @@ let matchupLoaded = false;
 const bannerHRs = {};           // batterId -> { id, name, teamAbbr, oppAbbr, count }
 const bannerKs  = {};           // pitcherId -> { name, teamAbbr, oppAbbr, ks, ouLine }
 const prevBannerHRCounts = {};  // batterId -> previous HR count
+let bannerHRCountsInitialized = false; // prevents old HRs from replaying as breaking news on load
 let breakingHRActive = false;
 let breakingHRTimeout = null;
 let breakingHRNames = [];
@@ -3195,7 +3205,7 @@ function updatePropsLiveBanner(liveGames) {
 
 
 function triggerBreakingHR(newHitters) {
-  // Show BREAKING banner for 2 minutes then revert
+  // Show only the current/new HR event for 2 minutes, then revert
   breakingHRNames = newHitters;
   breakingHRActive = true;
   renderBanner();
@@ -3222,11 +3232,20 @@ function renderBanner() {
       </span>`
     ).join('<span class="alert-sep">·</span>');
 
-    scoresTrack.innerHTML = breakingHTML;
-    scoresTrack.style.animation = 'none';
-    scoresTrack.style.justifyContent = 'center';
-    scoresTrack.style.flexWrap = breakingHRNames.length > 3 ? 'nowrap' : 'wrap';
-    scoresTrack.style.width = '100%';
+    // Make BREAKING alerts move like a true ticker.
+    // Duplicate the content so the marquee can loop smoothly without a blank gap.
+    const shouldScrollBreaking = breakingHRNames.length >= 2;
+    const breakingLoop = shouldScrollBreaking
+      ? breakingHTML + '<span class="alert-sep" style="padding:0 34px">·</span>' + breakingHTML
+      : breakingHTML;
+    const breakingDuration = Math.max(18, breakingHRNames.length * 5);
+
+    scoresTrack.innerHTML = breakingLoop;
+    scoresTrack.style.animation = shouldScrollBreaking ? `marquee ${breakingDuration}s linear infinite` : 'none';
+    scoresTrack.style.justifyContent = shouldScrollBreaking ? 'flex-start' : 'center';
+    scoresTrack.style.flexWrap = 'nowrap';
+    scoresTrack.style.width = shouldScrollBreaking ? 'max-content' : '100%';
+    scoresTrack.style.willChange = shouldScrollBreaking ? 'transform' : 'auto';
 
     scoresBanner.style.background = '';
     scoresBanner.style.borderColor = '';
@@ -3243,9 +3262,8 @@ function renderBanner() {
   if (liveBadge2) liveBadge2.style.background = '';
 
   const chips = [];
-  Object.values(bannerHRs).forEach(h => {
-    if (h.count > 0) chips.push(`<span class="alert-chip alert-hr">💥 ${h.name}${h.count > 1 ? ' ×'+h.count : ''} HR vs ${h.oppAbbr||''}</span>`);
-  });
+  // Do not replay every HR in the ticker. HRs only appear as short-lived
+  // BREAKING alerts when a new/current HR is detected in updateLiveBanner().
   Object.values(bannerKs).forEach(k => {
     if (k.ks > 0 && k.ouLine && k.ks > k.ouLine) {
       chips.push(`<span class="alert-chip alert-k">⚡ ${k.name} ${k.ks}K vs ${k.oppAbbr||''}</span>`);
@@ -3290,14 +3308,29 @@ function renderBanner() {
 }
 
 function updateLiveBanner() {
-  // Detect new HRs since last check
+  // Detect only NEW/CURRENT HRs since the last refresh.
+  // First load seeds the cache so existing HRs do not replay in Breaking News.
+  const currentHRs = Object.values(bannerHRs);
+
+  if (!bannerHRCountsInitialized) {
+    currentHRs.forEach(h => { prevBannerHRCounts[h.id] = h.count || 0; });
+    bannerHRCountsInitialized = true;
+    renderBanner();
+    return;
+  }
+
   const newHitters = [];
-  Object.values(bannerHRs).forEach(h => {
+  currentHRs.forEach(h => {
     const prev = prevBannerHRCounts[h.id] || 0;
-    if (h.count > prev) newHitters.push(h.name);
-    prevBannerHRCounts[h.id] = h.count;
+    const current = h.count || 0;
+    if (current > prev) {
+      const added = current - prev;
+      newHitters.push(`${h.name}${added > 1 ? ' ×' + added : ''}`);
+    }
+    prevBannerHRCounts[h.id] = current;
   });
-  if (newHitters.length && !breakingHRActive) {
+
+  if (newHitters.length) {
     triggerBreakingHR(newHitters);
   } else {
     renderBanner();
