@@ -3972,29 +3972,54 @@ function showTab(id, el) {
 
   function finalGameMap(){
     const map = {};
-    const finalRoot = document.getElementById('final-games');
-    const allFinalCards = finalRoot ? [...finalRoot.querySelectorAll('.game-card')] : [];
-    allFinalCards.forEach(card => {
+    const roots = ['final-games','live-games','scheduled-games']
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    const cards = roots.flatMap(root => [...root.querySelectorAll('.game-card')]);
+
+    cards.forEach(card => {
       const txt = card.innerText || '';
-      if(!/FINAL|F\/|FINAL SCORE/i.test(txt)) return;
-      const teams = [...card.querySelectorAll('.team-abbr')].map(x => norm(x.textContent)).filter(Boolean);
-      const scores = [...card.querySelectorAll('.score-block span, .score-block div')]
+      const statusEl = card.querySelector('.game-status');
+      const status = (statusEl ? statusEl.innerText : txt).toUpperCase();
+
+      // Accept all common MLB final labels.
+      const isFinal =
+        /FINAL|GAME OVER|F\/|FINAL\/|COMPLETED/.test(status) ||
+        card.classList.contains('closed');
+
+      if(!isFinal) return;
+
+      const teams = [...card.querySelectorAll('.team-abbr')]
+        .map(x => norm(x.textContent))
+        .filter(Boolean);
+
+      let scores = [...card.querySelectorAll('.score-block *')]
         .map(x => norm(x.textContent))
         .filter(x => /^\d+$/.test(x))
         .map(Number);
+
+      // Fallback: pull numbers from score block text.
+      if(scores.length < 2){
+        const scoreText = norm(card.querySelector('.score-block')?.innerText || '');
+        scores = [...scoreText.matchAll(/\b(\d{1,2})\b/g)].map(m => Number(m[1]));
+      }
+
       if(teams.length >= 2 && scores.length >= 2){
         const away = teams[0], home = teams[1], awayScore = scores[0], homeScore = scores[1];
         const winner = awayScore > homeScore ? away : homeScore > awayScore ? home : 'TIE';
-        const key1 = `${away}@${home}`;
-        const key2 = `${away}VS${home}`;
-        map[key1] = { away, home, awayScore, homeScore, winner, final:true };
-        map[key2] = map[key1];
+        const game = { away, home, awayScore, homeScore, winner, final:true };
+
+        [`${away}@${home}`, `${away}VS${home}`, `${away}V${home}`, `${home}VS${away}`, `${home}V${away}`]
+          .forEach(k => map[k] = game);
+
         map[away] ||= [];
         map[home] ||= [];
-        map[away].push(map[key1]);
-        map[home].push(map[key1]);
+        map[away].push(game);
+        map[home].push(game);
       }
     });
+
     return map;
   }
 
@@ -4015,11 +4040,36 @@ function showTab(id, el) {
   function resolveDRPickResult(rec){
     const finals = finalGameMap();
     if(!Object.keys(finals).length) return 'pending';
+
     const pick = String(rec.pick || '').toUpperCase();
     if(!pick || pick === '—') return 'pending';
-    const games = finals[pick] || [];
-    const game = Array.isArray(games) ? games[0] : null;
-    if(!game) return 'pending';
+
+    // Direct lookup by picked team.
+    let games = finals[pick] || [];
+
+    // Match by teams found inside the pick card.
+    if((!games || !games.length) && Array.isArray(rec.teams) && rec.teams.length >= 2){
+      const candidates = [];
+      for(let i=0;i<rec.teams.length;i++){
+        for(let j=i+1;j<rec.teams.length;j++){
+          const a=rec.teams[i], b=rec.teams[j];
+          candidates.push(finals[`${a}@${b}`], finals[`${a}VS${b}`], finals[`${a}V${b}`], finals[`${b}VS${a}`], finals[`${b}V${a}`]);
+        }
+      }
+      games = candidates.filter(Boolean);
+    }
+
+    // Match by label text fallback.
+    if((!games || !games.length)){
+      const label = String(rec.label || '').toUpperCase();
+      Object.values(finals).forEach(v => {
+        if(Array.isArray(v)) return;
+        if(label.includes(v.away) && label.includes(v.home)) games = [v];
+      });
+    }
+
+    const game = Array.isArray(games) ? games[0] : games;
+    if(!game || !game.final) return 'pending';
     return game.winner === pick ? 'win' : game.winner === 'TIE' ? 'push' : 'loss';
   }
 
@@ -4072,12 +4122,14 @@ function showTab(id, el) {
       for(let j=Math.max(0,idx+1);j<Math.min(lines.length,idx+6);j++){
         if(/^[A-Z]{2,3}$/.test(lines[j])) { pick=lines[j]; break; }
       }
-      const matchup = lines.find(l => /\b[A-Z]{2,3}\b\s+(?:@|VS|V)\s+\b[A-Z]{2,3}\b/i.test(l)) || lines.slice(0,3).join(' / ');
+      const teamsInCard = [...new Set((t.match(/\b[A-Z]{2,3}\b/g) || []).filter(x => !['MLB','DR','WIN','O','U'].includes(x)))];
+      const matchup = lines.find(l => /\b[A-Z]{2,3}\b\s+(?:@|VS|V)\s+\b[A-Z]{2,3}\b/i.test(l)) || (teamsInCard.length >= 2 ? `${teamsInCard[0]} @ ${teamsInCard[1]}` : lines.slice(0,3).join(' / '));
       return {
         key: `${dayKey()}|DRP|${i}|${pick}|${matchup}`,
         type: 'drp',
         label: matchup || `Game Pick ${i+1}`,
         pick: pick || '—',
+        teams: teamsInCard,
         result: 'pending',
         date: dayKey()
       };
@@ -4249,7 +4301,7 @@ function showTab(id, el) {
     }).join('') : '<div style="color:var(--muted);font-size:12px">Upcoming player HR predictions populate from HR Potential once loaded.</div>');
 
     set('tracker-refresh',
-      `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} • HRP ${currentThreats.length} • HRs ${homers.size} • Picks ${gamePicks.length} • Finals ${Object.keys(finalGameMap()).length ? 'yes' : 'no'}`
+      `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} • HRP ${currentThreats.length} • HRs ${homers.size} • Picks ${gamePicks.length} • Finals ${[...new Set(Object.values(finalGameMap()).filter(x=>!Array.isArray(x)).map(x=>x.away+'@'+x.home))].length}`
     );
   }
 
@@ -4307,6 +4359,10 @@ function showTab(id, el) {
     hookAfter('renderHRPTable');
     hookAfter('loadHRsToday');
     hookAfter('loadGameProps');
+    hookAfter('loadSchedule');
+    hookAfter('loadLiveScores');
+    hookAfter('renderScores');
+    hookAfter('loadScores');
     hookAfter('loadKProps');
     setInterval(sync, 30000);
   }
