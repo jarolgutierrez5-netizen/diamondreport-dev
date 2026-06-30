@@ -4169,6 +4169,34 @@ function showTab(id, el) {
     return Object.keys(finalGameMap()).length > 0;
   }
 
+  // Maps each team abbreviation to its current game state: 'final' | 'live' | 'upcoming'
+  // Used to label HR Threat picks correctly — a miss is only "Wrong" once the player's
+  // game is actually Final; otherwise it should read "Live" or "Pending" (game hasn't started).
+  function teamGameStatusMap(){
+    const map = {};
+    const liveRoot = document.getElementById('live-games');
+    const finalRoot = document.getElementById('final-games');
+    const schedRoot = document.getElementById('scheduled-games');
+
+    const tagTeams = (root, state) => {
+      if (!root) return;
+      [...root.querySelectorAll('.game-card')].forEach(card => {
+        [...card.querySelectorAll('.team-abbr')]
+          .map(x => norm(x.textContent))
+          .filter(Boolean)
+          .forEach(team => { map[team] = state; });
+      });
+    };
+
+    // Order matters: tag scheduled first, then live, then final —
+    // so if a team appears in multiple lists during a transition, the most current state wins
+    tagTeams(schedRoot, 'upcoming');
+    tagTeams(liveRoot, 'live');
+    tagTeams(finalRoot, 'final');
+
+    return map;
+  }
+
   function resultBadgeFromFinal(result){
     return result === 'win'
       ? '<span class="tracker-pill hit">✅ Right</span>'
@@ -4530,16 +4558,30 @@ function showTab(id, el) {
     set('tracker-underdog', dog ? dog.team : '—');
     set('tracker-underdog-sub', dog ? `${dog.winPct || 0}% projected win • value/underdog slot` : 'Waiting for Diamond Report Picks');
 
+    const teamStates = teamGameStatusMap();
+    const todayHits = (todays.length?todays:currentThreats).filter(p => p.hit || homers.has(p.player.toLowerCase())).length;
+    const todayTotal = (todays.length?todays:currentThreats).length;
+
     const rows=(todays.length?todays:currentThreats).map(p=>{
       const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0};
       const tm=store.teams[p.team] || {hits:0,total:0};
       const hitNow = p.hit || homers.has(p.player.toLowerCase());
-      const status=hitNow ? '<span class="tracker-pill hit">✅ Right</span>' : '<span class="tracker-pill pending">⏳ Wrong/Pending</span>';
+      const gameState = teamStates[p.team] || 'upcoming';
+      let status;
+      if (hitNow) {
+        status = '<span class="tracker-pill hit">✅ Right</span>';
+      } else if (gameState === 'final') {
+        status = '<span class="tracker-pill miss">❌ Wrong</span>';
+      } else if (gameState === 'live') {
+        status = '<span class="tracker-pill pending">🔴 Live</span>';
+      } else {
+        status = '<span class="tracker-pill pending">⏳ Pending</span>';
+      }
       return `<tr>
         <td>${p.player}</td>
         <td>${p.team||'—'}</td>
         <td>${p.hrPct||0}%</td>
-        <td>${status}</td>
+        <td>${status} <span style="color:var(--muted);font-size:11px">${todayHits}-${Math.max(todayTotal-todayHits,0)} (${pct(todayHits,todayTotal)}%)</span></td>
         <td>${pl.hits}-${Math.max(pl.total-pl.hits,0)} (${pct(pl.hits,pl.total)}%)</td>
         <td>${tm.hits}-${Math.max(tm.total-tm.hits,0)} (${pct(tm.hits,tm.total)}%)</td>
       </tr>`;
