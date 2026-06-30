@@ -954,10 +954,13 @@
       <div class="tracker-scroll">
         <table>
           <thead>
-            <tr><th>Game/Pick</th><th>Pick</th><th>Status</th><th>Today</th><th>All-Time</th></tr>
+            <tr>
+              <th onclick="sortDRPTable('date')" style="cursor:pointer;white-space:nowrap" id="drp-th-date">Date <span class="sort-arrow"></span></th>
+              <th>Game/Pick</th><th>Pick</th><th>Status</th><th>Today</th><th>All-Time</th>
+            </tr>
           </thead>
           <tbody id="tracker-drp-results">
-            <tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for Diamond Report Picks data…</td></tr>
+            <tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for Diamond Report Picks data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -4251,6 +4254,17 @@ function showTab(id, el) {
   function extractDRPicksAccuracy(){
     const root=document.getElementById('gameprops-content');
     if(!root) return [];
+    const TEAM_ABBRS = new Set(['ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR','LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG','STL','TB','TBR','TEX','TOR','WSH','WAS']);
+    const normTeam = t => {
+      t = String(t || '').toUpperCase().trim();
+      if(t === 'CHW') return 'CWS';
+      if(t === 'KCR') return 'KC';
+      if(t === 'SDP') return 'SD';
+      if(t === 'SFG') return 'SF';
+      if(t === 'TBR') return 'TB';
+      if(t === 'WAS') return 'WSH';
+      return t;
+    };
     const cards=[...root.querySelectorAll('.gp-card')];
     return cards.map((card,i)=>{
       const t=card.innerText || '';
@@ -4261,12 +4275,16 @@ function showTab(id, el) {
       for(let j=Math.max(0,idx+1);j<Math.min(lines.length,idx+6);j++){
         if(/^[A-Z]{2,3}$/.test(lines[j])) { pick=lines[j]; break; }
       }
-      const teamsInCard = [...new Set((t.match(/\b[A-Z]{2,3}\b/g) || []).filter(x => !['MLB','DR','WIN','O','U'].includes(x)))];
-      const matchup = lines.find(l => /\b[A-Z]{2,3}\b\s+(?:@|VS|V)\s+\b[A-Z]{2,3}\b/i.test(l)) || (teamsInCard.length >= 2 ? `${teamsInCard[0]} @ ${teamsInCard[1]}` : lines.slice(0,3).join(' / '));
+      const teamsInCard = [...new Set((t.match(/\b[A-Z]{2,3}\b/g) || [])
+        .map(normTeam)
+        .filter(x => TEAM_ABBRS.has(x) && !['MLB','DR','WIN','O','U'].includes(x)))];
+      const matchup = teamsInCard.length >= 2 ? `${teamsInCard[0]} @ ${teamsInCard[1]}` : (lines.find(l => /\b[A-Z]{2,3}\b\s+(?:@|VS|V)\s+\b[A-Z]{2,3}\b/i.test(l)) || lines.slice(0,3).join(' / '));
+      // Stable storage key: teams sorted alphabetically so the same game always
+      // produces the identical key, regardless of which team is listed first
+      // in the rendered card text (home/away order can vary between syncs)
+      const sortedTeamKey = teamsInCard.length >= 2 ? [...teamsInCard].sort().join('-') : matchup;
       return {
-        // Stable key: based on the actual matchup + pick, not DOM position — prevents duplicate rows
-        // when cards re-render in a different order across syncs
-        key: `${dayKey()}|DRP|${matchup}`,
+        key: `${dayKey()}|DRP|${sortedTeamKey}`,
         type: 'drp',
         label: matchup || `Game Pick ${i+1}`,
         pick: pick || '—',
@@ -4311,13 +4329,17 @@ function showTab(id, el) {
   }
 
   // One-time cleanup: collapse any legacy duplicate DRP entries that were created
-  // with index-based keys (same matchup+date logged multiple times under different keys)
+  // with index-based keys or with flipped team order (same matchup logged twice
+  // because the home/away order differed between renders)
   function dedupeLegacyMarketPicks(store){
     store.market ||= { drp: [], kprop: [] };
     const seen = new Map();
     const cleaned = [];
     (store.market.drp || []).forEach(rec => {
-      const stableKey = `${rec.date}|DRP|${rec.label}`;
+      // Normalize by sorting the teams in the label, so "TOR @ NYM" and "NYM @ TOR" collapse to one key
+      const teamsInLabel = (rec.label || '').match(/\b[A-Z]{2,3}\b/g) || [];
+      const sortedTeams = [...new Set(teamsInLabel)].sort().join('-');
+      const stableKey = `${rec.date}|DRP|${sortedTeams || rec.label}`;
       const prior = seen.get(stableKey);
       if (!prior) {
         seen.set(stableKey, rec);
@@ -4373,7 +4395,11 @@ function showTab(id, el) {
     if(Array.isArray(rec?.teams)) rec.teams.forEach(add);
     const raw = `${rec?.label || ''} ${rec?.pick || ''}`;
     [...raw.matchAll(/\b[A-Z]{2,3}\b/g)].forEach(m => add(m[0]));
-    return teams.length >= 2 ? `${teams[0]} @ ${teams[1]}` : '';
+    if (teams.length < 2) return '';
+    // Sort alphabetically so the same matchup always produces the same key,
+    // regardless of which team appeared first in the extracted text (home/away order can vary across renders)
+    const sorted = [...teams].sort();
+    return `${sorted[0]} @ ${sorted[1]}`;
   }
 
 
@@ -4414,19 +4440,34 @@ function showTab(id, el) {
 
     const statusBadge = r => resultBadgeFromFinal(r.result);
 
-    const drpRows = drpToday.list
+    // Show ALL stored DRP picks (not just today) so the Date column has something to sort
+    const drpRowsAll = drpAll.list
       .map(r => ({ ...r, matchupLabel: drpMatchupLabel(r) }))
       .filter(r => r.matchupLabel && r.matchupLabel.includes('@'));
+
+    // Apply current sort (default: date descending — most recent first)
+    window.drpTableSortDir = window.drpTableSortDir || -1;
+    const drpRows = [...drpRowsAll].sort((a,b) => {
+      if (a.date === b.date) return 0;
+      return a.date < b.date ? -window.drpTableSortDir : window.drpTableSortDir;
+    });
+
+    // Update sort arrow indicator
+    const dateArrowEl = document.querySelector('#drp-th-date .sort-arrow');
+    if (dateArrowEl) dateArrowEl.textContent = window.drpTableSortDir === -1 ? '▼' : '▲';
+
     set('tracker-drp-results', drpRows.length ? drpRows.map(r=>{
       const at=marketAllTimeByKey(store,'drp',r.matchupLabel);
+      const isToday = r.date === day;
       return `<tr>
+        <td style="white-space:nowrap;color:${isToday?'var(--accent2)':'var(--muted)'}">${r.date}${isToday?' <span style="font-size:9px;color:var(--accent2)">(Today)</span>':''}</td>
         <td>${r.matchupLabel}</td>
         <td>${r.pick}</td>
         <td>${statusBadge(r)}</td>
         <td>${drpMatchupToday.wins}-${drpMatchupToday.losses} (${pct(drpMatchupToday.wins,drpMatchupToday.total)}%)</td>
         <td>${at.wins}-${Math.max(at.total-at.wins,0)} (${at.pct}%)</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
+    }).join('') : '<tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
 
     set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
       const at=marketAllTimeByKey(store,'kprop',r.label);
@@ -4546,6 +4587,17 @@ function showTab(id, el) {
     }
   };
   window.syncDiamondTracker=sync;
+
+  window.sortDRPTable=function(col){
+    if (col === 'date') {
+      window.drpTableSortDir = (window.drpTableSortDir === -1) ? 1 : -1;
+      const store = loadStore();
+      const threats = extractHRThreats();
+      const homers = extractHRToday();
+      const gamePicks = extractGamePicks();
+      render(store, threats, homers, gamePicks);
+    }
+  };
 
   function hookAfter(fnName){
     try{
