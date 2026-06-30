@@ -34,7 +34,7 @@
   .tab:hover { color: var(--text); }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-  main { padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+  main { padding: 20px 24px; max-width: 1280px; margin: 0 auto; }
   .section { display: none; }
   .section.active { display: block; }
 
@@ -195,6 +195,41 @@
 
     /* ── SCHEDULE ── */
     #scheduled-games { grid-template-columns: 1fr; }
+
+    /* ── DR PICK / GAME PROPS CARDS ── */
+    /* The matchup/pick/win-bars flex row is too wide to fit side-by-side on a phone —
+       stack each section full-width instead of relying on flex-wrap, which can still
+       force individual blocks past the viewport on narrow screens. */
+    .gp-card > div[style*="display:flex"] { flex-direction: column; align-items: stretch !important; gap: 10px !important; }
+    .gp-matchup { min-width: 0 !important; flex-direction: row; justify-content: space-between; }
+    .gp-team { min-width: 0; flex: 1; }
+    .gp-team-abbr { font-size: 14px; }
+    .gp-team-logo { width: 26px; height: 26px; }
+    .gp-pick { width: 100%; }
+    .gp-pick-val { font-size: 18px; }
+    .gp-factors { gap: 5px; }
+    .gp-factor { font-size: 9px; padding: 2px 6px; }
+    /* Win % bars row needs full width once stacked, not a fixed min-width */
+    .gp-card div[style*="min-width:120px"] { min-width: 0 !important; width: 100%; }
+
+    /* ── HR POTENTIAL FILTER BUTTONS ── */
+    #filter-top-btn, #filter-drought-btn, #filter-favorable-btn, #filter-all-btn {
+      font-size: 8px !important;
+      padding: 3px 7px !important;
+    }
+
+    /* ── TRACKER: NEXT-DAY PREDICTION ROWS ── */
+    /* These had a fixed min-width:200px that could overflow a narrow phone screen
+       even after the parent grid was stacked to 1 column */
+    #tracker-nextday-hrp div[style*="min-width:200px"],
+    #tracker-nextday-drp div[style*="min-width:200px"],
+    #tracker-nextday-kprops div[style*="min-width:200px"] {
+      min-width: 0 !important;
+      flex-basis: 100%;
+    }
+    #tracker-nextday-hrp .stat-row, #tracker-nextday-drp .stat-row, #tracker-nextday-kprops .stat-row {
+      align-items: flex-start;
+    }
   }
 
   @media (max-width: 480px) {
@@ -506,7 +541,7 @@
   /* Layout guard: prevents live/ad banners from bleeding outside the viewport */
   html, body { width: 100%; overflow-x: hidden; }
   body::before, body::after { display: none !important; content: none !important; }
-  header, nav, main, #ad-container, #props-live-banner { max-width: 100vw; }
+  header, nav, #ad-container, #props-live-banner { max-width: 100vw; }
   #props-live-banner {
     margin-left: 0 !important;
     width: 100% !important;
@@ -863,7 +898,7 @@
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <button onclick="filterHRP('top')" id="filter-top-btn" style="background:var(--surface2);border:1px solid #f4a261;color:#f4a261;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">⚡ TOP HR THREAT</button>
       <button onclick="filterHRP('drought')" id="filter-drought-btn" style="background:var(--surface2);border:1px solid #e63946;color:#e63946;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🔴 DROUGHT</button>
-      <button onclick="filterHRP('favorable')" id="filter-favorable-btn" style="background:var(--surface2);border:1px solid #2ecc71;color:#2ecc71;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🟢 FAVORABLE MATCHUP FOR BATTER</button>
+      <button onclick="filterHRP('favorable')" id="filter-favorable-btn" style="background:var(--surface2);border:1px solid #2ecc71;color:#2ecc71;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🟢 FAVORABLE MATCHUP</button>
       <button onclick="filterHRP('all')" id="filter-all-btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">ALL</button>
       <div id="props-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
     </div>
@@ -3838,8 +3873,11 @@ function initPropsTab() {
   loadHRPotentialWithRetry();
   loadHRsToday();
   loadKsToday();
-  loadKProps();      // load immediately, don't wait for 7am gate
-  loadGameProps();
+  // loadKProps/loadGameProps are async — chain a tracker sync after each resolves so the
+  // Diamond Report Picks / K Props tracker tables update without depending on the window-hook
+  // pattern (which can miss this very first call if it fires before the hook attaches)
+  loadKProps().then(() => { if (window.syncDiamondTracker) window.syncDiamondTracker(); });
+  loadGameProps().then(() => { if (window.syncDiamondTracker) window.syncDiamondTracker(); });
 }
 
 // Auto-refresh Props tab every 60s (HR Potential only if stale, HRs Today always)
@@ -4461,7 +4499,7 @@ function showTab(id, el) {
   function extractDRPicksAccuracy(){
     const root=document.getElementById('gameprops-content');
     if(!root) return [];
-    const TEAM_ABBRS = new Set(['ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR','LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG','STL','TB','TBR','TEX','TOR','WSH','WAS']);
+    const TEAM_ABBRS = new Set(['ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR','LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG','STL','TB','TBR','TEX','TOR','WSH','WAS','AZ']);
     const normTeam = t => {
       t = String(t || '').toUpperCase().trim();
       if(t === 'CHW') return 'CWS';
@@ -4470,6 +4508,7 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
+      if(t === 'AZ') return 'ARI';
       return t;
     };
     const cards=[...root.querySelectorAll('.gp-card')];
@@ -4628,7 +4667,7 @@ function showTab(id, el) {
 
 
   function drpMatchupLabel(rec){
-    const TEAM_ABBRS = new Set(['ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR','LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG','STL','TB','TBR','TEX','TOR','WSH','WAS']);
+    const TEAM_ABBRS = new Set(['ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR','LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG','STL','TB','TBR','TEX','TOR','WSH','WAS','AZ']);
     const NON_TEAMS = new Set(['MLB','DR','PICK','WIN','LIVE','ERA','PROJ','OVER','UNDER','PUSH','LINE','VS','AT','THE','TODAY','SP']);
     const normTeam = t => {
       t = String(t || '').toUpperCase().trim();
@@ -4638,6 +4677,7 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
+      if(t === 'AZ') return 'ARI';
       return t;
     };
     const teams = [];
