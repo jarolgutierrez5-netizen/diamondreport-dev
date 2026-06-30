@@ -476,14 +476,13 @@
   /* Layout guard: prevents live/ad banners from bleeding outside the viewport */
   html, body { width: 100%; overflow-x: hidden; }
   body::before, body::after { display: none !important; content: none !important; }
-  header, nav, main, #ad-container, #scores-alert-banner, #props-live-banner { max-width: 100vw; }
-  #scores-alert-banner, #props-live-banner {
+  header, nav, main, #ad-container, #props-live-banner { max-width: 100vw; }
+  #props-live-banner {
     margin-left: 0 !important;
     width: 100% !important;
     overflow: hidden !important;
     contain: paint;
   }
-  #scores-alert-banner > div[style*="LIVE"],
   #props-live-banner > div[style*="LIVE"] {
     position: relative !important;
     left: auto !important;
@@ -3657,7 +3656,7 @@ async function loadKProps() {
         const lineLabel = `${ouLine} DR line`;
         const matchupTag = oppKpct >= 0.245 ? 'High-K matchup' : oppKpct <= 0.195 ? 'Contact-heavy matchup' : 'Average K matchup';
         const k9Tag = k9 >= 9 ? 'Strong K pitcher' : k9 <= 7 ? 'Lower K profile' : 'Solid K profile';
-        const decisionTag = pred==='OVER' ? 'Over lean' : pred==='UNDER' ? 'Under lean' : (pushLean ? `Push / ${pushLean} lean` : 'Push');
+        const decisionTag = pred==='OVER' ? 'OVER' : pred==='UNDER' ? 'UNDER' : (pushLean ? `Push / ${pushLean} lean` : 'Push');
         const reasoning = {
           matchupTag, k9Tag, decisionTag,
           oppKpctLabel, k9Label, workloadLabel, projectionLabel, lineLabel,
@@ -3816,65 +3815,6 @@ function showTab(id, el) {
   tabEl.classList.add('active');
   if (saved === 'matchups' && !matchupLoaded) { matchupLoaded = true; loadPitcherReport(); }
   if (saved === 'props') initPropsTab();
-})();
-
-
-// Diamond Report breaking HR ticker override: moving banner + last 5 minutes only
-(function(){
-  const FIVE_MIN = 5 * 60 * 1000;
-
-  function timeAgo(ts){
-    const diff = Math.max(0, Date.now() - ts);
-    const sec = Math.floor(diff / 1000);
-    if (sec < 60) return `${sec}s ago`;
-    return `${Math.floor(sec / 60)}m ago`;
-  }
-
-  window.renderBreakingHRTicker = function(alerts){
-    const now = Date.now();
-    const recent = (alerts || [])
-      .map(a => {
-        const ts = a.timestamp || a.time || a.eventTime || a.about?.startTime || a.playEndTime;
-        const parsed = ts ? new Date(ts).getTime() : now;
-        return { ...a, _ts: Number.isFinite(parsed) ? parsed : now };
-      })
-      .filter(a => now - a._ts <= FIVE_MIN)
-      .sort((a,b) => b._ts - a._ts)
-      .slice(0, 5);
-
-    const html = recent.map(a => {
-      const player = a.player || a.name || a.batter || a.description || 'Home Run';
-      return `<span class="breaking-item">🚨 BREAKING <span class="breaking-player">${player}</span> HIT A HOME RUN! 💥 <span class="breaking-time">${timeAgo(a._ts)}</span></span>`;
-    }).join('');
-
-    ['props-live-games'].forEach(id => {
-      const track = document.getElementById(id);
-      if (!track) return;
-      const banner = track.closest('.breaking-banner');
-      if (!recent.length) {
-        if (banner) banner.style.display = 'none';
-        track.innerHTML = '';
-        return;
-      }
-      track.innerHTML = html + html;
-      if (banner) banner.style.display = 'block';
-    });
-  };
-
-  // Last-resort cleanup for older code that writes list-style chips into the ticker.
-  function normalizeExistingTicker(){
-    ['props-live-games'].forEach(id => {
-      const track = document.getElementById(id);
-      if (!track || !track.innerHTML.trim()) return;
-      track.classList.add('breaking-track');
-      [...track.children].forEach(child => {
-        child.classList.add('breaking-item');
-        child.style.display = 'inline-flex';
-        child.style.margin = '0';
-      });
-    });
-  }
-  setInterval(normalizeExistingTicker, 1000);
 })();
 
 
@@ -4614,103 +4554,6 @@ function showTab(id, el) {
 })();
 
 
-// Diamond Report K Props live/final K count labels
-(function(){
-  function normK(s){ return String(s || '').replace(/\s+/g,' ').trim(); }
-
-  function pitcherNameFromRow(row){
-    return normK(row.querySelector('.kprop-name')?.textContent || row.innerText.split('\n')[0] || '').toLowerCase();
-  }
-
-  function getPitcherKStatus(name){
-    if(!name) return { status:'pending', k:null };
-
-    const scanRoots = [
-      document.getElementById('ks-today-props'),
-      document.getElementById('pr-content'),
-      document.getElementById('live-games'),
-      document.getElementById('final-games')
-    ].filter(Boolean);
-
-    let found = null;
-
-    scanRoots.forEach(root => {
-      if(found) return;
-      [...root.querySelectorAll('.ks-today-row, .pr-main-row, .stat-row, .game-card, tr, div')].forEach(el => {
-        if(found) return;
-        const t = (el.innerText || '').toLowerCase();
-        if(!t.includes(name)) return;
-
-        const isFinal = /final|game over|completed/.test(t) || el.closest?.('.closed') || el.classList?.contains('closed');
-        const isLive = /live|in progress|top|bot|bottom|inning/.test(t) || el.closest?.('.live') || el.classList?.contains('live');
-
-        let k = null;
-        const match =
-          t.match(/(\d+)\s*(?:k|ks)\b/i) ||
-          t.match(/\bk\s*[:\-]?\s*(\d+)\b/i) ||
-          t.match(/strikeouts?\s*[:\-]?\s*(\d+)/i);
-        if(match) k = Number(match[1]);
-
-        if(Number.isFinite(k)){
-          found = { status: isFinal ? 'final' : isLive ? 'live' : 'pending', k };
-        }
-      });
-    });
-
-    return found || { status:'pending', k:null };
-  }
-
-  function applyKCountLabels(){
-    const root = document.getElementById('kprops-content');
-    if(!root) return;
-
-    [...root.querySelectorAll('.kprop-row')].forEach(row => {
-      const pitcherCell = row.querySelector('.kprop-pitcher') || row;
-      let badge = row.querySelector('.kprop-kcount');
-      if(!badge){
-        badge = document.createElement('div');
-        badge.className = 'kprop-kcount pending';
-        pitcherCell.appendChild(badge);
-      }
-
-      const status = getPitcherKStatus(pitcherNameFromRow(row));
-      badge.className = `kprop-kcount ${status.status}`;
-
-      if(status.status === 'final' && status.k !== null){
-        badge.innerHTML = `✅ Final K's: ${status.k}`;
-      } else if(status.status === 'live' && status.k !== null){
-        badge.innerHTML = `● Live K Count: ${status.k}`;
-      } else {
-        badge.innerHTML = `⏳ K Count Pending`;
-      }
-    });
-  }
-
-  window.applyKCountLabels = applyKCountLabels;
-
-  function hook(fnName){
-    const original = window[fnName];
-    if(typeof original !== 'function' || original.__kCountHooked) return;
-    const wrapped = async function(...args){
-      const result = await original.apply(this,args);
-      setTimeout(applyKCountLabels, 300);
-      return result;
-    };
-    wrapped.__kCountHooked = true;
-    window[fnName] = wrapped;
-  }
-
-  function start(){
-    applyKCountLabels();
-    ['loadKProps','renderKProps','loadScores','renderScores','loadLiveScores','loadPitcherReport'].forEach(hook);
-    setInterval(applyKCountLabels, 15000);
-  }
-
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-  else start();
-})();
-
-
 // Diamond Report K Props label cleanup: keep PROJ underneath, simplify label to OVER/UNDER
 (function(){
   function cleanKPropLabels(){
@@ -4763,96 +4606,6 @@ function showTab(id, el) {
 })();
 
 
-// Diamond Report K Count result color logic
-(function(){
-  function n(text){
-    const m = String(text || '').match(/(\d+(?:\.\d+)?)/);
-    return m ? Number(m[1]) : null;
-  }
-
-  function getActualK(row){
-    const badge = row.querySelector('.kprop-kcount');
-    return n(badge ? badge.textContent : '');
-  }
-
-  function getDRLine(row){
-    return n(row.querySelector('.kprop-line-val')?.textContent || '');
-  }
-
-  function getProjectedK(row){
-    return n(row.querySelector('.kprop-pred-val')?.textContent || row.innerText || '');
-  }
-
-  function getPickDirection(row){
-    const txt = (row.querySelector('.kprop-pred-val')?.textContent || row.innerText || '').toUpperCase();
-    if(/\bOVER\b/.test(txt)) return 'OVER';
-    if(/\bUNDER\b/.test(txt)) return 'UNDER';
-
-    const proj = getProjectedK(row);
-    const line = getDRLine(row);
-    if(proj !== null && line !== null) return proj > line ? 'OVER' : 'UNDER';
-    return null;
-  }
-
-  function applyKCountResultColors(){
-    document.querySelectorAll('#kprops-content .kprop-row').forEach(row => {
-      const badge = row.querySelector('.kprop-kcount');
-      if(!badge) return;
-
-      const actual = getActualK(row);
-      const line = getDRLine(row);
-      const direction = getPickDirection(row);
-
-      badge.classList.remove('correct','wrong','neutral');
-
-      if(actual === null || line === null || !direction){
-        badge.classList.add('neutral');
-        return;
-      }
-
-      const actualOver = actual > line;
-      const actualUnder = actual < line;
-
-      if((actualOver && direction === 'OVER') || (actualUnder && direction === 'UNDER')){
-        badge.classList.add('correct');
-      } else if((actualUnder && direction === 'OVER') || (actualOver && direction === 'UNDER')){
-        badge.classList.add('wrong');
-      } else {
-        badge.classList.add('neutral');
-      }
-    });
-  }
-
-  window.applyKCountResultColors = applyKCountResultColors;
-
-  function run(){
-    if(typeof window.applyKCountLabels === 'function') window.applyKCountLabels();
-    applyKCountResultColors();
-  }
-
-  function hook(fnName){
-    const original = window[fnName];
-    if(typeof original !== 'function' || original.__kCountResultColorHooked) return;
-    const wrapped = async function(...args){
-      const result = await original.apply(this,args);
-      setTimeout(run, 250);
-      return result;
-    };
-    wrapped.__kCountResultColorHooked = true;
-    window[fnName] = wrapped;
-  }
-
-  function start(){
-    run();
-    ['loadKProps','renderKProps','renderKPropRows','loadScores','renderScores','loadLiveScores','loadPitcherReport'].forEach(hook);
-    setInterval(run, 1000);
-  }
-
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-  else start();
-})();
-
-
 // Keep static projection label instead of live K label
 (function(){
   function normalizeProjLabels(){
@@ -4901,10 +4654,7 @@ function showTab(id, el) {
     cleanKPropRecommendationLabels();
   }
 
-  const observer = new MutationObserver(runKPropRecommendationPatch);
-  function startKPropRecommendationPatch(){
-    const target = document.getElementById('kprops-content') || document.body;
-    observer.observe(target, { childList:true, subtree:true, characterData:true });
+  );
     runKPropRecommendationPatch();
     setInterval(runKPropRecommendationPatch, 500);
   }
@@ -4913,6 +4663,37 @@ function showTab(id, el) {
   else startKPropRecommendationPatch();
 })();
 
+
+
+// Lightweight Diamond Report safety cleanup — no intervals or observers
+(function(){
+  function cleanupDRPMatchupRowsOnce(){
+    const tbody = document.getElementById('tracker-drp-results');
+    if(!tbody) return;
+    [...tbody.querySelectorAll('tr')].forEach(row => {
+      const first = row.querySelector('td');
+      if(!first) return;
+      if(!/@/.test(first.textContent || '')) row.remove();
+    });
+    if(!tbody.querySelector('tr')){
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>';
+    }
+  }
+
+  function runSafetyCleanup(){
+    cleanupDRPMatchupRowsOnce();
+    document.querySelectorAll('#kprops-content .kprop-pred-val').forEach(el => {
+      const raw = (el.textContent || '').trim();
+      if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw) || /^OVER\s+LEAN$/i.test(raw)) el.textContent = 'OVER';
+      if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw) || /^UNDER\s+LEAN$/i.test(raw)) el.textContent = 'UNDER';
+    });
+  }
+
+  window.runDiamondReportSafetyCleanup = runSafetyCleanup;
+  document.addEventListener('click', () => setTimeout(runSafetyCleanup, 50), { passive:true });
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(runSafetyCleanup, 300));
+  else setTimeout(runSafetyCleanup, 300);
+})();
 
 </script>
 </body>
