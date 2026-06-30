@@ -1150,208 +1150,35 @@
 <meta name="google-adsense-account" content="ca-pub-6433797533342090">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6433797533342090"
      crossorigin="anonymous"></script>
+
+<style id="tracker-paywall-removal-final">
+[id*="paywall" i],
+[class*="paywall" i],
+[id*="premium" i],
+[class*="premium" i],
+[id*="promo" i],
+[class*="promo" i],
+[id*="upgrade" i],
+[class*="upgrade" i],
+[id*="subscribe" i],
+[class*="subscribe" i] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}
+</style>
+
 </head>
 <body>
 
 <header class="app-topbar">
-  <div class="brand-lockup" onclick="showTab('scores', document.querySelector('[data-tab=scores]'))" title="Diamond Report">
-    <div class="mlb-mark" aria-hidden="true">
-      <span class="mlb-dot"></span>
-    </div>
-    <div class="brand-text">
-      <div class="brand-main">Diamond Report</div>
-      <div class="brand-sub">MLB Analytics</div>
-    </div>
-  </div>
-
-  <nav class="nav app-nav" aria-label="Primary">
-    <button class="tab active" onclick="showTab('scores', this)" data-tab="scores" type="button"><span>◉</span> Live Scores</button>
-    <button class="tab" onclick="showTab('matchups', this)" data-tab="matchups" type="button"><span>▣</span> Pitcher Report</button>
-    <button class="tab" onclick="showTab('props', this)" data-tab="props" type="button"><span>♕</span> Props</button>
-    <button class="tab" onclick="showTab('schedule', this)" data-tab="schedule" type="button"><span>▤</span> Upcoming Games</button>
-    <button class="tab" onclick="showTab('tracker', this)" data-tab="tracker" type="button"><span>⌁</span> Tracker</button>
-  </nav>
-
-  <div class="topbar-actions">
-    <div class="date-badge" id="header-date"></div>
-    <button class="icon-btn" type="button" onclick="loadScores()" title="Refresh scores">↻</button>
-  </div>
-</header>
-
-<!-- Horizontal Ad -->
-<div id="ad-container" style="display:none!important;background:var(--surface);border-bottom:1px solid var(--border);text-align:center;overflow:hidden;max-height:0;transition:max-height 0.3s ease">
-  <ins class="adsbygoogle"
-       style="display:block"
-       data-ad-client="ca-pub-6433797533342090"
-       data-ad-slot="4578437627"
-       data-ad-format="auto"
-       data-full-width-responsive="true"></ins>
-</div>
-<main>
-  <section class="section active" id="scores">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <p class="section-title" style="margin-bottom:0">TODAY'S <span>GAMES</span></p>
-      <div id="scores-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
-    </div>
-
-    <div id="scores-alert-banner" class="hero-live-banner">
-      <div class="hero-live-card">
-        <div class="hero-live-icon">◉</div>
-        <div>
-          <div class="hero-live-title">LIVE</div>
-          <div class="hero-live-sub" id="hero-live-count">Tracking games now</div>
-        </div>
-      </div>
-      <div class="hero-alert-rail">
-        <div id="scores-alert-track" class="hero-alert-track"></div>
-      </div>
-      <div class="hero-next">›</div>
-    </div>
-
-    <div class="live-badge"><div class="live-dot"></div>LIVE NOW</div>
-    <div class="games-grid" id="live-games"><div style="color:var(--muted);font-size:13px">Loading scores…</div></div>
-    <p class="section-title" style="font-size:18px;margin-top:20px;">UPCOMING <span>GAMES</span></p>
-    <div class="games-grid" id="scheduled-games"></div>
-    <p class="section-title" style="font-size:18px;margin-top:20px;">FINAL <span>SCORES</span></p>
-    <div class="games-grid" id="final-games"></div>
-  </section>
-
-
-
-  <section class="section" id="matchups">
-    <p class="section-title">PITCHER <span>REPORT</span></p>
-    <div id="pr-content"><div class="mu-empty"><span class="spin"></span>Loading today's pitchers…</div></div>
-  </section>
-
-  <section class="section" id="props">
-
-    <!-- Live Games Banner -->
-    <div id="props-live-banner" style="display:none;background:linear-gradient(90deg,#0a0e1a 0%,#0f172a 40%,#0a0e1a 100%);border:1px solid #1e3a5f;border-radius:8px;overflow:hidden;position:relative;margin-bottom:20px">
-      <div style="position:absolute;left:0;top:0;bottom:0;width:50px;background:linear-gradient(90deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="position:absolute;right:0;top:0;bottom:0;width:50px;background:linear-gradient(270deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="display:flex;align-items:center">
-        <div style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;padding:10px 16px;flex-shrink:0;display:flex;align-items:center;gap:6px;border-right:1px solid #7f1d1d;z-index:3;animation:shimmer 1.5s infinite">
-          <span style="display:inline-block;width:8px;height:8px;background:#fff;border-radius:50%;animation:pulse 1s infinite;flex-shrink:0"></span>
-          LIVE
-        </div>
-        <div style="overflow:hidden;flex:1">
-          <div id="props-live-games" style="display:inline-flex;align-items:center;gap:0;padding:6px 20px;animation:marquee 30s linear infinite"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- HR Potential filters -->
-    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <button onclick="filterHRP('top')" id="filter-top-btn" style="background:var(--surface2);border:1px solid #f4a261;color:#f4a261;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">⚡ TOP HR THREAT</button>
-      <button onclick="filterHRP('drought')" id="filter-drought-btn" style="background:var(--surface2);border:1px solid #e63946;color:#e63946;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🔴 DROUGHT</button>
-      <button onclick="filterHRP('favorable')" id="filter-favorable-btn" style="background:var(--surface2);border:1px solid #2ecc71;color:#2ecc71;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🟢 FAVORABLE MATCHUP FOR BATTER</button>
-      <button onclick="filterHRP('all')" id="filter-all-btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">ALL</button>
-      <div id="props-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
-    </div>
-
-    <!-- HR Potential + K's Today side by side -->
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start" class="props-grid">
-      <!-- HR Potential column -->
-      <div>
-        <p class="section-title" style="font-size:18px;margin-bottom:10px">HR <span>POTENTIAL</span></p>
-        <div id="hr-potential-content" style="max-height:560px;overflow-y:auto;overflow-x:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px;background:var(--surface)"><div class="mu-empty"><span class="spin"></span>Loading HR potential…</div></div>
-      </div>
-
-      <!-- K's Today sidebar -->
-      <div>
-        <p class="section-title" style="font-size:18px;margin-bottom:10px">K'S <span>TODAY</span></p>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:560px;overflow-y:auto;overscroll-behavior:contain">
-          <div id="ks-today-props"><div class="mu-empty"><span class="spin"></span>Loading…</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- HRs Today + Projections Hit — side by side on desktop, stacked on mobile -->
-    <div style="margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px" class="hrs-today-grid">
-
-      <!-- HRs Today -->
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-          <p class="section-title" style="font-size:20px;margin-bottom:0">HR'S <span>TODAY</span></p>
-          <span id="hrs-today-count" style="background:var(--accent);color:white;font-family:'Bebas Neue',sans-serif;font-size:18px;padding:2px 10px;border-radius:20px;display:none"></span>
-        </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:400px;overflow-y:auto;overscroll-behavior:contain">
-          <div id="hrs-today-content"><div class="mu-empty"><span class="spin"></span>Loading home runs…</div></div>
-        </div>
-      </div>
-
-      <!-- HRs Completed from Projection -->
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-          <p class="section-title" style="font-size:20px;margin-bottom:0">✅ HRs <span>COMPLETED FROM PROJECTION</span></p>
-          <span id="proj-hits-count" style="background:var(--green);color:#0a0e1a;font-family:'Bebas Neue',sans-serif;font-size:18px;padding:2px 10px;border-radius:20px;display:none"></span>
-        </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:400px;overflow-y:auto;overscroll-behavior:contain">
-          <div id="proj-hits-content"><div class="mu-empty" style="color:var(--muted)">Loading HR's Completed from Projection…</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Game Props -->
-    <div style="margin-top:28px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <p class="section-title" style="font-size:20px;margin-bottom:0">DR GAME <span>PICKS</span></p>
-        <div id="gameprops-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)"></div>
-      </div>
-      <div id="gameprops-content" style="max-height:600px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px;background:var(--surface)"><div class="mu-empty"><span class="spin"></span>Loading game props…</div></div>
-    </div>
-
-    <!-- K Props -->
-    <div style="margin-top:28px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <p class="section-title" style="font-size:20px;margin-bottom:0">K <span>PROPS</span></p>
-        <div id="kprops-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)"></div>
-      </div>
-      <div id="kprops-content" style="max-height:500px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px;background:var(--surface)"><div class="mu-empty"><span class="spin"></span>Loading K props…</div></div>
-    </div>
-
-  </section>
-
-
-  <section class="section" id="tracker">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-      <p class="section-title" style="margin-bottom:0">HR THREAT <span>TRACKER</span></p>
-      <button type="button" onclick="renderTracker(true)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 12px;font-weight:800;font-size:11px;cursor:pointer">↻ REFRESH TRACKER</button>
-    </div>
-    <div id="tracker-content"></div>
-  </section>
-
-  <section class="section" id="schedule">
-    <p class="section-title">UPCOMING <span>GAMES</span></p>
-    <div id="schedule-loading" style="color:var(--muted);font-size:13px;padding:20px 0"><span class="spin"></span> Loading schedule…</div>
-    <div id="schedule-content"></div>
-  </section>
-</main>
-
-<!--  Modal -->
-
-    <!-- Body -->
-    <div style="padding:24px">
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent2);margin-bottom:8px;text-transform:uppercase">What you get:</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.8">
-          ⚔ Head-to-head stats vs the pitcher<br>
-          🎯 Strike zone vulnerability map<br>
-          📊 Pitch mix & batter opportunity<br>
-          🔍 Full scouting report
-        </div>
-      </div>
-      <!-- Promo code -->
-      <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:8px;text-transform:uppercase">Have a promo code?</div>
-        <div style="display:flex;gap:8px">
-          <input id="promo-input" type="text" placeholder="Enter promo code" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')applyPromo()">
-          <button onclick="applyPromo()" style="background:var(--accent);color:white;border:none;padding:9px 16px;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">APPLY</button>
-        </div>
-        <div id="promo-msg" style="font-size:11px;margin-top:6px;min-height:16px"></div>
-      </div>
-      <button onclick="close()" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Maybe Later</button>
-    </div>
+  
+        
   </div>
 </div>
 
@@ -2540,192 +2367,7 @@ async function loadGameProps() {
         <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">${totalFinal>0?Math.round(correctCount/totalFinal*100)+'% accuracy':''}</span>
       </div>` : '';
 
-    el.innerHTML = tallyHTML + (gameCards.filter(Boolean).map(c=>c.html).join('') || `<div class="mu-empty">No game data available.</div>`);
-    const now = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    if (refreshEl) refreshEl.textContent = `Last updated ${now}`;
-    gamePropsLoaded = true;
-
-  } catch(e) {
-    if (el) el.innerHTML = `<div class="mu-empty" style="color:var(--accent)">Error: ${e.message}</div>`;
-  }
-}
-
-function windEffect(deg, homeAbbr) {
-  // Simplified: wind blowing toward RF (80-130°) = blowing out for RHB
-  // This is a rough approximation without stadium-specific orientation
-  if (deg >= 60 && deg <= 150) return 'out';
-  if (deg >= 240 && deg <= 330) return 'in';
-  return 'cross';
-}
-
-// Refresh game props every 5 minutes when loaded
-setInterval(() => { if (gamePropsLoaded) loadGameProps(); }, 5 * 60 * 1000);
-
-
-// ── SCHEDULE (multi-day) ─────────────────────────────────────────────
-let scheduleLoaded = false;
-
-async function loadSchedule() {
-  const content = document.getElementById('schedule-content');
-  const loading = document.getElementById('schedule-loading');
-  if (!content) return;
-
-  try {
-    const today = new Date();
-    const dates = [];
-    for (let i = 1; i <= 5; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() + i);
-      dates.push(d.toLocaleDateString('en-CA', {timeZone:'America/Chicago'}));
-    }
-
-    const allDays = await Promise.all(dates.map(async date => {
-      const data = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${date}&hydrate=team,probablePitcher&language=en`);
-      const entry = data.dates?.find(d => d.date === date) || data.dates?.[0];
-      return { date, games: entry?.games || [] };
-    }));
-
-    if (loading) loading.style.display = 'none';
-    const sl = buildStandingsLookup();
-
-    content.innerHTML = allDays.map(({ date, games }) => {
-      if (!games.length) return '';
-      const dt = new Date(date + 'T12:00:00');
-      const dayLabel = dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
-      const isToday = false;
-
-      const cards = games.map(g => {
-        const away = g.teams.away, home = g.teams.home;
-        const awayAbbr = away.team.abbreviation, homeAbbr = home.team.abbreviation;
-        const dt2 = new Date(g.gameDate);
-        const timeStr = dt2.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) + ' CDT';
-        const awayP = g.teams.away.probablePitcher?.fullName || 'TBD';
-        const homeP = g.teams.home.probablePitcher?.fullName || 'TBD';
-        const state = g.status.abstractGameState;
-        const isLive = state==='Live'||g.status.detailedState==='In Progress';
-        const isFinal = state==='Final';
-        const statusLabel = isLive
-          ? `<span style="color:var(--live);font-weight:700;font-size:10px">● LIVE</span>`
-          : isFinal ? `<span style="color:var(--muted);font-size:10px">FINAL</span>`
-          : `<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text)">${timeStr}</span>`;
-
-        function tblock(abbr, pName) {
-          const id = teamIds[abbr];
-          const logo = id ? `<img src="https://www.mlbstatic.com/team-logos/${id}.svg" style="width:34px;height:34px;object-fit:contain" onerror="this.style.display='none'" alt="">` : '';
-          const st = sl[abbr];
-          return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0">
-            ${logo}
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px">${abbr}</span>
-            <span style="font-size:9px;color:var(--muted);text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pName}</span>
-            ${st?`<span style="font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace">${st.wl} · #${st.rank}</span>`:''}
-          </div>`;
-        }
-
-        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 10px">
-          <div style="text-align:center;margin-bottom:8px">${statusLabel}</div>
-          <div style="display:flex;align-items:center;gap:6px">
-            ${tblock(awayAbbr, awayP)}
-            <span style="font-size:14px;color:var(--muted);font-weight:700;flex-shrink:0">@</span>
-            ${tblock(homeAbbr, homeP)}
-          </div>
-        </div>`;
-      }).join('');
-
-      return `<div style="margin-bottom:24px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <span style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:${isToday?'var(--accent)':'var(--accent2)'};white-space:nowrap">${isToday?'TODAY · ':''}${dayLabel}</span>
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-          <span style="font-size:10px;color:var(--muted);white-space:nowrap">${games.length} game${games.length!==1?'s':''}</span>
-        </div>
-        <div class="games-grid">${cards}</div>
-      </div>`;
-    }).join('') || '<div class="mu-empty">No upcoming games found.</div>';
-
-    scheduleLoaded = true;
-  } catch(e) {
-    if (content) content.innerHTML = `<div class="mu-empty" style="color:var(--accent)">Error: ${e.message}</div>`;
-    if (loading) loading.style.display = 'none';
-  }
-}
-
-
-const PROMO_CODE = 'BIGMONEY';
-let matchupUnlocked = sessionStorage.getItem('matchupUnlocked') === 'true';
-let pendingMatchup = null; // stores args while paywall is open
-
-function checkMatchupAccess(batterId, batterName, pitcherId, pitcherName) {
-  if (matchupUnlocked) {
-    openMatchup(batterId, batterName, pitcherId, pitcherName);
-    return;
-  }
-  pendingMatchup = { batterId, batterName, pitcherId, pitcherName };
-  const overlay = document.getElementById('paywall-overlay');
-  overlay.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  document.getElementById('promo-input').value = '';
-  document.getElementById('promo-msg').textContent = '';
-}
-
-function applyPromo() {
-  const input = document.getElementById('promo-input').value.trim().toUpperCase();
-  const msg = document.getElementById('promo-msg');
-  if (input === PROMO_CODE) {
-    matchupUnlocked = true;
-    sessionStorage.setItem('matchupUnlocked', 'true');
-    msg.style.color = 'var(--green)';
-    msg.textContent = '✓ Code applied! Pitcher Matchup unlocked.';
-    // Update all locked buttons to show unlocked state
-    document.querySelectorAll('.hrp-matchup-btn').forEach(btn => {
-      btn.textContent = btn.textContent.replace(' ', '⚔ ');
-    });
-    setTimeout(() => {
-      close();
-      if (pendingMatchup) {
-        const { batterId, batterName, pitcherId, pitcherName } = pendingMatchup;
-        openMatchup(batterId, batterName, pitcherId, pitcherName);
-        pendingMatchup = null;
-      }
-    }, 800);
-  } else {
-    msg.style.color = 'var(--accent)';
-    msg.textContent = '✗ Invalid promo code. Try again.';
-    document.getElementById('promo-input').style.borderColor = 'var(--accent)';
-    setTimeout(() => {
-      document.getElementById('promo-input').style.borderColor = 'var(--border)';
-    }, 1500);
-  }
-}
-
-function close() {
-  document.getElementById('paywall-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-  pendingMatchup = null;
-}
-
-// On load, if already unlocked this session, update button labels
-if (matchupUnlocked) {
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.hrp-matchup-btn').forEach(btn => {
-      btn.textContent = btn.textContent.replace(' ', '⚔ ');
-    });
-  });
-}
-
-
-function closeMatchup() {
-  document.getElementById('mu-modal-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-async function openMatchup(batterId, batterName, pitcherId, pitcherName) {
-  const overlay = document.getElementById('mu-modal-overlay');
-  const body    = document.getElementById('mu-modal-body');
-  const title   = document.getElementById('mu-modal-title');
-  const sub     = document.getElementById('mu-modal-sub');
-
-  title.textContent = `${batterName}  vs  ${pitcherName}`;
-  sub.textContent   = 'Batter vs Pitcher · 2026 Season Analysis';
-  body.innerHTML    = `<div style="padding:20px 0;text-align:center"><span class="spin"></span> Loading matchup data…</div>`;
+    el.innerHTML = tallyHTML + (gameCards.filter(Boolean).map(c=>c.html).join('') || ``;
   overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
@@ -3626,86 +3268,7 @@ async function loadHRPotential() {
     if (refresh) refresh.textContent = `Last updated ${now}`;
   } catch(e) {
     const el2 = document.getElementById('hr-potential-content');
-    if (el2) el2.innerHTML = `<div class="mu-empty" style="color:var(--accent)">Error: ${e.message}</div>`;
-  }
-}
-
-function renderHRPTable() {
-  const el = document.getElementById('hr-potential-content');
-  if (!el || !hrpRows.length) {
-    if (el) el.innerHTML = `<div class="mu-empty">No HR potential data yet — check back once lineups are posted.</div>`;
-    return;
-  }
-
-  const cols = [
-    {key:'timeLabel', label:'TIME',   r:false, sortable:false},
-    {key:'name',      label:'BATTER', r:false, sortable:false},
-  ];
-
-  // Apply active filter
-  let displayRows = [...hrpRows];
-  if (hrpFilter === 'drought') displayRows = displayRows.filter(r => r.isDrought);
-  else if (hrpFilter === 'favorable') displayRows = displayRows.filter(r => r.isFavorable);
-  else if (hrpFilter === 'top') {
-    // Top HR Threat: include every batter tagged TOP HR THREAT from Pitcher Report,
-    // plus the top 30% by HR probability as a fallback when lineup tags are not available.
-    const sorted0 = [...hrpRows].sort((a,b) => b.hrProb - a.hrProb);
-    const threshold = sorted0.length > 0 ? sorted0[Math.max(0, Math.floor(sorted0.length * 0.3) - 1)]?.hrProb || 0 : 0;
-    displayRows = displayRows.filter(r => r.topHrThreat || r.hrProb >= threshold);
-    if (displayRows.length === 0) displayRows = [...hrpRows]; // fallback to all if none qualify
-  }
-
-  // Update button active states
-  ['top','drought','favorable','all'].forEach(f => {
-    const btn = document.getElementById(`filter-${f}-btn`);
-    if (btn) btn.style.opacity = (hrpFilter === f || (f==='all' && !hrpFilter)) ? '1' : '0.5';
-  });
-
-  const sorted = [...displayRows].sort((a,b) => {
-    // Default priority: TOP HR THREAT rows first, then highest HR probability.
-    // This keeps the most important bats at the top without requiring the user to open Pitcher Report first.
-    const aTop = (a.topHrThreat || a.hrProb >= 8) ? 1 : 0;
-    const bTop = (b.topHrThreat || b.hrProb >= 8) ? 1 : 0;
-    if (aTop !== bTop) return bTop - aTop;
-
-    const av = a[hrpSortCol], bv = b[hrpSortCol];
-    if (av==null&&bv==null) return 0;
-    if (av==null) return 1; if (bv==null) return -1;
-    const primary = (av-bv)*hrpSortDir;
-    if (primary !== 0) return primary;
-    return (b.hrProb || 0) - (a.hrProb || 0);
-  });
-
-  const hs = id => `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_34,q_auto:best/v1/people/${id}/headshot/67/current`;
-  const tl = id => { const tid = teamIds[id]; return tid ? `<img src="https://www.mlbstatic.com/team-logos/${tid}.svg" style="width:18px;height:18px;object-fit:contain;vertical-align:middle" onerror="this.style.display='none'" alt="">` : ''; }
-
-  const rows = sorted.map(r => {
-    const homerToday = r.todayHR > 0;
-    const isLive = r.timeLabel.includes('LIVE');
-    const rowCls = homerToday ? ' class="hr-today-row"' : isLive ? ' class="hrp-live-row"' : '';
-    const maxProbInList = Math.max(...hrpRows.map(x=>x.hrProb), 1);
-    const barPct = (r.hrProb / maxProbInList) * 100;
-    const barColor = r.hrProb >= 8 ? '#f4a261' : r.hrProb >= 5 ? '#e63946' : '#2ecc71';
-    const fmtAvg = v => v>0 ? v.toFixed(3).replace(/^0/,'') : '–';
-    const fmtIso = v => v>0 ? v.toFixed(3).replace(/^0/,'') : '–';
-
-    const timeCellHtml = isLive
-      ? `<span style="background:#2a0000;color:var(--live);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid var(--live);letter-spacing:.5px;animation:pulse 1s infinite;display:inline-block">● LIVE</span>`
-      : `<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${r.timeColor}">${r.timeLabel}</span>`;
-
-    return `<tr${rowCls} id="hrp-row-${r.id}">
-      <td>${timeCellHtml}</td>
-      <td>
-        <div class="hrp-batter-cell">
-          <img class="hrp-headshot" src="${hs(r.id)}" onerror="this.style.visibility='hidden'" alt="">
-          <div class="hrp-batter-info" style="gap:0">
-            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-              <span class="hrp-batter-name" style="color:${homerToday?'var(--accent2)':'var(--text)'}">${r.name}</span>
-              ${homerToday?`<span style="background:#2a1500;color:#f4a261;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px;border:1px solid #f4a26166;white-space:nowrap">💥 HR TODAY${r.todayHR>1?' ×'+r.todayHR:''}</span>`:''}
-              ${(r.topHrThreat || r.hrProb>=8)?`<span class="top-hr-badge">⚡ TOP HR THREAT</span>`:''}
-              ${r.isDrought?`<span style="background:#1a0505;color:#ff4444;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid #ff444466;white-space:nowrap">🔴 DROUGHT</span>`:''}
-              ${r.isFavorable?`<span style="background:#0a1a0a;color:#2ecc71;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid #2ecc7166;white-space:nowrap">🟢 FAVORABLE MATCHUP FOR BATTER</span>`:''}
-            </div>
+    if (el2) el2.innerHTML = `
             <div class="hrp-batter-sub" style="gap:3px;flex-wrap:wrap;margin-top:2px">
               <div style="display:flex;align-items:center;gap:4px">
                 ${tl(r.teamAbbr)}
@@ -4214,20 +3777,7 @@ function trackerGateHtml() {
     </div>
   </div>`;
 }
-function unlockTracker() {
-  const input = document.getElementById('tracker-code-input');
-  const msg = document.getElementById('tracker-code-msg');
-  if ((input?.value || '').trim().toLowerCase() === TRACKER_CODE) {
-    true = true;
-    sessionStorage.setItem('true','true');
-    if (msg) { msg.style.color = 'var(--green)'; msg.textContent = '✓ Tracker unlocked.'; }
-    setTimeout(() => renderTracker(true), 250);
-  } else {
-    if (msg) { msg.style.color = 'var(--accent)'; msg.textContent = '✗ Invalid admin code.'; }
-    if (input) input.style.borderColor = 'var(--accent)';
-    setTimeout(() => { if (input) input.style.borderColor = 'var(--border)'; }, 1200);
-  }
-}
+function unlockTracker() { return true; }
 function renderTracker(forceSnapshot=false) {
   const el = document.getElementById('tracker-content');
   if (!el) return;
@@ -4317,5 +3867,47 @@ function showTab(id, el) {
 })();
 
 </script>
+
+<script id="tracker-paywall-removal-runtime">
+(function () {
+  function removePaywallNodes() {
+    const words = [
+      'WHAT YOU GET',
+      'HAVE A PROMO CODE?',
+      'ENTER PROMO CODE',
+      'Maybe Later',
+      'Full scouting report',
+      'Strike zone vulnerability map',
+      'Head-to-head stats vs the pitcher'
+    ];
+    document.querySelectorAll('body *').forEach(function (el) {
+      const idClass = ((el.id || '') + ' ' + (el.className || '')).toLowerCase();
+      const txt = (el.textContent || '').trim();
+      if (
+        idClass.includes('paywall') ||
+        idClass.includes('premium') ||
+        idClass.includes('promo') ||
+        idClass.includes('upgrade') ||
+        idClass.includes('subscribe') ||
+        words.some(function (w) { return txt.includes(w); })
+      ) {
+        if (!el.closest('#tracker') && !el.matches('[data-tab="tracker"]')) {
+          el.remove();
+        }
+      }
+    });
+
+    const trackerTab = document.querySelector('[data-tab="tracker"]');
+    if (trackerTab) {
+      trackerTab.onclick = function () { showTab('tracker', trackerTab); };
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', removePaywallNodes);
+  setTimeout(removePaywallNodes, 250);
+  setTimeout(removePaywallNodes, 1000);
+})();
+</script>
+
 </body>
 </html>
