@@ -5047,11 +5047,12 @@ function showTab(id, el) {
 
   function sync(){
     const store=loadStore();
+    let threats=[], homers=new Set(), gamePicks=[];
     try{
       dedupeLegacyMarketPicks(store); // one-time cleanup of old index-keyed duplicate rows
-      const threats=extractHRThreats();
-      const homers=extractHRToday();
-      const gamePicks=extractGamePicks();
+      threats=extractHRThreats();
+      homers=extractHRToday();
+      gamePicks=extractGamePicks();
       const drpAccuracy=extractDRPicksAccuracy();
       const kpropsAccuracy=extractKPropsAccuracy();
       drpAccuracy.forEach(r=>upsertMarketPick(store,r));
@@ -5073,13 +5074,18 @@ function showTab(id, el) {
 
       return { threats, homers, gamePicks };
     } catch(e){
+      // Defensive fallback: even if extraction/rendering above failed partway through
+      // (e.g. a DOM element wasn't ready yet, common on some mobile browsers), still
+      // try to render whatever we have rather than leaving the whole Tracker tab blank.
       console.error('Tracker sync failed:', e);
       store.debug.lastError = e.message || String(e);
-      saveStore(store);
-      renderNextDayModels(store, currentThreats, gamePicks);
-
-    set('tracker-refresh', `Tracker error: ${e.message || e}`);
-      return { threats:[], homers:new Set(), gamePicks:[] };
+      try { saveStore(store); } catch(_) {}
+      try { render(store, threats, homers, gamePicks); } catch(renderErr) {
+        console.error('Tracker render also failed:', renderErr);
+      }
+      const refreshEl = document.getElementById('tracker-refresh');
+      if (refreshEl) refreshEl.textContent = `Tracker error: ${e.message || e} — retrying next sync`;
+      return { threats, homers, gamePicks };
     }
   }
 
