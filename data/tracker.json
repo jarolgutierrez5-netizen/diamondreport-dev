@@ -1,1 +1,18 @@
-
+{
+  "version": 4,
+  "generatedAt": null,
+  "picks": [],
+  "players": {},
+  "teams": {},
+  "days": {},
+  "market": {
+    "drp": [],
+    "kprop": []
+  },
+  "dailyResults": [],
+  "debug": {
+    "lastError": "",
+    "lastSync": "",
+    "repoDataLoaded": true
+  }
+}

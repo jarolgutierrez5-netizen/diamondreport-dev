@@ -1,1 +1,8 @@
-
+{
+  "version": 1,
+  "generatedAt": null,
+  "teamAccuracy": {},
+  "playerAccuracy": {},
+  "confidenceCalibration": {},
+  "notes": "Reserved for model-learning data generated from tracker.json and daily-results.json."
+}
