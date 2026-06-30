@@ -1,1 +1,13 @@
-
+{
+  "barrel": 18.7,
+  "hardHit": 14.1,
+  "xwoba": 12.9,
+  "batSpeed": 11.8,
+  "sweetSpot": 9.4,
+  "weather": 7.2,
+  "parkFactor": 6.8,
+  "bullpen": 5.9,
+  "lineup": 5.1,
+  "market": 4.1,
+  "recentForm": 4.0
+}
