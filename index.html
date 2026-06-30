@@ -717,6 +717,26 @@
   }
 
 
+  /* Hot Hitter HR Potential Engine */
+  .hrp-hot-badge {
+    display:inline-flex;align-items:center;gap:4px;
+    background:#2a1200;border:1px solid #ff8c0066;color:#ffb86b;
+    font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px;
+    letter-spacing:.4px;white-space:nowrap;
+  }
+  .hrp-hot-badge.elite { background:#2a0505;border-color:#ff444499;color:#ff7777;box-shadow:0 0 10px rgba(255,68,68,.12); }
+  .hrp-hot-chip {
+    display:inline-flex;align-items:center;gap:3px;
+    background:var(--bg);border:1px solid var(--border);color:var(--muted);
+    font-size:8px;font-weight:700;padding:1px 6px;border-radius:999px;white-space:nowrap;
+  }
+  .hrp-hot-chip.up { border-color:#2ecc7166;color:#2ecc71;background:#0d2a1a; }
+  .hrp-hot-chip.power { border-color:#f4a26166;color:#f4a261;background:#2a1800; }
+  .hrp-prob-cell { min-width:76px; }
+  .hrp-prob-num { font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1; }
+  .hrp-prob-boost { font-size:9px;color:#ffb86b;font-family:'JetBrains Mono',monospace;margin-top:2px;white-space:nowrap; }
+
+
   /* K Props live/final K count badge */
   .kprop-kcount {
     display:inline-flex;
@@ -1540,6 +1560,9 @@ let breakingHRActive = false;
 let breakingHRTimeout = null;
 let breakingHRNames = [];
 let hrpRows = [], hrpSortCol = 'hrProb', hrpSortDir = -1, hrpFilter = 'all';
+let statcastHotHitters = {};
+let statcastHotHittersLoaded = false;
+let statcastHotHittersPromise = null;
 const prevHrpHRs = {};          // batterId -> todayHR count for diff detection
 let kPropsData = [];
 let kPropsLoadedAt = null;
@@ -1594,6 +1617,7 @@ async function loadPitcherReport() {
   const el = document.getElementById('pr-content');
   try {
     const today = new Date().toLocaleDateString('en-CA', {timeZone:'America/Chicago'});
+    await loadStatcastHotHitters();
     const schedData = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${today}&hydrate=team,probablePitcher&language=en`);
     const entry = schedData.dates?.find(d => d.date === today) || schedData.dates?.[0];
     const games = entry?.games || [];
@@ -2016,7 +2040,7 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
     return Math.min(((batterRate * 0.6) + (pitcherRate * 0.4)) * 100, 25);
   }
 
-  const withProbs = lineup.map(b => ({ ...b, hrProb: hrProb(b.stats) }));
+  const withProbs = applyHotHitterBoosts(lineup.map(b => ({ ...b, hrProb: hrProb(b.stats), baseHrProb: hrProb(b.stats) })));
   const maxProb = Math.max(...withProbs.map(b => b.hrProb), 0.01);
   const topIdx = withProbs.reduce((best, b, i) => b.hrProb > withProbs[best].hrProb ? i : best, 0);
 
@@ -2036,7 +2060,7 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
       const existing = hrpRows.find(r => r.id === b.id && r.pitcherId == pitcherId);
       if (existing) {
         existing.topHrThreat = existing.topHrThreat || isTopThreat;
-        existing.hrProb = Math.max(existing.hrProb || 0, b.hrProb || 0);
+        existing.hrProb = Math.max(existing.hrProb || 0, b.hrProb || 0); existing.baseHrProb = existing.baseHrProb || b.baseHrProb || b.hrProb || 0; applyHotHitterBoost(existing);
         return;
       }
       if (!existing) {
@@ -2056,7 +2080,11 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
           stats: s,
           last10HR: b.last10HR ?? null,
           todayHR: b.todayHR || 0,
+          baseHrProb: b.baseHrProb || b.hrProb,
           hrProb: b.hrProb,
+          hotHitter: b.hotHitter || null,
+          hotBoostPct: b.hotBoostPct || 0,
+          onFireScore: b.onFireScore || 0,
           topHrThreat: isTopThreat,
           streakDays: 1,
           hrVsPitcher: null,
@@ -2867,6 +2895,113 @@ function scheduleMidnightRefresh() {
 }
 scheduleMidnightRefresh();
 
+
+// ── HOT HITTER HR POTENTIAL ENGINE ───────────────────────────────────
+// Uses repo-fed Baseball Savant/Statcast trend data when available. If the
+// GitHub Action has not populated data/statcast-hot-hitters.json yet, the
+// model falls back to the live MLB stats already on the page.
+async function loadStatcastHotHitters(force=false) {
+  if (statcastHotHittersLoaded && !force) return statcastHotHitters;
+  if (statcastHotHittersPromise && !force) return statcastHotHittersPromise;
+  statcastHotHittersPromise = (async () => {
+    try {
+      const res = await fetch(`data/statcast-hot-hitters.json?ts=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('statcast-hot-hitters.json not available');
+      const data = await res.json();
+      const list = Array.isArray(data.players) ? data.players : [];
+      statcastHotHitters = {};
+      list.forEach(p => {
+        if (p.playerId) statcastHotHitters[String(p.playerId)] = p;
+        if (p.name) statcastHotHitters[String(p.name).toLowerCase()] = p;
+      });
+    } catch(e) {
+      statcastHotHitters = {};
+    }
+    statcastHotHittersLoaded = true;
+    return statcastHotHitters;
+  })();
+  return statcastHotHittersPromise;
+}
+function clampNum(n, min, max) { n = Number(n); if (!Number.isFinite(n)) return min; return Math.max(min, Math.min(max, n)); }
+function pctNum(v) { if (v === null || v === undefined || v === '') return null; const n = Number(String(v).replace('%','')); return Number.isFinite(n) ? n : null; }
+function buildFallbackHotHitterProfile(row) {
+  const ops = Number(row.ops || row.stats?.ops || 0);
+  const iso = Number(row.iso || ((Number(row.stats?.slg)||0) - (Number(row.stats?.avg)||0)) || 0);
+  const last10HR = Number(row.last10HR || 0);
+  const streakDays = Number(row.streakDays || 0);
+  const favorable = row.isFavorable ? 1 : 0;
+  const score = clampNum(
+    (ops >= .900 ? 22 : ops >= .820 ? 16 : ops >= .760 ? 10 : 0) +
+    (iso >= .260 ? 22 : iso >= .210 ? 16 : iso >= .170 ? 9 : 0) +
+    (last10HR >= 3 ? 26 : last10HR >= 2 ? 18 : last10HR >= 1 ? 10 : 0) +
+    (streakDays >= 3 ? 14 : streakDays === 2 ? 8 : 0) +
+    (favorable ? 10 : 0), 0, 100
+  );
+  const tags = [];
+  if (ops >= .820) tags.push('OPS↑');
+  if (iso >= .210) tags.push('ISO Power↑');
+  if (last10HR >= 2) tags.push('L10 HR Surge');
+  if (streakDays >= 2) tags.push('Streak');
+  if (favorable) tags.push('Matchup Edge');
+  return { source:'page-fallback', onFireScore:score, hotBoostPct: +(score/100*4.5).toFixed(1), tags };
+}
+function getStatcastHotHitterProfile(row) {
+  const fromRepo = statcastHotHitters[String(row.id)] || statcastHotHitters[String(row.name || '').toLowerCase()];
+  const fallback = buildFallbackHotHitterProfile(row);
+  if (!fromRepo) return fallback;
+  const xwobaTrend = Number(fromRepo.xwobaTrend || 0);
+  const hardHitTrend = Number(fromRepo.hardHitTrend || 0);
+  const sweetSpotTrend = Number(fromRepo.sweetSpotTrend || 0);
+  const barrelTrend = Number(fromRepo.barrelTrend || 0);
+  const batSpeedTrend = Number(fromRepo.batSpeedTrend || 0);
+  const blastTrend = Number(fromRepo.blastTrend || 0);
+  const xwoba = Number(fromRepo.xwoba || 0);
+  const hardHit = pctNum(fromRepo.hardHitPct) ?? 0;
+  const sweetSpot = pctNum(fromRepo.sweetSpotPct) ?? 0;
+  const barrel = pctNum(fromRepo.barrelPct) ?? 0;
+  const batSpeed = Number(fromRepo.batSpeed || 0);
+  const blastRate = pctNum(fromRepo.blastRate) ?? 0;
+  const score = clampNum(
+    (xwoba >= .420 ? 18 : xwoba >= .370 ? 13 : xwoba >= .330 ? 7 : 0) +
+    (xwobaTrend >= .060 ? 15 : xwobaTrend >= .030 ? 10 : xwobaTrend >= .015 ? 5 : 0) +
+    (hardHit >= 52 ? 14 : hardHit >= 45 ? 10 : hardHit >= 40 ? 5 : 0) +
+    (hardHitTrend >= 10 ? 12 : hardHitTrend >= 5 ? 8 : hardHitTrend >= 2 ? 4 : 0) +
+    (sweetSpot >= 40 ? 9 : sweetSpot >= 34 ? 6 : sweetSpot >= 30 ? 3 : 0) +
+    (sweetSpotTrend >= 8 ? 8 : sweetSpotTrend >= 4 ? 5 : sweetSpotTrend >= 2 ? 2 : 0) +
+    (barrel >= 15 ? 10 : barrel >= 10 ? 7 : barrel >= 7 ? 3 : 0) +
+    (barrelTrend >= 5 ? 7 : barrelTrend >= 2 ? 4 : 0) +
+    (batSpeed >= 75 ? 5 : batSpeed >= 72 ? 3 : 0) +
+    (batSpeedTrend >= 1.5 ? 5 : batSpeedTrend >= .7 ? 3 : 0) +
+    (blastRate >= 18 ? 5 : blastRate >= 12 ? 3 : 0) +
+    (blastTrend >= 5 ? 5 : blastTrend >= 2 ? 3 : 0), 0, 100
+  );
+  const tags = [];
+  if (xwobaTrend >= .015 || xwoba >= .370) tags.push('xwOBA↑');
+  if (hardHitTrend >= 2 || hardHit >= 45) tags.push('Hard-Hit↑');
+  if (sweetSpotTrend >= 2 || sweetSpot >= 34) tags.push('Sweet-Spot↑');
+  if (barrelTrend >= 2 || barrel >= 10) tags.push('Barrel↑');
+  if (batSpeedTrend >= .7 || batSpeed >= 72) tags.push('Bat Speed↑');
+  if (blastTrend >= 2 || blastRate >= 12) tags.push('Blasts↑');
+  const boost = clampNum((score / 100) * 7.5, 0, 7.5);
+  return { ...fallback, ...fromRepo, source:'statcast-repo', onFireScore:Math.max(score, fallback.onFireScore || 0), hotBoostPct:+Math.max(boost, fallback.hotBoostPct || 0).toFixed(1), tags:[...new Set([...tags, ...(fallback.tags||[])])].slice(0,6) };
+}
+function applyHotHitterBoost(row) {
+  const profile = getStatcastHotHitterProfile(row);
+  const base = Number(row.hrProb || 0);
+  const boost = Number(profile.hotBoostPct || 0);
+  row.baseHrProb = row.baseHrProb ?? base;
+  row.hotHitter = profile;
+  row.hotBoostPct = boost;
+  row.onFireScore = Number(profile.onFireScore || 0);
+  row.hrProb = +clampNum(base + boost, 0, 35).toFixed(1);
+  row.isOnFire = row.onFireScore >= 70 || boost >= 4.5;
+  return row;
+}
+function applyHotHitterBoosts(rows) {
+  (rows || []).forEach(applyHotHitterBoost);
+  return rows;
+}
+
 // ── 5AM HR POTENTIAL REFRESH ─────────────────────────────────────────
 // Checks on load and reschedules daily — handles cases where tab wasn't open at 5am
 const HR_POTENTIAL_STORAGE_KEY = 'hrp_last_loaded_date';
@@ -3318,6 +3453,7 @@ async function loadHRPotential() {
   const refresh = document.getElementById('props-refresh');
   try {
     const today = new Date().toLocaleDateString('en-CA', {timeZone:'America/Chicago'});
+    await loadStatcastHotHitters();
     const schedData = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${today}&hydrate=team,probablePitcher&language=en`);
     const entry = schedData.dates?.find(d => d.date === today) || schedData.dates?.[0];
     const games = entry?.games || [];
@@ -3449,7 +3585,8 @@ async function loadHRPotential() {
           const ab=parseInt(s.atBats)||0, hr=parseInt(s.homeRuns)||0;
           const batterRate=ab>0?hr/ab:0;
           const pitcherRate=pitcherHr9>0?pitcherHr9/27:0.03;
-          const hrProb=Math.min(((batterRate*0.6)+(pitcherRate*0.4))*100,25);
+          const baseHrProb=Math.min(((batterRate*0.6)+(pitcherRate*0.4))*100,25);
+          let hrProb=baseHrProb;
           const hrInLast8=(logs||[]).slice(0,8).some(g2=>parseInt(g2.stat?.homeRuns)>0);
           const isDrought=!hrInLast8&&hr>0;
           const batterOPS=parseFloat(s.ops)||0;
@@ -3458,7 +3595,7 @@ async function loadHRPotential() {
             id:pid, name:b.player.person?.fullName||'–', pos:b.player.position?.abbreviation||'–',
             teamAbbr, oppAbbr, pitcherName:pitcher.fullName, pitcherId:pitcher.id,
             timeLabel, timeColor, gameTimestamp:dt.getTime(), gamePk:g.gamePk,
-            stats:s, last10HR, todayHR, hrProb, streakDays, hrVsPitcher,
+            stats:s, last10HR, todayHR, baseHrProb, hrProb, streakDays, hrVsPitcher,
             avg:parseFloat(s.avg)||0, hrSeason:hr, ops:batterOPS,
             iso:(parseFloat(s.slg)||0)-(parseFloat(s.avg)||0), isDrought, isFavorable,
             topHrThreat:false,
@@ -3466,6 +3603,7 @@ async function loadHRPotential() {
         }))).filter(Boolean);
 
         if (batterRowsForPitcher.length) {
+          applyHotHitterBoosts(batterRowsForPitcher);
           const topRow = batterRowsForPitcher.reduce((best, row) => row.hrProb > best.hrProb ? row : best, batterRowsForPitcher[0]);
           batterRowsForPitcher.forEach(row => {
             row.topHrThreat = row.id === topRow.id;
@@ -3475,7 +3613,7 @@ async function loadHRPotential() {
       }));
     }));
 
-    hrpRows = allBatters;
+    hrpRows = applyHotHitterBoosts(allBatters);
     renderHRPTable();
 
     const now = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
@@ -3496,6 +3634,7 @@ function renderHRPTable() {
   const cols = [
     {key:'timeLabel', label:'TIME',   r:false, sortable:false},
     {key:'name',      label:'BATTER', r:false, sortable:false},
+    {key:'hrProb',    label:'HR%',    r:true,  sortable:true, tip:'Final HR Potential includes Hot Hitter boost from xwOBA, Hard-Hit %, Sweet-Spot %, Bat Speed, Blasts, and rolling 5–10 game trend when available.'},
   ];
 
   // 'all' shows every batter with no extra prioritization beyond the default sort below.
@@ -3565,6 +3704,7 @@ function renderHRPTable() {
               ${(r.topHrThreat || r.hrProb>=8)?`<span class="top-hr-badge">⚡ TOP HR THREAT</span>`:''}
               ${r.isDrought?`<span style="background:#1a0505;color:#ff4444;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid #ff444466;white-space:nowrap">🔴 DROUGHT</span>`:''}
               ${r.isFavorable?`<span style="background:#0a1a0a;color:#2ecc71;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid #2ecc7166;white-space:nowrap">🟢 FAVORABLE MATCHUP FOR BATTER</span>`:''}
+              ${r.isOnFire?`<span class="hrp-hot-badge ${r.onFireScore>=85?'elite':''}">🔥 ON FIRE ${Math.round(r.onFireScore||0)}</span>`:''}
             </div>
             <div class="hrp-batter-sub" style="gap:3px;flex-wrap:wrap;margin-top:2px">
               <div style="display:flex;align-items:center;gap:4px">
@@ -3576,6 +3716,7 @@ function renderHRPTable() {
                 <span style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-size:9px;font-family:'JetBrains Mono',monospace"><span style="color:var(--muted)">L10 </span><strong style="color:${r.last10HR>=2?'var(--accent2)':r.last10HR>=1?'#90ee60':'var(--muted)'}">${r.last10HR??'–'}</strong></span>
                 ${r.hrVsPitcher !== null && r.hrVsPitcher !== undefined ? `<span style="background:${r.hrVsPitcher>0?'#2a1500':'var(--bg)'};border:1px solid ${r.hrVsPitcher>0?'#f4a261':'var(--border)'};border-radius:3px;padding:1px 6px;font-size:9px;font-family:'JetBrains Mono',monospace;white-space:nowrap"><span style="color:var(--muted)">vs P </span><strong style="color:${r.hrVsPitcher>0?'var(--accent2)':'var(--muted)'}">${r.hrVsPitcher} HR</strong></span>` : ''}
                 ${r.streakDays>=3?`<span style="background:#1a1200;color:#ffd700;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;border:1px solid #ffd70066;white-space:nowrap">👑 ON A HEATER</span>`:r.streakDays===2?`<span style="background:#1a0d00;color:#ff8c00;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;border:1px solid #ff8c0066;white-space:nowrap">🔥 BACK TO BACK</span>`:''}
+                ${(r.hotHitter?.tags||[]).slice(0,4).map(t=>`<span class="hrp-hot-chip ${/xwOBA|Hard-Hit|Sweet|Barrel|Bat|Blast/.test(t)?'up':'power'}">${t}</span>`).join('')}
               </div>
               <div class="hrp-matchup-wrap">
                 <button class="hrp-matchup-btn"
@@ -3589,6 +3730,11 @@ function renderHRPTable() {
             </div>
           </div>
         </div>
+      </td>
+      <td class="r hrp-prob-cell">
+        <div class="hrp-prob-num" style="color:${r.hrProb>=10?'var(--accent2)':r.hrProb>=7?'#ff7777':'var(--text)'}">${Number(r.hrProb||0).toFixed(1)}%</div>
+        ${r.hotBoostPct?`<div class="hrp-prob-boost">+${Number(r.hotBoostPct||0).toFixed(1)} hot</div>`:''}
+        <div class="hrp-bar-wrap" style="width:70px;margin-left:auto;margin-top:4px"><div class="hrp-bar-fill" style="width:${Math.max(5,barPct)}%;background:${barColor}"></div></div>
       </td>
     </tr>`;
   }).join('');
@@ -3607,7 +3753,8 @@ function renderHRPTable() {
 
   el.innerHTML = `<div style="overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-y"><table class="hrp-table"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div>
     <div style="padding:8px 12px;font-size:10px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border)">
-      HR Prob = blend of batter HR/AB (60%) + pitcher HR/9 rate (40%)<br>
+      HR Prob = batter HR/AB + pitcher HR/9 baseline, then boosted by Hot Hitter data: xwOBA trend, Hard-Hit %, Sweet-Spot %, Barrels, Bat Speed, Blasts, and rolling 5–10 game power signals when repo data exists.<br>
+      🔥 <strong>ON FIRE</strong> — Recent contact quality / rolling batted-ball trend boost applied to HR Potential<br>
       🔴 <strong>DROUGHT</strong> — No home run in the last 8 games (due for one)<br>
       🟢 <strong>FAVORABLE MATCHUP FOR BATTER</strong> — Batter has OPS ≥ .800 against a pitcher allowing high AVG or WHIP ≥ 1.25
     </div>`;
