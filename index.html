@@ -4583,7 +4583,7 @@ function showTab(id, el) {
   function start(){
     cleanKPropLabels();
     ['loadKProps','renderKProps','renderKPropRows'].forEach(hook);
-    setInterval(cleanKPropLabels, 1000);
+    setInterval(cleanKPropLabels, 5000); // throttled from 1000ms to reduce DOM scan frequency
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
@@ -4602,7 +4602,7 @@ function showTab(id, el) {
   }
   window.hideLiveScoresBanner = hideLiveScoresBanner;
   hideLiveScoresBanner();
-  setInterval(hideLiveScoresBanner, 1000);
+  setInterval(hideLiveScoresBanner, 3000); // throttled from 1000ms
 })();
 
 
@@ -4620,7 +4620,7 @@ function showTab(id, el) {
   }
   const run=()=>normalizeProjLabels();
   run();
-  setInterval(run,1000);
+  setInterval(run, 5000); // throttled from 1000ms — full wildcard query was too aggressive
 })();
 
 
@@ -4640,7 +4640,6 @@ function showTab(id, el) {
         }
       });
 
-      // Some renderers place the label as direct text in the prediction box.
       [...root.childNodes].forEach(node => {
         if(node.nodeType !== Node.TEXT_NODE) return;
         const raw = node.textContent.trim();
@@ -4654,9 +4653,10 @@ function showTab(id, el) {
     cleanKPropRecommendationLabels();
   }
 
-  );
+  function startKPropRecommendationPatch(){
     runKPropRecommendationPatch();
-    setInterval(runKPropRecommendationPatch, 500);
+    // Throttled to 5s instead of 500ms — full DOM walk doesn't need to run twice a second
+    setInterval(runKPropRecommendationPatch, 5000);
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startKPropRecommendationPatch);
