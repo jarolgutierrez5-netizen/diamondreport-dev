@@ -630,6 +630,38 @@
     overscroll-behavior: contain;
   }
 
+
+  /* K Props live/final K count badge */
+  .kprop-kcount {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    margin-top:6px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:3px 8px;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.3px;
+    white-space:nowrap;
+    width:max-content;
+  }
+  .kprop-kcount.live {
+    background:#2a0d0d;
+    border-color:#e63946;
+    color:#ff6b6b;
+  }
+  .kprop-kcount.final {
+    background:#0d2a1a;
+    border-color:#2ecc71;
+    color:#2ecc71;
+  }
+  .kprop-kcount.pending {
+    background:var(--surface2);
+    border-color:var(--border);
+    color:var(--muted);
+  }
+
 </style>
 <meta name="google-adsense-account" content="ca-pub-6433797533342090">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6433797533342090"
@@ -4368,6 +4400,103 @@ function showTab(id, el) {
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+
+
+// Diamond Report K Props live/final K count labels
+(function(){
+  function normK(s){ return String(s || '').replace(/\s+/g,' ').trim(); }
+
+  function pitcherNameFromRow(row){
+    return normK(row.querySelector('.kprop-name')?.textContent || row.innerText.split('\n')[0] || '').toLowerCase();
+  }
+
+  function getPitcherKStatus(name){
+    if(!name) return { status:'pending', k:null };
+
+    const scanRoots = [
+      document.getElementById('ks-today-props'),
+      document.getElementById('pr-content'),
+      document.getElementById('live-games'),
+      document.getElementById('final-games')
+    ].filter(Boolean);
+
+    let found = null;
+
+    scanRoots.forEach(root => {
+      if(found) return;
+      [...root.querySelectorAll('.ks-today-row, .pr-main-row, .stat-row, .game-card, tr, div')].forEach(el => {
+        if(found) return;
+        const t = (el.innerText || '').toLowerCase();
+        if(!t.includes(name)) return;
+
+        const isFinal = /final|game over|completed/.test(t) || el.closest?.('.closed') || el.classList?.contains('closed');
+        const isLive = /live|in progress|top|bot|bottom|inning/.test(t) || el.closest?.('.live') || el.classList?.contains('live');
+
+        let k = null;
+        const match =
+          t.match(/(\d+)\s*(?:k|ks)\b/i) ||
+          t.match(/\bk\s*[:\-]?\s*(\d+)\b/i) ||
+          t.match(/strikeouts?\s*[:\-]?\s*(\d+)/i);
+        if(match) k = Number(match[1]);
+
+        if(Number.isFinite(k)){
+          found = { status: isFinal ? 'final' : isLive ? 'live' : 'pending', k };
+        }
+      });
+    });
+
+    return found || { status:'pending', k:null };
+  }
+
+  function applyKCountLabels(){
+    const root = document.getElementById('kprops-content');
+    if(!root) return;
+
+    [...root.querySelectorAll('.kprop-row')].forEach(row => {
+      const pitcherCell = row.querySelector('.kprop-pitcher') || row;
+      let badge = row.querySelector('.kprop-kcount');
+      if(!badge){
+        badge = document.createElement('div');
+        badge.className = 'kprop-kcount pending';
+        pitcherCell.appendChild(badge);
+      }
+
+      const status = getPitcherKStatus(pitcherNameFromRow(row));
+      badge.className = `kprop-kcount ${status.status}`;
+
+      if(status.status === 'final' && status.k !== null){
+        badge.innerHTML = `✅ Final K's: ${status.k}`;
+      } else if(status.status === 'live' && status.k !== null){
+        badge.innerHTML = `● Live K Count: ${status.k}`;
+      } else {
+        badge.innerHTML = `⏳ K Count Pending`;
+      }
+    });
+  }
+
+  window.applyKCountLabels = applyKCountLabels;
+
+  function hook(fnName){
+    const original = window[fnName];
+    if(typeof original !== 'function' || original.__kCountHooked) return;
+    const wrapped = async function(...args){
+      const result = await original.apply(this,args);
+      setTimeout(applyKCountLabels, 300);
+      return result;
+    };
+    wrapped.__kCountHooked = true;
+    window[fnName] = wrapped;
+  }
+
+  function start(){
+    applyKCountLabels();
+    ['loadKProps','renderKProps','loadScores','renderScores','loadLiveScores','loadPitcherReport'].forEach(hook);
+    setInterval(applyKCountLabels, 15000);
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 })();
 
