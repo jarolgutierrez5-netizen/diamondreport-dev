@@ -1384,6 +1384,7 @@ const prevBannerHRCounts = {};  // batterId -> previous HR count
 let breakingHRActive = false;
 let breakingHRTimeout = null;
 let breakingHRNames = [];
+let bannerInitialized = false; // prevents false BREAKING alert on first page load
 let hrpRows = [], hrpSortCol = 'hrProb', hrpSortDir = -1, hrpFilter = 'all';
 const prevHrpHRs = {};          // batterId -> todayHR count for diff detection
 let kPropsData = [];
@@ -3021,13 +3022,21 @@ function renderBanner() {
   if (!scoresBanner || !scoresTrack) return;
 
   if (breakingHRActive && breakingHRNames.length) {
-    const breakingHTML = breakingHRNames.map(n =>
-      `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 20px">
+    const breakingHTML = (() => {
+      if (breakingHRNames.length === 1) {
+        return `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 20px">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#ffffff;animation:pulse 0.6s infinite">🚨 BREAKING</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#f97316;text-shadow:0 0 12px #f97316">${breakingHRNames[0]} HIT A HOME RUN! 💥</span>
+        </span>`;
+      }
+      const names = breakingHRNames.length === 2
+        ? breakingHRNames.join(' & ')
+        : breakingHRNames.slice(0,-1).join(', ') + ' & ' + breakingHRNames.slice(-1);
+      return `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 20px">
         <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#ffffff;animation:pulse 0.6s infinite">🚨 BREAKING</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#f97316;text-shadow:0 0 12px #f97316">${n} HIT A HOME RUN!</span>
-        <span style="font-size:20px">💥</span>
-      </span>`
-    ).join('<span style="color:#334155;padding:0 10px;font-size:20px">·</span>');
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#f97316;text-shadow:0 0 12px #f97316">${names} ALL HIT HOME RUNS! 💥</span>
+      </span>`;
+    })();
     scoresTrack.innerHTML = breakingHTML;
     scoresTrack.style.cssText = 'display:inline-flex;align-items:center;padding:8px 20px;animation:none;justify-content:center;flex-wrap:wrap;width:100%';
     scoresBanner.style.background = 'linear-gradient(90deg,#1a0000,#2a0500,#1a0000)';
@@ -3074,13 +3083,16 @@ function renderBanner() {
 }
 
 function updateLiveBanner() {
-  // Detect new HRs since last check
   const newHitters = [];
   Object.values(bannerHRs).forEach(h => {
-    const prev = prevBannerHRCounts[h.id] || 0;
-    if (h.count > prev) newHitters.push(h.name);
+    const prev = prevBannerHRCounts[h.id];
+    if (bannerInitialized && prev !== undefined && h.count > prev) {
+      newHitters.push(h.name);
+    }
     prevBannerHRCounts[h.id] = h.count;
   });
+  bannerInitialized = true;
+
   if (newHitters.length && !breakingHRActive) {
     triggerBreakingHR(newHitters);
   } else {
