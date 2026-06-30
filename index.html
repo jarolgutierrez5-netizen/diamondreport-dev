@@ -3218,6 +3218,560 @@ video {
 }
 </style>
 
+
+<style id="v6-0-mobile-native-card-rebuild">
+/* ============================================================
+   Diamond Report DIE v6.0 — Mobile Native Responsive Rebuild
+   Purpose:
+   - Stop squeezing desktop tables into iPhone screens.
+   - Convert HR Potential + K's Today into native mobile cards.
+   - Preserve desktop/tablet table layouts.
+   ============================================================ */
+
+#mobile-hrp-cards,
+#mobile-ks-cards {
+  display: none;
+}
+
+/* Desktop/tablet still use existing sections */
+@media (min-width: 769px) {
+  #hr-potential-content,
+  #ks-today-props {
+    display: block !important;
+  }
+}
+
+/* Mobile native cards */
+@media (max-width: 768px) {
+  /* Hide desktop HR table and desktop K list */
+  #hr-potential-content,
+  #ks-today-props {
+    display: none !important;
+  }
+
+  #mobile-hrp-cards,
+  #mobile-ks-cards {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 18px !important;
+  }
+
+  .mhr-card,
+  .mks-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.015) !important;
+  }
+
+  .mhr-card.live,
+  .mks-card.live {
+    border-left: 3px solid var(--live) !important;
+    background:
+      linear-gradient(90deg, rgba(230,57,70,.12), transparent 28%),
+      var(--surface) !important;
+  }
+
+  .mhr-top,
+  .mks-top {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  .mhr-player,
+  .mks-player {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .mhr-headshot,
+  .mks-headshot {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    background: var(--surface2) !important;
+    border: 1px solid var(--border) !important;
+    flex: 0 0 42px !important;
+  }
+
+  .mhr-info,
+  .mks-info {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .mhr-name,
+  .mks-name {
+    color: #fff !important;
+    font-family: var(--dr-font-body, 'Inter', system-ui, sans-serif) !important;
+    font-size: 15px !important;
+    font-weight: 900 !important;
+    line-height: 1.16 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .mhr-meta,
+  .mks-meta {
+    color: var(--muted) !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    margin-top: 3px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .mhr-status,
+  .mks-status {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    border: 1px solid var(--border) !important;
+    background: var(--bg) !important;
+    color: var(--muted) !important;
+    border-radius: 7px !important;
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+    text-transform: uppercase !important;
+  }
+
+  .mhr-status.live,
+  .mks-status.live {
+    border-color: rgba(239,68,68,.8) !important;
+    color: #ff8b8b !important;
+    background: rgba(42,13,13,.9) !important;
+  }
+
+  .mhr-status.final,
+  .mks-status.final {
+    border-color: rgba(34,197,94,.8) !important;
+    color: #86efac !important;
+    background: rgba(13,42,26,.85) !important;
+  }
+
+  .mhr-prob-row {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: end !important;
+    gap: 10px !important;
+    margin-top: 12px !important;
+    padding-top: 11px !important;
+    border-top: 1px solid var(--border) !important;
+  }
+
+  .mhr-prob-label,
+  .mks-label {
+    color: var(--muted) !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+  }
+
+  .mhr-prob {
+    color: #fff !important;
+    font-family: var(--dr-font-display, 'Bebas Neue', Impact, sans-serif) !important;
+    font-size: 34px !important;
+    line-height: .9 !important;
+    letter-spacing: .03em !important;
+  }
+
+  .mhr-boost {
+    color: var(--accent2) !important;
+    font-family: var(--dr-font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 10px !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  .mhr-chips,
+  .mks-chips {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+
+  .mhr-chip,
+  .mks-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    max-width: 100% !important;
+    border: 1px solid var(--border) !important;
+    background: var(--bg) !important;
+    color: var(--muted) !important;
+    border-radius: 999px !important;
+    padding: 3px 8px !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+
+  .mhr-chip.hot { border-color: #f97316aa !important; color: #fdba74 !important; background: rgba(42,24,0,.75) !important; }
+  .mhr-chip.good { border-color: #22c55e99 !important; color: #86efac !important; background: rgba(13,42,26,.75) !important; }
+  .mhr-chip.warn { border-color: #f59e0b99 !important; color: #fbbf24 !important; background: rgba(42,24,0,.75) !important; }
+  .mhr-chip.bad { border-color: #ef444499 !important; color: #fca5a5 !important; background: rgba(42,13,13,.75) !important; }
+
+  .mhr-stats,
+  .mks-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    margin-top: 10px !important;
+  }
+
+  .mhr-stat,
+  .mks-stat {
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    padding: 7px !important;
+    min-width: 0 !important;
+  }
+
+  .mhr-stat-label,
+  .mks-stat-label {
+    color: var(--muted) !important;
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    letter-spacing: .07em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+  }
+
+  .mhr-stat-value,
+  .mks-stat-value {
+    color: #fff !important;
+    font-family: var(--dr-font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+    margin-top: 2px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .mhr-matchup {
+    margin-top: 10px !important;
+    width: 100% !important;
+  }
+
+  .mhr-matchup button,
+  .mhr-matchup .hrp-matchup-btn {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 36px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+  }
+
+  .mks-progress {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border) !important;
+  }
+
+  .mks-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 28px !important;
+    border-radius: 8px !important;
+    padding: 5px 7px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+    border: 1px solid var(--border) !important;
+    color: var(--muted) !important;
+    background: var(--bg) !important;
+  }
+
+  .mks-badge.live { border-color: #ef444499 !important; color: #fca5a5 !important; background: rgba(42,13,13,.75) !important; }
+  .mks-badge.good { border-color: #22c55e99 !important; color: #86efac !important; background: rgba(13,42,26,.75) !important; }
+  .mks-badge.warn { border-color: #f59e0b99 !important; color: #fbbf24 !important; background: rgba(42,24,0,.75) !important; }
+
+  .mks-note {
+    margin-top: 9px !important;
+    color: #8fa3c8 !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .mhr-card,
+  .mks-card {
+    padding: 10px !important;
+  }
+
+  .mhr-headshot,
+  .mks-headshot {
+    width: 38px !important;
+    height: 38px !important;
+    flex-basis: 38px !important;
+  }
+
+  .mhr-name,
+  .mks-name {
+    font-size: 14px !important;
+  }
+
+  .mhr-prob {
+    font-size: 30px !important;
+  }
+
+  .mhr-stats,
+  .mks-stats,
+  .mks-progress {
+    gap: 6px !important;
+  }
+
+  .mhr-stat,
+  .mks-stat {
+    padding: 6px !important;
+  }
+}
+</style>
+<script id="v6-0-mobile-native-card-rebuild-script">
+(function () {
+  function text(el) {
+    return el ? (el.textContent || '').trim() : '';
+  }
+
+  function attr(el, name) {
+    return el ? (el.getAttribute(name) || '') : '';
+  }
+
+  function findImg(el) {
+    var img = el ? el.querySelector('img') : null;
+    return img ? img.src : '';
+  }
+
+  function badgeClass(t) {
+    t = String(t || '').toLowerCase();
+    if (t.includes('fire') || t.includes('heater')) return 'hot';
+    if (t.includes('favorable') || t.includes('top')) return 'good';
+    if (t.includes('live')) return 'bad';
+    return 'warn';
+  }
+
+  function buildHrpCards() {
+    var src = document.getElementById('hr-potential-content');
+    if (!src) return;
+
+    var parent = src.parentElement;
+    if (!parent) return;
+
+    var mobile = document.getElementById('mobile-hrp-cards');
+    if (!mobile) {
+      mobile = document.createElement('div');
+      mobile.id = 'mobile-hrp-cards';
+      src.insertAdjacentElement('afterend', mobile);
+    }
+
+    var rows = Array.from(src.querySelectorAll('tbody tr'));
+    if (!rows.length) {
+      mobile.innerHTML = '<div class="mhr-card"><div class="mhr-name">Waiting for HR Potential data.</div></div>';
+      return;
+    }
+
+    mobile.innerHTML = rows.slice(0, 40).map(function (row, idx) {
+      var cells = Array.from(row.querySelectorAll('td'));
+      var rowText = text(row);
+      var batterCell = row.querySelector('.hrp-batter-cell') || cells[1] || cells[0] || row;
+      var nameEl = batterCell.querySelector('.hrp-batter-name') || batterCell.querySelector('[style*="font-weight"]') || batterCell;
+      var name = text(nameEl).split('\n')[0] || 'Player';
+      var img = findImg(batterCell);
+
+      var sub = text(batterCell.querySelector('.hrp-batter-sub')) || '';
+      var teamMatch = sub.match(/[A-Z]{2,3}\s*·?\s*[A-Z]{1,3}/);
+      var meta = teamMatch ? teamMatch[0] : sub.replace(name, '').slice(0, 32);
+
+      var probEl = row.querySelector('.hrp-prob-num');
+      var prob = text(probEl);
+      if (!prob) {
+        var maybePct = rowText.match(/\b\d{1,2}(?:\.\d+)?%/);
+        prob = maybePct ? maybePct[0] : '--';
+      }
+
+      var boost = text(row.querySelector('.hrp-prob-boost'));
+      var status = rowText.toLowerCase().includes('live') ? 'LIVE' : (rowText.toLowerCase().includes('final') ? 'FINAL' : 'PENDING');
+      var statusClass = status === 'LIVE' ? 'live' : (status === 'FINAL' ? 'final' : '');
+
+      var chips = [];
+      row.querySelectorAll('.hrp-hot-badge,.hrp-hot-chip,.matchup-label,.tracker-pill,.kprop-chip').forEach(function (chip) {
+        var chipText = text(chip);
+        if (chipText && !chips.includes(chipText) && chips.length < 7) chips.push(chipText);
+      });
+      if (!chips.length) {
+        ['TOP HR THREAT','FAVORABLE MATCHUP','ON FIRE'].forEach(function(label){
+          if (rowText.toLowerCase().includes(label.toLowerCase())) chips.push(label);
+        });
+      }
+
+      var matchupBtn = row.querySelector('.hrp-matchup-btn,button[onclick*="matchup"],button');
+      var matchupHtml = '';
+      if (matchupBtn) {
+        matchupHtml = '<div class="mhr-matchup">' + matchupBtn.outerHTML + '</div>';
+      }
+
+      var hr = (rowText.match(/\bHR\s*\d+/i) || ['HR --'])[0];
+      var l10 = (rowText.match(/\bL10\s*\d+/i) || ['L10 --'])[0];
+      var pitcher = (text(matchupBtn) || '').replace(/pitcher matchup/i,'').replace(/vs/i,'vs').trim();
+      if (!pitcher) pitcher = 'Matchup ready';
+
+      return [
+        '<div class="mhr-card ' + statusClass + '">',
+          '<div class="mhr-top">',
+            '<div class="mhr-player">',
+              img ? '<img class="mhr-headshot" src="' + img + '" alt="">' : '<div class="mhr-headshot"></div>',
+              '<div class="mhr-info">',
+                '<div class="mhr-name">' + name + '</div>',
+                '<div class="mhr-meta">' + (meta || 'Team/player data') + '</div>',
+              '</div>',
+            '</div>',
+            '<div class="mhr-status ' + statusClass + '">● ' + status + '</div>',
+          '</div>',
+          '<div class="mhr-prob-row">',
+            '<div><div class="mhr-prob-label">HR Probability</div><div class="mhr-prob">' + prob + '</div></div>',
+            '<div class="mhr-boost">' + (boost || 'DIE ranked') + '</div>',
+          '</div>',
+          '<div class="mhr-chips">' + chips.map(function(c){ return '<span class="mhr-chip ' + badgeClass(c) + '">' + c + '</span>'; }).join('') + '</div>',
+          '<div class="mhr-stats">',
+            '<div class="mhr-stat"><div class="mhr-stat-label">HR</div><div class="mhr-stat-value">' + hr.replace(/HR/i,'') + '</div></div>',
+            '<div class="mhr-stat"><div class="mhr-stat-label">L10</div><div class="mhr-stat-value">' + l10.replace(/L10/i,'') + '</div></div>',
+            '<div class="mhr-stat"><div class="mhr-stat-label">Pitcher</div><div class="mhr-stat-value">' + pitcher + '</div></div>',
+          '</div>',
+          matchupHtml,
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function buildKsCards() {
+    var src = document.getElementById('ks-today-props');
+    if (!src) return;
+
+    var mobile = document.getElementById('mobile-ks-cards');
+    if (!mobile) {
+      mobile = document.createElement('div');
+      mobile.id = 'mobile-ks-cards';
+      src.insertAdjacentElement('afterend', mobile);
+    }
+
+    var rows = Array.from(src.querySelectorAll('.ks-today-row,.kprop-row,.stat-row'));
+    if (!rows.length) {
+      mobile.innerHTML = '<div class="mks-card"><div class="mks-name">No K data yet.</div></div>';
+      return;
+    }
+
+    mobile.innerHTML = rows.slice(0, 40).map(function (row) {
+      var rowText = text(row);
+      var img = findImg(row);
+      var nameEl = row.querySelector('.kprop-name') || row.querySelector('[style*="font-weight"]') || row.querySelector('strong');
+      var name = text(nameEl).split('\n')[0] || rowText.split('\n')[0] || 'Pitcher';
+      var meta = '';
+      var muted = row.querySelector('[style*="color:var(--muted)"],.kprop-meta');
+      if (muted) meta = text(muted);
+      if (!meta) {
+        var game = rowText.match(/[A-Z]{2,3}\s*@\s*[A-Z]{2,3}/);
+        meta = game ? game[0] : 'Pitcher report';
+      }
+
+      var live = rowText.toLowerCase().includes('live');
+      var final = rowText.toLowerCase().includes('final');
+      var status = live ? 'LIVE' : (final ? 'FINAL' : 'PENDING');
+      var statusClass = live ? 'live' : (final ? 'final' : '');
+
+      var pitches = (rowText.match(/\d+\s*pitches/i) || ['-- pitches'])[0];
+      var ip = (rowText.match(/\d+(?:\.\d+)?\s*IP/i) || ['-- IP'])[0];
+      var runs = (rowText.match(/\d+\s*Run[s]?\s*Allowed/i) || ['Runs --'])[0];
+      var kcount = text(row.querySelector('.kprop-kcount')) || '';
+      var chips = [];
+      row.querySelectorAll('.kprop-chip,.tracker-pill,.k-ou-tag,.k-proj-tag').forEach(function (chip) {
+        var chipText = text(chip);
+        if (chipText && !chips.includes(chipText) && chips.length < 5) chips.push(chipText);
+      });
+
+      return [
+        '<div class="mks-card ' + statusClass + '">',
+          '<div class="mks-top">',
+            '<div class="mks-player">',
+              img ? '<img class="mks-headshot" src="' + img + '" alt="">' : '<div class="mks-headshot"></div>',
+              '<div class="mks-info">',
+                '<div class="mks-name">' + name + '</div>',
+                '<div class="mks-meta">' + meta + '</div>',
+              '</div>',
+            '</div>',
+            '<div class="mks-status ' + statusClass + '">● ' + status + '</div>',
+          '</div>',
+          '<div class="mks-progress">',
+            '<div class="mks-badge live">' + ip + '</div>',
+            '<div class="mks-badge warn">' + pitches + '</div>',
+            '<div class="mks-badge ' + (runs.includes('0') ? 'good' : 'live') + '">' + runs + '</div>',
+          '</div>',
+          chips.length ? '<div class="mks-chips">' + chips.map(function(c){ return '<span class="mks-chip">' + c + '</span>'; }).join('') + '</div>' : '',
+          kcount ? '<div class="mks-note">' + kcount + '</div>' : '',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function rebuildMobileCards() {
+    buildHrpCards();
+    buildKsCards();
+  }
+
+  document.addEventListener('DOMContentLoaded', rebuildMobileCards);
+  window.addEventListener('load', rebuildMobileCards);
+  window.addEventListener('resize', function () {
+    if (window.innerWidth <= 768) rebuildMobileCards();
+  });
+
+  var observer = new MutationObserver(function () {
+    clearTimeout(window.__drMobileCardsTimer);
+    window.__drMobileCardsTimer = setTimeout(rebuildMobileCards, 250);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    ['hr-potential-content','ks-today-props'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) observer.observe(el, { childList: true, subtree: true, characterData: true });
+    });
+  });
+})();
+</script>
+
 </head>
 <body>
 

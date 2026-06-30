@@ -1,12 +1,27 @@
-# Diamond Report DIE v5.3 — Mobile HR Potential + K's Today Fix
+# Diamond Report DIE v6.0 — Mobile Native Responsive Rebuild
 
 ## What changed
-- Fixed mobile layout for **HR Potential**.
-- Fixed mobile layout for **K's Today**.
-- HR Potential now scrolls inside its card instead of breaking the page width.
-- K's Today rows are now compact mobile cards with controlled spacing.
-- Preserves tablet and desktop layouts.
-- Keeps DIE, API optimizer, data folders, scripts, workflows, and responsive base from v5.2.
+This release stops trying to squeeze desktop tables into iPhone screens.
+
+## Mobile rebuild
+- HR Potential now renders as native mobile player cards.
+- K's Today now renders as native mobile pitcher cards.
+- Desktop/tablet views remain unchanged.
+- Mobile HR cards show:
+  - Player
+  - Team/position metadata
+  - HR probability
+  - On-fire / matchup / trend chips
+  - HR and L10 stats
+  - Pitcher matchup button
+- Mobile K cards show:
+  - Pitcher
+  - Game metadata
+  - Live/final status
+  - IP
+  - Pitch count
+  - Runs allowed
+  - K status notes
 
 ## Upload
 This is a full Developer repo snapshot. Replace the Developer repo contents with this package.
