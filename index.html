@@ -539,6 +539,7 @@
   <div class="tab" onclick="showTab('matchups', this)" data-tab="matchups">Pitcher Report</div>
   <div class="tab" onclick="showTab('props', this)" data-tab="props">Props</div>
   <div class="tab" onclick="showTab('schedule', this)" data-tab="schedule">Upcoming Games</div>
+  <div class="tab" onclick="showTab('tracker', this)" data-tab="tracker">Tracker</div>
 </nav>
 
 
@@ -673,6 +674,29 @@
     <div id="schedule-loading" style="color:var(--muted);font-size:13px;padding:20px 0"><span class="spin"></span> Loading schedule…</div>
     <div id="schedule-content"></div>
   </section>
+
+  <section class="section" id="tracker">
+    <p class="section-title">HR <span>TRACKER</span></p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:20px">
+      <div class="game-card"><h3>Today's Accuracy</h3><div id="tracker-today">0-0 (0%)</div></div>
+      <div class="game-card"><h3>All-Time Accuracy</h3><div id="tracker-all">0-0 (0%)</div></div>
+      <div class="game-card"><h3>Best Favorite Today</h3><div id="tracker-favorite">Loading…</div></div>
+      <div class="game-card"><h3>Best Underdog Today</h3><div id="tracker-underdog">Loading…</div></div>
+    </div>
+    <div class="game-card" style="margin-bottom:16px">
+      <h3>Top HR Threat Results</h3>
+      <table>
+        <thead><tr><th>Player</th><th>Team</th><th>Result</th><th>Correct</th></tr></thead>
+        <tbody id="tracker-results"></tbody>
+      </table>
+    </div>
+    <div class="game-card">
+      <h3>Next Game HR Prediction Engine</h3>
+      <p style="color:var(--muted)">This section is reserved for historical hit-rate analysis. Correct predictions will be stored and used to weight future HR projections by player/team success.</p>
+      <div id="tracker-predictions"></div>
+    </div>
+  </section>
+
 </main>
 
 <!-- Paywall Modal -->
