@@ -4251,7 +4251,7 @@ function showTab(id, el) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
     catch(e){ console.warn('Tracker localStorage save failed:', e); }
     window.__diamondTrackerStore = store;
-    maybeAutoExportBackup(store);
+    saveRepoSyncSnapshot(store); // no browser auto-downloads; GitHub Actions handle repo-side files
   }
 
   async function initPersistentTrackerData(){
@@ -4280,6 +4280,7 @@ function showTab(id, el) {
   }
 
   function downloadTrackerBackup(store, prefix='tracker'){
+    // Manual-only safety export. Automatic downloads are disabled in V3.4.
     const backup = cloneStoreForBackup(store);
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
     const a = document.createElement('a');
@@ -4293,48 +4294,35 @@ function showTab(id, el) {
   }
 
   function autoBackupEnabled(){
-    try {
-      const val = localStorage.getItem(AUTO_BACKUP_PREF_KEY);
-      if (val === null) return true; // enabled by default so Tracker creates a daily safety backup automatically
-      return val === '1';
-    } catch(e){ return true; }
+    return false; // V3.4: no automatic browser downloads. Repo updates happen via GitHub Actions.
   }
 
-  function saveAutoBackupSnapshot(store){
-    try { localStorage.setItem(AUTO_BACKUP_SNAPSHOT_KEY, JSON.stringify(cloneStoreForBackup(store))); }
-    catch(e){ console.warn('Auto backup snapshot save failed:', e); }
+  function saveRepoSyncSnapshot(store){
+    try {
+      const backup = cloneStoreForBackup(store);
+      localStorage.setItem(AUTO_BACKUP_SNAPSHOT_KEY, JSON.stringify(backup));
+      localStorage.setItem(AUTO_BACKUP_LAST_KEY, new Date().toISOString());
+    } catch(e){ console.warn('Tracker snapshot save failed:', e); }
   }
 
   function maybeAutoExportBackup(store, force=false){
-    if (!autoBackupEnabled() && !force) return;
-    const backup = cloneStoreForBackup(store);
-    saveAutoBackupSnapshot(backup);
-    try {
-      const today = dayKey();
-      const last = localStorage.getItem(AUTO_BACKUP_LAST_KEY);
-      if (!force && last === today) return;
-      localStorage.setItem(AUTO_BACKUP_LAST_KEY, today);
-      // Delay until the page settles. Some browsers may still require a user gesture for downloads,
-      // but the local snapshot above is always kept even when the download is blocked.
-      setTimeout(() => downloadTrackerBackup(backup, 'tracker-auto-backup'), force ? 50 : 1200);
-    } catch(e){ console.warn('Auto backup export failed:', e); }
+    saveRepoSyncSnapshot(store);
+    return; // no auto-downloads
   }
 
   window.exportDiamondTrackerData = function(){
-    downloadTrackerBackup(loadStore(), 'tracker');
+    downloadTrackerBackup(loadStore(), 'tracker-manual-backup');
   };
 
   window.exportLatestDiamondTrackerAutoBackup = function(){
     try {
       const snapshot = JSON.parse(localStorage.getItem(AUTO_BACKUP_SNAPSHOT_KEY) || 'null');
-      downloadTrackerBackup(snapshot || loadStore(), 'tracker-latest-auto-backup');
-    } catch(e){ downloadTrackerBackup(loadStore(), 'tracker-latest-auto-backup'); }
+      downloadTrackerBackup(snapshot || loadStore(), 'tracker-manual-backup');
+    } catch(e){ downloadTrackerBackup(loadStore(), 'tracker-manual-backup'); }
   };
 
   window.toggleDiamondTrackerAutoBackup = function(){
-    const next = !autoBackupEnabled();
-    try { localStorage.setItem(AUTO_BACKUP_PREF_KEY, next ? '1' : '0'); } catch(e){}
-    if (next) maybeAutoExportBackup(loadStore(), true);
+    alert('Automatic browser downloads are disabled. GitHub Actions now update repo data files on schedule. Use the manual backup button only if you want a local safety copy.');
     if (window.syncDiamondTracker) window.syncDiamondTracker();
   };
 
@@ -4351,7 +4339,7 @@ function showTab(id, el) {
         const merged = mergeStores(loadStore(), imported);
         saveStore(merged);
         if (window.syncDiamondTracker) window.syncDiamondTracker();
-        alert('Tracker backup imported on this device. To share it across iPhone/desktop, copy this exported JSON into data/tracker.json on GitHub and redeploy.');
+        alert('Tracker backup imported on this device. Repo-side updates are handled by GitHub Actions; this import only affects the current browser cache.');
       } catch (e) {
         alert('Import failed. Make sure this is a valid Diamond Report tracker JSON backup.');
         console.error('Tracker import failed:', e);
@@ -5242,10 +5230,9 @@ function showTab(id, el) {
 
     const sourceStatus = [
       `<span class="tracker-pill ${repoTrackerLoaded?'hit':'pending'}">${repoTrackerLoaded?'✅':'💾'} Repo tracker.json ${repoTrackerLoaded?'loaded':'fallback: browser cache'}</span>`,
-      `<span class="tracker-pill hit" onclick="window.exportDiamondTrackerData && window.exportDiamondTrackerData()" style="cursor:pointer">⬇ Export backup</span>`,
-      `<span class="tracker-pill ${autoBackupEnabled()?'hit':'pending'}" onclick="window.toggleDiamondTrackerAutoBackup && window.toggleDiamondTrackerAutoBackup()" style="cursor:pointer">${autoBackupEnabled()?'✅':'⏸'} Auto backup ${autoBackupEnabled()?'ON':'OFF'}</span>`,
-      `<span class="tracker-pill hit" onclick="window.exportLatestDiamondTrackerAutoBackup && window.exportLatestDiamondTrackerAutoBackup()" style="cursor:pointer">💾 Latest auto backup</span>`,
-      `<span class="tracker-pill hit" onclick="window.importDiamondTrackerData && window.importDiamondTrackerData()" style="cursor:pointer">⬆ Import backup</span>`,
+      `<span class="tracker-pill hit">✅ Repo sync via GitHub Actions</span>`,
+      `<span class="tracker-pill pending" onclick="window.exportDiamondTrackerData && window.exportDiamondTrackerData()" style="cursor:pointer">⬇ Manual local backup</span>`,
+      `<span class="tracker-pill hit" onclick="window.importDiamondTrackerData && window.importDiamondTrackerData()" style="cursor:pointer">⬆ Import local backup</span>`,
       `<span class="tracker-pill pending" onclick="window.resetDiamondTrackerLocalCache && window.resetDiamondTrackerLocalCache()" style="cursor:pointer">♻ Reload repo data</span>`,
       ...SOURCES.map(src => {
         const connected = src.live && ((src.name.includes('MLB Stats') ? (currentThreats.length || homers.size) : true));
