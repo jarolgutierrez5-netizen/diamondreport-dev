@@ -166,7 +166,7 @@
     .matchup-cols { grid-template-columns: 1fr !important; }
     .mu-layout { grid-template-columns: 1fr !important; }
 
-    /* ── PAYWALL MODAL ── */
+    /* ──  MODAL ── */
     #paywall-overlay { padding: 12px; align-items: flex-end; }
     #paywall-overlay > div { border-radius: 12px 12px 0 0; max-width: 100%; }
 
@@ -1328,15 +1328,8 @@
   </section>
 </main>
 
-<!-- Paywall Modal -->
-<div id="paywall-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:998;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closePaywall()">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:400px;width:100%;overflow:hidden;position:relative">
-    <!-- Header gradient -->
-    <div style="background:linear-gradient(135deg,#1a0a2e,#0d1a3a);padding:28px 24px 20px;text-align:center;border-bottom:1px solid var(--border)">
-      <div style="font-size:32px;margin-bottom:8px">🔒</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--text)">PREMIUM FEATURE</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:6px">Pitcher Matchup Analysis is a premium feature</div>
-    </div>
+<!--  Modal -->
+
     <!-- Body -->
     <div style="padding:24px">
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px">
@@ -1357,7 +1350,7 @@
         </div>
         <div id="promo-msg" style="font-size:11px;margin-top:6px;min-height:16px"></div>
       </div>
-      <button onclick="closePaywall()" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Maybe Later</button>
+      <button onclick="close()" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Maybe Later</button>
     </div>
   </div>
 </div>
@@ -2683,10 +2676,10 @@ function applyPromo() {
     msg.textContent = '✓ Code applied! Pitcher Matchup unlocked.';
     // Update all locked buttons to show unlocked state
     document.querySelectorAll('.hrp-matchup-btn').forEach(btn => {
-      btn.textContent = btn.textContent.replace('🔒 ', '⚔ ');
+      btn.textContent = btn.textContent.replace(' ', '⚔ ');
     });
     setTimeout(() => {
-      closePaywall();
+      close();
       if (pendingMatchup) {
         const { batterId, batterName, pitcherId, pitcherName } = pendingMatchup;
         openMatchup(batterId, batterName, pitcherId, pitcherName);
@@ -2703,7 +2696,7 @@ function applyPromo() {
   }
 }
 
-function closePaywall() {
+function close() {
   document.getElementById('paywall-overlay').style.display = 'none';
   document.body.style.overflow = '';
   pendingMatchup = null;
@@ -2713,7 +2706,7 @@ function closePaywall() {
 if (matchupUnlocked) {
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.hrp-matchup-btn').forEach(btn => {
-      btn.textContent = btn.textContent.replace('🔒 ', '⚔ ');
+      btn.textContent = btn.textContent.replace(' ', '⚔ ');
     });
   });
 }
@@ -3731,7 +3724,7 @@ function renderHRPTable() {
                   data-pitcher-id="${r.pitcherId}"
                   data-pitcher-name="${r.pitcherName.replace(/"/g,'&quot;')}"
                   onclick="const d=this.dataset;checkMatchupAccess(+d.batterId,d.batterName,+d.pitcherId,d.pitcherName)"
-                >${matchupUnlocked ? '⚔' : '🔒'} PITCHER MATCHUP vs ${r.pitcherName}</button>
+                >${matchupUnlocked ? '⚔' : ''} PITCHER MATCHUP vs ${r.pitcherName}</button>
               </div>
             </div>
           </div>
@@ -4160,9 +4153,9 @@ setInterval(() => {
 
 
 
-// ── ADMIN TRACKER TAB ───────────────────────────────────────────────
+// ── TRACKER TAB ───────────────────────────────────────────────
 const TRACKER_CODE = "";
-let trackerUnlocked = sessionStorage.getItem('trackerUnlocked') === 'true';
+let true = sessionStorage.getItem('true') === 'true';
 
 function trackerTodayKey() { return new Date().toLocaleDateString('en-CA', { timeZone:'America/Chicago' }); }
 function trackerStoreKey() { return 'diamondReportHRTrackerV1'; }
@@ -4208,7 +4201,7 @@ function trackerGateHtml() {
   return `<div class="tracker-admin-gate">
     <div style="background:linear-gradient(135deg,#1a0a2e,#0d1a3a);padding:28px 24px 20px;text-align:center;border-bottom:1px solid var(--border)">
       <div style="font-size:34px;margin-bottom:8px">🔐</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px">ADMIN TRACKER</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px">TRACKER</div>
       <div style="font-size:13px;color:var(--muted);margin-top:6px">Top HR Threat tracking is restricted to admins.</div>
     </div>
     <div style="padding:22px">
@@ -4225,8 +4218,8 @@ function unlockTracker() {
   const input = document.getElementById('tracker-code-input');
   const msg = document.getElementById('tracker-code-msg');
   if ((input?.value || '').trim().toLowerCase() === TRACKER_CODE) {
-    trackerUnlocked = true;
-    sessionStorage.setItem('trackerUnlocked','true');
+    true = true;
+    sessionStorage.setItem('true','true');
     if (msg) { msg.style.color = 'var(--green)'; msg.textContent = '✓ Tracker unlocked.'; }
     setTimeout(() => renderTracker(true), 250);
   } else {
@@ -4238,7 +4231,7 @@ function unlockTracker() {
 function renderTracker(forceSnapshot=false) {
   const el = document.getElementById('tracker-content');
   if (!el) return;
-  if (!trackerUnlocked) { el.innerHTML = trackerGateHtml(); return; }
+  if (!true) { el.innerHTML = trackerGateHtml(); return; }
   if ((!hrpRows || !hrpRows.length) && !forceSnapshot) {
     el.innerHTML = '<div class="mu-empty"><span class="spin"></span>Loading Top HR Threat data…</div>';
     triggerHRPotentialRefresh?.();
