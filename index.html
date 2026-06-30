@@ -215,7 +215,7 @@
     .gp-card div[style*="min-width:120px"] { min-width: 0 !important; width: 100%; }
 
     /* ── HR POTENTIAL FILTER BUTTONS ── */
-    #filter-top-btn, #filter-drought-btn, #filter-favorable-btn, #filter-all-btn {
+    #filter-onfire-btn, #filter-top-btn, #filter-drought-btn, #filter-favorable-btn, #filter-all-btn {
       font-size: 8px !important;
       padding: 3px 7px !important;
     }
@@ -680,6 +680,7 @@
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
   }
   .tracker-pill.hit { border-color: #2ecc71; color: #2ecc71; background: #0d2a1a; }
   .tracker-pill.miss { border-color: #e63946; color: #e63946; background: #2a0d0d; }
@@ -695,6 +696,7 @@
     color: var(--muted);
     margin-left: 8px;
     vertical-align: middle;
+    font-family: 'JetBrains Mono', monospace;
   }
   .tracker-header-pct.good { border-color: #2ecc71; color: #2ecc71; background: #0d2a1a; }
   .tracker-header-pct.bad { border-color: #e63946; color: #e63946; background: #2a0d0d; }
@@ -930,6 +932,7 @@
 
     <!-- HR Potential filters -->
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <button onclick="filterHRP('onfire')" id="filter-onfire-btn" style="background:var(--surface2);border:1px solid #ff4444;color:#ff7777;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🔥 ON FIRE</button>
       <button onclick="filterHRP('top')" id="filter-top-btn" style="background:var(--surface2);border:1px solid #f4a261;color:#f4a261;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">⚡ TOP HR THREAT</button>
       <button onclick="filterHRP('drought')" id="filter-drought-btn" style="background:var(--surface2);border:1px solid #e63946;color:#e63946;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🔴 DROUGHT</button>
       <button onclick="filterHRP('favorable')" id="filter-favorable-btn" style="background:var(--surface2);border:1px solid #2ecc71;color:#2ecc71;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🟢 FAVORABLE MATCHUP</button>
@@ -2417,7 +2420,7 @@ async function loadGameProps() {
               ${winLogo}
               <div style="display:flex;flex-direction:column;align-items:center">
                 <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;color:#2ecc71">${winnerAbbr}</span>
-                <span style="font-size:9px;color:#2ecc71;opacity:.8">${winnerPct}% WIN</span>
+                <span style="font-size:9px;color:#2ecc71;opacity:.8;font-family:'JetBrains Mono',monospace">${winnerPct}% WIN</span>
               </div>
             </div>
             <span style="font-size:10px;font-weight:700;color:${confColor};letter-spacing:.5px">${confidence}</span>
@@ -3638,19 +3641,26 @@ function renderHRPTable() {
   ];
 
   // 'all' shows every batter with no extra prioritization beyond the default sort below.
-  // Clicking TOP HR THREAT / FAVORABLE MATCHUP / DROUGHT no longer hides anyone — it just
-  // re-prioritizes the full list so matching players float to the top.
-  let displayRows = [...hrpRows];
+  // ON FIRE is a true filter so users can quickly isolate the hottest batted-ball profiles.
+  // TOP HR THREAT / FAVORABLE MATCHUP / DROUGHT keep the full list but float matching players first.
+  let displayRows = hrpFilter === 'onfire'
+    ? hrpRows.filter(r => r.isOnFire || Number(r.onFireScore || 0) >= 70 || Number(r.hotBoostPct || 0) >= 4.5)
+    : [...hrpRows];
 
   // Update button active states
-  ['top','drought','favorable','all'].forEach(f => {
+  ['onfire','top','drought','favorable','all'].forEach(f => {
     const btn = document.getElementById(`filter-${f}-btn`);
     if (btn) btn.style.opacity = (hrpFilter === f || (f==='all' && !hrpFilter)) ? '1' : '0.5';
   });
 
   const sorted = [...displayRows].sort((a,b) => {
     // Active filter priority: whichever filter is selected, matching players go first.
-    if (hrpFilter === 'drought') {
+    if (hrpFilter === 'onfire') {
+      const aScore = Number(a.onFireScore || 0), bScore = Number(b.onFireScore || 0);
+      if (aScore !== bScore) return bScore - aScore;
+      const aBoost = Number(a.hotBoostPct || 0), bBoost = Number(b.hotBoostPct || 0);
+      if (aBoost !== bBoost) return bBoost - aBoost;
+    } else if (hrpFilter === 'drought') {
       const aMatch = a.isDrought ? 1 : 0, bMatch = b.isDrought ? 1 : 0;
       if (aMatch !== bMatch) return bMatch - aMatch;
     } else if (hrpFilter === 'favorable') {
@@ -3747,7 +3757,7 @@ function renderHRPTable() {
   }).join('');
 
   if (!sorted.length) {
-    el.innerHTML = `<div class="mu-empty" style="padding:24px">No players match this filter right now.</div>`;
+    el.innerHTML = `<div class="mu-empty" style="padding:24px">No players match this filter right now. For ON FIRE, a player needs a strong recent batted-ball profile, high On Fire Score, or a meaningful hot boost.</div>`;
     return;
   }
 
@@ -3764,6 +3774,9 @@ function renderHRPTable() {
 function filterHRP(filter) {
   hrpFilter = filter;
   if (filter === 'top') {
+    hrpSortCol = 'hrProb';
+    hrpSortDir = -1;
+  } else if (filter === 'onfire') {
     hrpSortCol = 'hrProb';
     hrpSortDir = -1;
   }
