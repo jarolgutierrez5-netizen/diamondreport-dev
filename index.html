@@ -476,13 +476,14 @@
   /* Layout guard: prevents live/ad banners from bleeding outside the viewport */
   html, body { width: 100%; overflow-x: hidden; }
   body::before, body::after { display: none !important; content: none !important; }
-  header, nav, main, #ad-container, #props-live-banner { max-width: 100vw; }
-  #props-live-banner {
+  header, nav, main, #ad-container, #scores-alert-banner, #props-live-banner { max-width: 100vw; }
+  #scores-alert-banner, #props-live-banner {
     margin-left: 0 !important;
     width: 100% !important;
     overflow: hidden !important;
     contain: paint;
   }
+  #scores-alert-banner > div[style*="LIVE"],
   #props-live-banner > div[style*="LIVE"] {
     position: relative !important;
     left: auto !important;
@@ -748,23 +749,7 @@
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
   <script>
-
-// Safe fallback after Live Scores banner removal
-var scoresBanner = window.scoresBanner || {
-  update:function(){},
-  render:function(){},
-  clear:function(){},
-  set:function(){},
-  add:function(){},
-  hide:function(){}
-};
-window.scoresBanner = scoresBanner;
-window.updateScoresBanner = window.updateScoresBanner || function(){};
-window.renderScoresBanner = window.renderScoresBanner || function(){};
-
-
-
-(adsbygoogle = window.adsbygoogle || []).push({});
+       (adsbygoogle = window.adsbygoogle || []).push({});
        // Expand container once ad loads
        window.addEventListener('load', function() {
          setTimeout(function() {
@@ -796,6 +781,14 @@ window.renderScoresBanner = window.renderScoresBanner || function(){};
     </div>
 
     <!-- Banner temporarily removed -->
+    <div id="scores-alert-banner" class="breaking-banner" style="display:none!important" hidden>
+      <div class="breaking-banner-inner">
+        <div class="breaking-label">LIVE</div>
+        <div class="breaking-window">
+          <div id="scores-alert-track" class="breaking-track"></div>
+        </div>
+      </div>
+    </div>
     </div>
 
     <div class="live-badge"><div class="live-dot"></div>LIVE NOW</div>
@@ -967,7 +960,7 @@ window.renderScoresBanner = window.renderScoresBanner || function(){};
     </div>
 
     <div class="tracker-card" style="margin-bottom:16px">
-      <h3>Diamond Report Picks — Daily + All-Time Accuracy</h3><div class="tracker-sub" style="margin-bottom:8px">One row per game/pick. Duplicate live refresh rows are merged automatically.</div>
+      <h3>Diamond Report Picks — Daily + All-Time Accuracy</h3>
       <div class="tracker-scroll">
         <table>
           <thead>
@@ -1105,13 +1098,6 @@ window.renderScoresBanner = window.renderScoresBanner || function(){};
 </div>
 
 <script>
-
-function getSafeScoresBanner(){
-  return window.scoresBanner || scoresBanner || {
-    update:function(){}, render:function(){}, clear:function(){}, set:function(){}, add:function(){}, hide:function(){}
-  };
-}
-
 // Safe fetch wrapper — handles empty/truncated responses from the proxy
 async function fetchJSON(url) {
   const res = await fetch(url);
@@ -3041,6 +3027,8 @@ function triggerBreakingHR(newHitters) {
 }
 
 function renderBanner() {
+  const scoresBanner = document.getElementById('scores-alert-banner');
+  const scoresTrack  = document.getElementById('scores-alert-track');
   if (!scoresBanner || !scoresTrack) return;
 
   if (breakingHRActive && breakingHRNames.length) {
@@ -3678,7 +3666,7 @@ async function loadKProps() {
         const lineLabel = `${ouLine} DR line`;
         const matchupTag = oppKpct >= 0.245 ? 'High-K matchup' : oppKpct <= 0.195 ? 'Contact-heavy matchup' : 'Average K matchup';
         const k9Tag = k9 >= 9 ? 'Strong K pitcher' : k9 <= 7 ? 'Lower K profile' : 'Solid K profile';
-        const decisionTag = pred==='OVER' ? 'OVER' : pred==='UNDER' ? 'UNDER' : (pushLean ? `Push / ${pushLean} lean` : 'Push');
+        const decisionTag = pred==='OVER' ? 'Over lean' : pred==='UNDER' ? 'Under lean' : (pushLean ? `Push / ${pushLean} lean` : 'Push');
         const reasoning = {
           matchupTag, k9Tag, decisionTag,
           oppKpctLabel, k9Label, workloadLabel, projectionLabel, lineLabel,
@@ -4381,68 +4369,17 @@ function showTab(id, el) {
 
   function upsertMarketPick(store, rec){
     store.market ||= { drp: [], kprop: [] };
-    rec.key = rec.type === 'kprop' ? normalizeKPropKey(rec) : normalizeDRPKey(rec);
     rec.result = rec.type === 'kprop' ? resolveKPropResult(rec) : resolveDRPickResult(rec);
     rec.finalChecked = rec.result !== 'pending';
-
     const bucket = rec.type === 'kprop' ? store.market.kprop : store.market.drp;
     const existing = bucket.find(x => x.key === rec.key);
     if(!existing) bucket.push(rec);
     else Object.assign(existing, rec);
-
-    dedupeMarketPicks(store);
   }
-
-
-  function normalizeDRPKey(rec){
-    const date = rec.date || dayKey();
-    const pick = String(rec.pick || '').toUpperCase().trim();
-    const teams = Array.isArray(rec.teams) ? rec.teams.filter(Boolean).map(x=>String(x).toUpperCase()).sort().join('-') : '';
-    const labelTeams = String(rec.label || '').toUpperCase().match(/\b[A-Z]{2,3}\b/g);
-    const labelKey = labelTeams && labelTeams.length >= 2 ? labelTeams.slice(0,2).sort().join('-') : String(rec.label || '').toUpperCase().replace(/\s+/g,' ').trim();
-    return `${date}|DRP|${pick}|${teams || labelKey}`;
-  }
-
-  function normalizeKPropKey(rec){
-    const date = rec.date || dayKey();
-    return `${date}|KPROP|${String(rec.label || '').toLowerCase().trim()}|${String(rec.line || '').trim()}|${String(rec.pick || '').toUpperCase().trim()}`;
-  }
-
-  function dedupeMarketPicks(store){
-    store.market ||= { drp: [], kprop: [] };
-
-    const dedupe = (list, keyFn) => {
-      const map = new Map();
-      (list || []).forEach(item => {
-        const key = keyFn(item);
-        const existing = map.get(key);
-        if(!existing){
-          item.key = key;
-          map.set(key, item);
-          return;
-        }
-
-        // Prefer the most informative/graded row.
-        const existingScore = (existing.result === 'win' || existing.result === 'loss' ? 3 : existing.result === 'push' ? 2 : 1) + (existing.teams?.length || 0);
-        const itemScore = (item.result === 'win' || item.result === 'loss' ? 3 : item.result === 'push' ? 2 : 1) + (item.teams?.length || 0);
-        if(itemScore >= existingScore){
-          item.key = key;
-          map.set(key, { ...existing, ...item, key });
-        }
-      });
-      return [...map.values()];
-    };
-
-    store.market.drp = dedupe(store.market.drp, normalizeDRPKey);
-    store.market.kprop = dedupe(store.market.kprop, normalizeKPropKey);
-  }
-
 
   function marketStats(store, type, date){
     store.market ||= { drp: [], kprop: [] };
-    dedupeMarketPicks(store);
-    const keyFn = type === 'kprop' ? normalizeKPropKey : normalizeDRPKey;
-    const list = [...new Map((store.market[type] || []).filter(x => !date || x.date === date).map(x => [keyFn(x), x])).values()];
+    const list = (store.market[type] || []).filter(x => !date || x.date === date);
     const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
     const wins = graded.filter(x => x.result === 'win').length;
     return { wins, losses: Math.max(graded.length - wins, 0), total: graded.length, pending: list.length - graded.length, list };
@@ -4484,8 +4421,7 @@ function showTab(id, el) {
 
     const statusBadge = r => resultBadgeFromFinal(r.result);
 
-    const drpRows=[...new Map(drpToday.list.map(r=>[normalizeDRPKey(r), r])).values()];
-    set('tracker-drp-results', drpRows.length ? drpRows.map(r=>{
+    set('tracker-drp-results', drpToday.list.length ? drpToday.list.map(r=>{
       const at=marketAllTimeByKey(store,'drp',r.label);
       return `<tr>
         <td>${r.label}</td>
@@ -4590,7 +4526,6 @@ function showTab(id, el) {
       drpAccuracy.forEach(r=>upsertMarketPick(store,r));
       kpropsAccuracy.forEach(r=>upsertMarketPick(store,r));
       threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
-      dedupeMarketPicks(store);
       store.debug.lastError = '';
       store.debug.lastSync = new Date().toISOString();
       saveStore(store);
@@ -4746,6 +4681,58 @@ function showTab(id, el) {
 })();
 
 
+// Diamond Report K Props label cleanup: keep PROJ underneath, simplify label to OVER/UNDER
+(function(){
+  function cleanKPropLabels(){
+    document.querySelectorAll('#kprops-content .kprop-pred-val, #kprops-content .kprop-chip, #kprops-content *').forEach(el => {
+      if(!el || !el.childNodes || el.childNodes.length > 1) return;
+      const raw = (el.textContent || '').trim();
+      if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*OVER\s*LEAN$/i.test(raw) || /^OVER\s*LEAN$/i.test(raw)){
+        el.textContent = 'OVER';
+      }
+      if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*UNDER\s*LEAN$/i.test(raw) || /^UNDER\s*LEAN$/i.test(raw)){
+        el.textContent = 'UNDER';
+      }
+    });
+  }
+  window.cleanKPropLabels = cleanKPropLabels;
+  function hook(fnName){
+    const original = window[fnName];
+    if(typeof original !== 'function' || original.__kPropLabelHooked) return;
+    const wrapped = async function(...args){
+      const result = await original.apply(this,args);
+      setTimeout(cleanKPropLabels, 100);
+      return result;
+    };
+    wrapped.__kPropLabelHooked = true;
+    window[fnName] = wrapped;
+  }
+  function start(){
+    cleanKPropLabels();
+    ['loadKProps','renderKProps','renderKPropRows'].forEach(hook);
+    setInterval(cleanKPropLabels, 1000);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+
+
+// Diamond Report: Live Scores breaking banner removed
+(function(){
+  function hideLiveScoresBanner(){
+    const banner = document.getElementById('scores-alert-banner');
+    if(!banner) return;
+    banner.hidden = true;
+    banner.style.display = 'none';
+    const track = document.getElementById('scores-alert-track');
+    if(track) track.innerHTML = '';
+  }
+  window.hideLiveScoresBanner = hideLiveScoresBanner;
+  hideLiveScoresBanner();
+  setInterval(hideLiveScoresBanner, 1000);
+})();
+
+
 // Diamond Report K Count result color logic
 (function(){
   function n(text){
@@ -4836,268 +4823,64 @@ function showTab(id, el) {
 })();
 
 
-
-// Consolidated Diamond Report K Props label guard
+// Keep static projection label instead of live K label
 (function(){
-  function cleanKProps(){
-    const root = document.getElementById('kprops-content');
-    if(!root) return;
-
-    root.querySelectorAll('.kprop-pred-val, .kprop-chip, .kprop-pred *').forEach(el => {
-      const raw = (el.textContent || '').trim();
-      if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*OVER\s*LEAN$/i.test(raw) || /^OVER\s+LEAN$/i.test(raw)) el.textContent = 'OVER';
-      if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*UNDER\s*LEAN$/i.test(raw) || /^UNDER\s+LEAN$/i.test(raw)) el.textContent = 'UNDER';
-      if(/^\d+(\.\d+)?K\s+LIVE$/i.test(raw)){
-        const m = raw.match(/^(\d+(?:\.\d+)?)K/i);
+  function normalizeProjLabels(){
+    document.querySelectorAll('#kprops-content .kprop-pred-val, #kprops-content .kprop-pick, #kprops-content *').forEach(el=>{
+      if(!el || !el.textContent) return;
+      const t = el.textContent.trim();
+      if(/^\d+(\.\d+)?K\s+LIVE$/i.test(t)){
+        const m=t.match(/^(\d+(?:\.\d+)?)K/i);
         if(m) el.textContent = `${m[1]} PROJ`;
       }
     });
   }
-
-  window.cleanKProps = cleanKProps;
-
-  function hook(fnName){
-    const original = window[fnName];
-    if(typeof original !== 'function' || original.__cleanKPropsHooked) return;
-    const wrapped = async function(...args){
-      const result = await original.apply(this,args);
-      setTimeout(cleanKProps, 100);
-      return result;
-    };
-    wrapped.__cleanKPropsHooked = true;
-    window[fnName] = wrapped;
-  }
-
-  function start(){
-    cleanKProps();
-    ['loadKProps','renderKProps','renderKPropRows'].forEach(hook);
-    const root = document.getElementById('kprops-content');
-    if(root) new MutationObserver(cleanKProps).observe(root, { childList:true, subtree:true, characterData:true });
-    setInterval(cleanKProps, 1000);
-  }
-
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-  else start();
+  const run=()=>normalizeProjLabels();
+  run();
+  setInterval(run,1000);
 })();
 
 
-// Robust K Count badge updater
+// Permanent K Props recommendation label patch
 (function(){
-  function getNum(s){ const m=String(s||'').match(/(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : null; }
-  function cleanName(s){ return String(s||'').replace(/\s+/g,' ').trim().toLowerCase(); }
+  function cleanKPropRecommendationLabels(){
+    const roots = document.querySelectorAll('#kprops-content .kprop-pred, #kprops-content .kprop-chip, #kprops-content .kprop-row');
+    roots.forEach(root => {
+      root.querySelectorAll('*').forEach(el => {
+        if(!el || !el.childNodes || el.childNodes.length !== 1) return;
+        const raw = (el.textContent || '').trim();
+        if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*OVER\s*LEAN$/i.test(raw) || /^OVER\s*LEAN$/i.test(raw)){
+          el.textContent = 'OVER';
+        }
+        if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*UNDER\s*LEAN$/i.test(raw) || /^UNDER\s*LEAN$/i.test(raw)){
+          el.textContent = 'UNDER';
+        }
+      });
 
-  function findKForPitcher(name){
-    const roots = [
-      document.getElementById('ks-today-props'),
-      document.getElementById('pr-content'),
-      document.getElementById('kprops-content')
-    ].filter(Boolean);
-    for(const root of roots){
-      const rows=[...root.querySelectorAll('.ks-today-row,.pr-main-row,.kprop-row,.stat-row,tr,div')];
-      for(const row of rows){
-        const t=(row.innerText||'');
-        if(!cleanName(t).includes(name)) continue;
-        let m=t.match(/(\d+)\s*K\b/i) || t.match(/\bK\s*[:\-]?\s*(\d+)\b/i) || t.match(/strikeouts?\s*[:\-]?\s*(\d+)/i);
-        if(m) return Number(m[1]);
-      }
-    }
-    return null;
-  }
-
-  function gameStatusForRow(row){
-    const t=(row.innerText||'').toLowerCase();
-    if(/final|game over|completed/.test(t)) return 'final';
-    if(/live|in progress|top|bot|bottom/.test(t)) return 'live';
-    // If a K count exists and game time has passed, mark as live/current rather than pending
-    return 'pending';
-  }
-
-  function apply(){
-    const root=document.getElementById('kprops-content');
-    if(!root) return;
-    root.querySelectorAll('.kprop-row').forEach(row=>{
-      const pitcherCell=row.querySelector('.kprop-pitcher') || row;
-      const name=cleanName(row.querySelector('.kprop-name')?.textContent || (row.innerText||'').split('\n')[0]);
-      let badge=row.querySelector('.kprop-kcount');
-      if(!badge){
-        badge=document.createElement('div');
-        pitcherCell.appendChild(badge);
-      }
-      let k=findKForPitcher(name);
-      let status=gameStatusForRow(row);
-      // If K count exists but status is not final, call it live/current.
-      if(k !== null && status === 'pending') status='live';
-      badge.className='kprop-kcount ' + (status==='final'?'final':status==='live'?'live':'pending');
-      badge.textContent = k === null ? '⏳ K Count Pending' : (status==='final' ? `✅ Final K's: ${k}` : `● Live K Count: ${k}`);
+      // Some renderers place the label as direct text in the prediction box.
+      [...root.childNodes].forEach(node => {
+        if(node.nodeType !== Node.TEXT_NODE) return;
+        const raw = node.textContent.trim();
+        if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw)) node.textContent = 'OVER';
+        if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw)) node.textContent = 'UNDER';
+      });
     });
-    if(typeof window.applyKCountResultColors === 'function') window.applyKCountResultColors();
-  }
-  window.applyKCountLabels=apply;
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', apply); else apply();
-  setInterval(apply, 1000);
-})();
-
-
-// Robust reload guards for K's Today and HR's Today
-(function(){
-  function isScoresBannerError(e){
-    return e && /scoresBanner is not defined/i.test(String(e.message || e));
   }
 
-  function clearBadSection(id, msg){
-    const el = document.getElementById(id);
-    if(el && /scoresBanner is not defined/i.test(el.innerText || '')){
-      el.innerHTML = `<div class="mu-empty"><span class="spin"></span>${msg}</div>`;
-    }
+  function runKPropRecommendationPatch(){
+    cleanKPropRecommendationLabels();
   }
 
-  function safeCall(fnName){
-    const fn = window[fnName];
-    if(typeof fn !== 'function') return false;
-    try {
-      const res = fn();
-      if(res && typeof res.catch === 'function'){
-        res.catch(e => {
-          if(!isScoresBannerError(e)) console.warn(fnName, e);
-        });
-      }
-      return true;
-    } catch(e){
-      if(!isScoresBannerError(e)) console.warn(fnName, e);
-      return false;
-    }
+  const observer = new MutationObserver(runKPropRecommendationPatch);
+  function startKPropRecommendationPatch(){
+    const target = document.getElementById('kprops-content') || document.body;
+    observer.observe(target, { childList:true, subtree:true, characterData:true });
+    runKPropRecommendationPatch();
+    setInterval(runKPropRecommendationPatch, 500);
   }
 
-  function repairTodaySections(){
-    if(!window.scoresBanner){
-      window.scoresBanner = scoresBanner;
-    }
-    clearBadSection('ks-today-props','Reloading K\\'s Today…');
-    clearBadSection('hrs-today-content','Reloading HR\\'s Today…');
-
-    // Try all possible loader names used across versions of this file.
-    ['loadKsToday','loadKsTodayProps','loadKToday','renderKsToday','loadHRsToday','loadHRToday','renderHRsToday','loadProps'].forEach(safeCall);
-  }
-
-  window.repairTodaySections = repairTodaySections;
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => setTimeout(repairTodaySections, 500));
-  } else {
-    setTimeout(repairTodaySections, 500);
-  }
-  setInterval(repairTodaySections, 30000);
-})();
-
-
-// Emergency fallback renderers for HR's Today and K's Today
-(function(){
-  async function fetchJSONSafe(url){
-    const r = await fetch(url);
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return await r.json();
-  }
-
-  function todayISO(){
-    const d = new Date();
-    return d.toISOString().slice(0,10).replaceAll('-','/');
-  }
-
-  async function loadTodayFeed(){
-    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${todayISO()}&hydrate=linescore,team,probablePitcher,person,stats,game(content(summary,media(epg))),decisions`;
-    return await fetchJSONSafe(url);
-  }
-
-  async function renderFallbackHRsToday(){
-    const root = document.getElementById('hrs-today-content');
-    if(!root || !/scoresBanner is not defined|Reloading|Loading/i.test(root.innerText || '')) return;
-    try{
-      const sched = await loadTodayFeed();
-      const rows = [];
-      for(const date of (sched.dates || [])){
-        for(const game of (date.games || [])){
-          const gamePk = game.gamePk;
-          if(!gamePk) continue;
-          try{
-            const live = await fetchJSONSafe(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
-            const plays = live.liveData?.plays?.allPlays || [];
-            plays.forEach(p=>{
-              const event = p.result?.event || '';
-              if(/home run/i.test(event)){
-                const batter = p.matchup?.batter?.fullName || 'Unknown';
-                const team = p.about?.halfInning === 'top' ? game.teams?.away?.team?.abbreviation : game.teams?.home?.team?.abbreviation;
-                rows.push({ batter, team: team || '' });
-              }
-            });
-          }catch(e){}
-        }
-      }
-      const count = document.getElementById('hrs-today-count');
-      if(count){ count.textContent = `${rows.length} HRS`; count.style.display = rows.length ? 'inline-block' : 'none'; }
-      root.innerHTML = rows.length ? rows.map((r,i)=>`
-        <div class="stat-row">
-          <div class="stat-row-num">${i+1}</div>
-          <div style="flex:1">
-            <div style="font-weight:800">${r.batter}</div>
-            <div style="color:var(--muted);font-size:11px">${r.team || '—'} • Home Run</div>
-          </div>
-        </div>`).join('') : '<div class="mu-empty">No HRs recorded yet today.</div>';
-    }catch(e){
-      root.innerHTML = `<div class="mu-empty" style="color:var(--accent)">Unable to load HRs Today.</div>`;
-    }
-  }
-
-  async function renderFallbackKsToday(){
-    const root = document.getElementById('ks-today-props');
-    if(!root || !/scoresBanner is not defined|Reloading|Loading/i.test(root.innerText || '')) return;
-    try{
-      const sched = await loadTodayFeed();
-      const rows = [];
-      for(const date of (sched.dates || [])){
-        for(const game of (date.games || [])){
-          const gamePk = game.gamePk;
-          if(!gamePk) continue;
-          try{
-            const box = await fetchJSONSafe(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
-            ['away','home'].forEach(side=>{
-              const players = box.teams?.[side]?.players || {};
-              Object.values(players).forEach(pl=>{
-                const pitching = pl.stats?.pitching;
-                const k = Number(pitching?.strikeOuts || 0);
-                if(k > 0){
-                  rows.push({
-                    name: pl.person?.fullName || 'Unknown',
-                    team: box.teams?.[side]?.team?.abbreviation || '',
-                    k
-                  });
-                }
-              });
-            });
-          }catch(e){}
-        }
-      }
-      rows.sort((a,b)=>b.k-a.k);
-      root.innerHTML = rows.length ? rows.slice(0,20).map(r=>`
-        <div class="ks-today-row">
-          <div class="ks-count">${r.k}</div>
-          <div style="flex:1">
-            <div style="font-weight:800">${r.name}</div>
-            <div style="color:var(--muted);font-size:10px">${r.team || '—'}</div>
-          </div>
-          <div style="font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:10px">K</div>
-        </div>`).join('') : '<div class="mu-empty">No strikeouts recorded yet today.</div>';
-    }catch(e){
-      root.innerHTML = `<div class="mu-empty" style="color:var(--accent)">Unable to load K's Today.</div>`;
-    }
-  }
-
-  function runFallbacks(){
-    renderFallbackHRsToday();
-    renderFallbackKsToday();
-  }
-  window.runTodayFallbacks = runFallbacks;
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(runFallbacks,1500));
-  else setTimeout(runFallbacks,1500);
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startKPropRecommendationPatch);
+  else startKPropRecommendationPatch();
 })();
 
 </script>
