@@ -750,19 +750,21 @@
   <script>
 
 // Safe fallback after Live Scores banner removal
-window.scoresBanner = window.scoresBanner || {
-  update(){},
-  render(){},
-  clear(){},
-  set(){},
-  add(){},
-  hide(){}
+var scoresBanner = window.scoresBanner || {
+  update:function(){},
+  render:function(){},
+  clear:function(){},
+  set:function(){},
+  add:function(){},
+  hide:function(){}
 };
+window.scoresBanner = scoresBanner;
 window.updateScoresBanner = window.updateScoresBanner || function(){};
 window.renderScoresBanner = window.renderScoresBanner || function(){};
 
 
-       (adsbygoogle = window.adsbygoogle || []).push({});
+
+(adsbygoogle = window.adsbygoogle || []).push({});
        // Expand container once ad loads
        window.addEventListener('load', function() {
          setTimeout(function() {
@@ -1103,6 +1105,13 @@ window.renderScoresBanner = window.renderScoresBanner || function(){};
 </div>
 
 <script>
+
+function getSafeScoresBanner(){
+  return window.scoresBanner || scoresBanner || {
+    update:function(){}, render:function(){}, clear:function(){}, set:function(){}, add:function(){}, hide:function(){}
+  };
+}
+
 // Safe fetch wrapper — handles empty/truncated responses from the proxy
 async function fetchJSON(url) {
   const res = await fetch(url);
@@ -4872,29 +4881,6 @@ function showTab(id, el) {
 })();
 
 
-// Retry sections that may have failed before scoresBanner fallback initialized
-(function(){
-  function clearScoresBannerErrors(){
-    ['ks-today-props','hrs-today-content'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el && /scoresBanner is not defined/i.test(el.innerText||'')){
-        el.innerHTML = '<div class="mu-empty"><span class="spin"></span>Reloading…</div>';
-      }
-    });
-  }
-  function retryFailedSections(){
-    clearScoresBannerErrors();
-    ['loadKsToday','loadHRsToday','loadProps','loadKProps'].forEach(fn=>{
-      if(typeof window[fn] === 'function'){
-        try { window[fn](); } catch(e) { console.warn(fn, e); }
-      }
-    });
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(retryFailedSections, 300));
-  else setTimeout(retryFailedSections, 300);
-})();
-
-
 // Robust K Count badge updater
 (function(){
   function getNum(s){ const m=String(s||'').match(/(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : null; }
@@ -4949,6 +4935,169 @@ function showTab(id, el) {
   window.applyKCountLabels=apply;
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', apply); else apply();
   setInterval(apply, 1000);
+})();
+
+
+// Robust reload guards for K's Today and HR's Today
+(function(){
+  function isScoresBannerError(e){
+    return e && /scoresBanner is not defined/i.test(String(e.message || e));
+  }
+
+  function clearBadSection(id, msg){
+    const el = document.getElementById(id);
+    if(el && /scoresBanner is not defined/i.test(el.innerText || '')){
+      el.innerHTML = `<div class="mu-empty"><span class="spin"></span>${msg}</div>`;
+    }
+  }
+
+  function safeCall(fnName){
+    const fn = window[fnName];
+    if(typeof fn !== 'function') return false;
+    try {
+      const res = fn();
+      if(res && typeof res.catch === 'function'){
+        res.catch(e => {
+          if(!isScoresBannerError(e)) console.warn(fnName, e);
+        });
+      }
+      return true;
+    } catch(e){
+      if(!isScoresBannerError(e)) console.warn(fnName, e);
+      return false;
+    }
+  }
+
+  function repairTodaySections(){
+    if(!window.scoresBanner){
+      window.scoresBanner = scoresBanner;
+    }
+    clearBadSection('ks-today-props','Reloading K\\'s Today…');
+    clearBadSection('hrs-today-content','Reloading HR\\'s Today…');
+
+    // Try all possible loader names used across versions of this file.
+    ['loadKsToday','loadKsTodayProps','loadKToday','renderKsToday','loadHRsToday','loadHRToday','renderHRsToday','loadProps'].forEach(safeCall);
+  }
+
+  window.repairTodaySections = repairTodaySections;
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(repairTodaySections, 500));
+  } else {
+    setTimeout(repairTodaySections, 500);
+  }
+  setInterval(repairTodaySections, 30000);
+})();
+
+
+// Emergency fallback renderers for HR's Today and K's Today
+(function(){
+  async function fetchJSONSafe(url){
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  }
+
+  function todayISO(){
+    const d = new Date();
+    return d.toISOString().slice(0,10).replaceAll('-','/');
+  }
+
+  async function loadTodayFeed(){
+    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${todayISO()}&hydrate=linescore,team,probablePitcher,person,stats,game(content(summary,media(epg))),decisions`;
+    return await fetchJSONSafe(url);
+  }
+
+  async function renderFallbackHRsToday(){
+    const root = document.getElementById('hrs-today-content');
+    if(!root || !/scoresBanner is not defined|Reloading|Loading/i.test(root.innerText || '')) return;
+    try{
+      const sched = await loadTodayFeed();
+      const rows = [];
+      for(const date of (sched.dates || [])){
+        for(const game of (date.games || [])){
+          const gamePk = game.gamePk;
+          if(!gamePk) continue;
+          try{
+            const live = await fetchJSONSafe(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
+            const plays = live.liveData?.plays?.allPlays || [];
+            plays.forEach(p=>{
+              const event = p.result?.event || '';
+              if(/home run/i.test(event)){
+                const batter = p.matchup?.batter?.fullName || 'Unknown';
+                const team = p.about?.halfInning === 'top' ? game.teams?.away?.team?.abbreviation : game.teams?.home?.team?.abbreviation;
+                rows.push({ batter, team: team || '' });
+              }
+            });
+          }catch(e){}
+        }
+      }
+      const count = document.getElementById('hrs-today-count');
+      if(count){ count.textContent = `${rows.length} HRS`; count.style.display = rows.length ? 'inline-block' : 'none'; }
+      root.innerHTML = rows.length ? rows.map((r,i)=>`
+        <div class="stat-row">
+          <div class="stat-row-num">${i+1}</div>
+          <div style="flex:1">
+            <div style="font-weight:800">${r.batter}</div>
+            <div style="color:var(--muted);font-size:11px">${r.team || '—'} • Home Run</div>
+          </div>
+        </div>`).join('') : '<div class="mu-empty">No HRs recorded yet today.</div>';
+    }catch(e){
+      root.innerHTML = `<div class="mu-empty" style="color:var(--accent)">Unable to load HRs Today.</div>`;
+    }
+  }
+
+  async function renderFallbackKsToday(){
+    const root = document.getElementById('ks-today-props');
+    if(!root || !/scoresBanner is not defined|Reloading|Loading/i.test(root.innerText || '')) return;
+    try{
+      const sched = await loadTodayFeed();
+      const rows = [];
+      for(const date of (sched.dates || [])){
+        for(const game of (date.games || [])){
+          const gamePk = game.gamePk;
+          if(!gamePk) continue;
+          try{
+            const box = await fetchJSONSafe(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
+            ['away','home'].forEach(side=>{
+              const players = box.teams?.[side]?.players || {};
+              Object.values(players).forEach(pl=>{
+                const pitching = pl.stats?.pitching;
+                const k = Number(pitching?.strikeOuts || 0);
+                if(k > 0){
+                  rows.push({
+                    name: pl.person?.fullName || 'Unknown',
+                    team: box.teams?.[side]?.team?.abbreviation || '',
+                    k
+                  });
+                }
+              });
+            });
+          }catch(e){}
+        }
+      }
+      rows.sort((a,b)=>b.k-a.k);
+      root.innerHTML = rows.length ? rows.slice(0,20).map(r=>`
+        <div class="ks-today-row">
+          <div class="ks-count">${r.k}</div>
+          <div style="flex:1">
+            <div style="font-weight:800">${r.name}</div>
+            <div style="color:var(--muted);font-size:10px">${r.team || '—'}</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:10px">K</div>
+        </div>`).join('') : '<div class="mu-empty">No strikeouts recorded yet today.</div>';
+    }catch(e){
+      root.innerHTML = `<div class="mu-empty" style="color:var(--accent)">Unable to load K's Today.</div>`;
+    }
+  }
+
+  function runFallbacks(){
+    renderFallbackHRsToday();
+    renderFallbackKsToday();
+  }
+  window.runTodayFallbacks = runFallbacks;
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(runFallbacks,1500));
+  else setTimeout(runFallbacks,1500);
 })();
 
 </script>
