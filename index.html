@@ -4840,6 +4840,49 @@ function showTab(id, el) {
   setInterval(run,1000);
 })();
 
+
+// Permanent K Props recommendation label patch
+(function(){
+  function cleanKPropRecommendationLabels(){
+    const roots = document.querySelectorAll('#kprops-content .kprop-pred, #kprops-content .kprop-chip, #kprops-content .kprop-row');
+    roots.forEach(root => {
+      root.querySelectorAll('*').forEach(el => {
+        if(!el || !el.childNodes || el.childNodes.length !== 1) return;
+        const raw = (el.textContent || '').trim();
+        if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*OVER\s*LEAN$/i.test(raw) || /^OVER\s*LEAN$/i.test(raw)){
+          el.textContent = 'OVER';
+        }
+        if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*UNDER\s*LEAN$/i.test(raw) || /^UNDER\s*LEAN$/i.test(raw)){
+          el.textContent = 'UNDER';
+        }
+      });
+
+      // Some renderers place the label as direct text in the prediction box.
+      [...root.childNodes].forEach(node => {
+        if(node.nodeType !== Node.TEXT_NODE) return;
+        const raw = node.textContent.trim();
+        if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw)) node.textContent = 'OVER';
+        if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw)) node.textContent = 'UNDER';
+      });
+    });
+  }
+
+  function runKPropRecommendationPatch(){
+    cleanKPropRecommendationLabels();
+  }
+
+  const observer = new MutationObserver(runKPropRecommendationPatch);
+  function startKPropRecommendationPatch(){
+    const target = document.getElementById('kprops-content') || document.body;
+    observer.observe(target, { childList:true, subtree:true, characterData:true });
+    runKPropRecommendationPatch();
+    setInterval(runKPropRecommendationPatch, 500);
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startKPropRecommendationPatch);
+  else startKPropRecommendationPatch();
+})();
+
 </script>
 </body>
 </html>
