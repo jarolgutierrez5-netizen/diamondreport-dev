@@ -845,6 +845,26 @@
         <div class="tracker-sub" id="tracker-all-sub">0% hit rate</div>
       </div>
       <div class="tracker-card">
+        <h3>Diamond Report Picks Today</h3>
+        <div class="tracker-big" id="tracker-drp-today">0-0</div>
+        <div class="tracker-sub" id="tracker-drp-today-sub">0% accuracy</div>
+      </div>
+      <div class="tracker-card">
+        <h3>Diamond Report Picks All-Time</h3>
+        <div class="tracker-big" id="tracker-drp-all">0-0</div>
+        <div class="tracker-sub" id="tracker-drp-all-sub">0% all-time accuracy</div>
+      </div>
+      <div class="tracker-card">
+        <h3>K Props Today</h3>
+        <div class="tracker-big" id="tracker-kprops-today">0-0</div>
+        <div class="tracker-sub" id="tracker-kprops-today-sub">0% accuracy</div>
+      </div>
+      <div class="tracker-card">
+        <h3>K Props All-Time</h3>
+        <div class="tracker-big" id="tracker-kprops-all">0-0</div>
+        <div class="tracker-sub" id="tracker-kprops-all-sub">0% all-time accuracy</div>
+      </div>
+      <div class="tracker-card">
         <h3>Best-Favored Today</h3>
         <div class="tracker-big tracker-good" id="tracker-favorite">—</div>
         <div class="tracker-sub" id="tracker-favorite-sub">Waiting for Diamond Report Picks</div>
@@ -870,9 +890,36 @@
     </div>
 
     <div class="tracker-card" style="margin-bottom:16px">
+      <h3>Diamond Report Picks — Daily + All-Time Accuracy</h3>
+      <div class="tracker-scroll">
+        <table>
+          <thead>
+            <tr><th>Game/Pick</th><th>Pick</th><th>Status</th><th>Today</th><th>All-Time</th></tr>
+          </thead>
+          <tbody id="tracker-drp-results">
+            <tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for Diamond Report Picks data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tracker-card" style="margin-bottom:16px">
+      <h3>K Props — Daily + All-Time Accuracy</h3>
+      <div class="tracker-scroll">
+        <table>
+          <thead>
+            <tr><th>Pitcher</th><th>Pick</th><th>Line</th><th>Status</th><th>All-Time</th></tr>
+          </thead>
+          <tbody id="tracker-kprops-results">
+            <tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tracker-card" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
         <h3 style="margin-bottom:0">Top HR Threat Players — Daily + All-Time Tally</h3>
-        <button onclick="resetTrackerData()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:700;padding:5px 9px;border-radius:5px;cursor:pointer">Reset Tracker</button>
       </div>
       <div class="tracker-scroll">
         <table>
@@ -3756,7 +3803,7 @@ function showTab(id, el) {
   const set = (id, html) => { const el=document.getElementById(id); if(el) el.innerHTML=html; };
 
   function safeStore(){
-    return { picks: [], players:{}, teams:{}, days:{}, debug:{ lastError:'', lastSync:'' } };
+    return { picks: [], players:{}, teams:{}, days:{}, market:{ drp:[], kprop:[] }, debug:{ lastError:'', lastSync:'' } };
   }
 
   function loadStore(){
@@ -3767,6 +3814,7 @@ function showTab(id, el) {
       current.players ||= {};
       current.teams ||= {};
       current.days ||= {};
+      current.market ||= { drp:[], kprop:[] };
       current.debug ||= {};
       return current;
     } catch(e){
@@ -3920,6 +3968,88 @@ function showTab(id, el) {
     return Math.min(99, Math.round((p.hrPct||0)*0.55 + playerRate*0.25 + teamRate*0.15 + Math.max(0, 11-p.rank)*0.5));
   }
 
+
+  function pickResultFromText(t){
+    const upper = String(t || '').toUpperCase();
+    if (/✅|WON|WIN\b|RIGHT|CASHED|HIT\b/.test(upper)) return 'win';
+    if (/❌|LOST|LOSS|WRONG|MISS/.test(upper)) return 'loss';
+    if (/PUSH|VOID|CANCEL/.test(upper)) return 'push';
+    return 'pending';
+  }
+
+  function extractDRPicksAccuracy(){
+    const root=document.getElementById('gameprops-content');
+    if(!root) return [];
+    const cards=[...root.querySelectorAll('.gp-card')];
+    return cards.map((card,i)=>{
+      const t=card.innerText || '';
+      if(!/DIAMOND REPORT PICK|DR PICK|PICK/i.test(t)) return null;
+      const lines=t.split('\n').map(norm).filter(Boolean);
+      const idx=lines.findIndex(l=>/DIAMOND REPORT PICK|DR PICK|PICK/i.test(l));
+      let pick='';
+      for(let j=Math.max(0,idx+1);j<Math.min(lines.length,idx+6);j++){
+        if(/^[A-Z]{2,3}$/.test(lines[j])) { pick=lines[j]; break; }
+      }
+      const matchup = lines.find(l => /\b[A-Z]{2,3}\b\s+(?:@|VS|V)\s+\b[A-Z]{2,3}\b/i.test(l)) || lines.slice(0,3).join(' / ');
+      return {
+        key: `${dayKey()}|DRP|${i}|${pick}|${matchup}`,
+        type: 'drp',
+        label: matchup || `Game Pick ${i+1}`,
+        pick: pick || '—',
+        result: pickResultFromText(t),
+        date: dayKey()
+      };
+    }).filter(Boolean);
+  }
+
+  function extractKPropsAccuracy(){
+    const root=document.getElementById('kprops-content');
+    if(!root) return [];
+    const rows=[...root.querySelectorAll('.kprop-row')];
+    return rows.map((row,i)=>{
+      const t=row.innerText || '';
+      if(!t || isPlaceholderText(t)) return null;
+      const name=norm(row.querySelector('.kprop-name')?.textContent || t.split('\n')[0] || `Pitcher ${i+1}`);
+      const line=norm(row.querySelector('.kprop-line-val')?.textContent || '');
+      const pred=norm(row.querySelector('.kprop-pred-lbl')?.textContent || row.querySelector('.kprop-pred-val')?.textContent || '');
+      let pick = /UNDER/i.test(t) ? 'UNDER' : /OVER/i.test(t) ? 'OVER' : (pred || '—');
+      return {
+        key: `${dayKey()}|KPROP|${name.toLowerCase()}|${line}|${pick}`,
+        type: 'kprop',
+        label: name,
+        pick,
+        line: line || '—',
+        result: pickResultFromText(t),
+        date: dayKey()
+      };
+    }).filter(Boolean);
+  }
+
+  function upsertMarketPick(store, rec){
+    store.market ||= { drp: [], kprop: [] };
+    const bucket = rec.type === 'kprop' ? store.market.kprop : store.market.drp;
+    const existing = bucket.find(x => x.key === rec.key);
+    if(!existing) bucket.push(rec);
+    else Object.assign(existing, rec);
+  }
+
+  function marketStats(store, type, date){
+    store.market ||= { drp: [], kprop: [] };
+    const list = (store.market[type] || []).filter(x => !date || x.date === date);
+    const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
+    const wins = graded.filter(x => x.result === 'win').length;
+    return { wins, losses: Math.max(graded.length - wins, 0), total: graded.length, pending: list.length - graded.length, list };
+  }
+
+  function marketAllTimeByKey(store, type, keyPart){
+    store.market ||= { drp: [], kprop: [] };
+    const list = (store.market[type] || []).filter(x => (x.label || x.pick || '').toLowerCase().includes(String(keyPart || '').toLowerCase()));
+    const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
+    const wins = graded.filter(x => x.result === 'win').length;
+    return { wins, total: graded.length, pct: pct(wins, graded.length) };
+  }
+
+
   function render(store, currentThreats, homers, gamePicks){
     const day=dayKey();
     const todays=store.picks.filter(p=>p.date===day);
@@ -3930,6 +4060,51 @@ function showTab(id, el) {
     set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} Top HR Threats tracked`);
     set('tracker-all', `${ah}-${Math.max(at-ah,0)}`);
     set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} stored picks`);
+
+    const drpToday=marketStats(store,'drp',day);
+    const drpAll=marketStats(store,'drp');
+    const kpToday=marketStats(store,'kprop',day);
+    const kpAll=marketStats(store,'kprop');
+
+    set('tracker-drp-today', `${drpToday.wins}-${drpToday.losses}`);
+    set('tracker-drp-today-sub', `${pct(drpToday.wins,drpToday.total)}% today • ${drpToday.pending} pending`);
+    set('tracker-drp-all', `${drpAll.wins}-${drpAll.losses}`);
+    set('tracker-drp-all-sub', `${pct(drpAll.wins,drpAll.total)}% all-time • ${drpAll.pending} pending`);
+    set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
+    set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.pending} pending`);
+    set('tracker-kprops-all', `${kpAll.wins}-${kpAll.losses}`);
+    set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.pending} pending`);
+
+    const statusBadge = r => r.result === 'win'
+      ? '<span class="tracker-pill hit">✅ Right</span>'
+      : r.result === 'loss'
+        ? '<span class="tracker-pill miss">❌ Wrong</span>'
+        : r.result === 'push'
+          ? '<span class="tracker-pill pending">↔ Push</span>'
+          : '<span class="tracker-pill pending">⏳ Pending</span>';
+
+    set('tracker-drp-results', drpToday.list.length ? drpToday.list.map(r=>{
+      const at=marketAllTimeByKey(store,'drp',r.label);
+      return `<tr>
+        <td>${r.label}</td>
+        <td>${r.pick}</td>
+        <td>${statusBadge(r)}</td>
+        <td>${drpToday.wins}-${drpToday.losses} (${pct(drpToday.wins,drpToday.total)}%)</td>
+        <td>${at.wins}-${Math.max(at.total-at.wins,0)} (${at.pct}%)</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for Diamond Report Picks data.</td></tr>');
+
+    set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
+      const at=marketAllTimeByKey(store,'kprop',r.label);
+      return `<tr>
+        <td>${r.label}</td>
+        <td>${r.pick}</td>
+        <td>${r.line || '—'}</td>
+        <td>${statusBadge(r)}</td>
+        <td>${at.wins}-${Math.max(at.total-at.wins,0)} (${at.pct}%)</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
+
 
     const sourceStatus = SOURCES.map((s,i)=>{
       const connected =
@@ -4002,6 +4177,10 @@ function showTab(id, el) {
       const threats=extractHRThreats();
       const homers=extractHRToday();
       const gamePicks=extractGamePicks();
+      const drpAccuracy=extractDRPicksAccuracy();
+      const kpropsAccuracy=extractKPropsAccuracy();
+      drpAccuracy.forEach(r=>upsertMarketPick(store,r));
+      kpropsAccuracy.forEach(r=>upsertMarketPick(store,r));
       threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
       store.debug.lastError = '';
       store.debug.lastSync = new Date().toISOString();
@@ -4046,6 +4225,7 @@ function showTab(id, el) {
     hookAfter('renderHRPTable');
     hookAfter('loadHRsToday');
     hookAfter('loadGameProps');
+    hookAfter('loadKProps');
     setInterval(sync, 30000);
   }
 
