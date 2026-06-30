@@ -1,0 +1,27 @@
+name: Update Diamond Report Tracker
+
+on:
+  schedule:
+    # Runs every morning at 7:00 AM Central during daylight time.
+    # GitHub Actions uses UTC. Adjust if you want a different refresh time.
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-tracker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Grade tracker picks
+        run: node scripts/update-tracker.mjs
+      - name: Commit updated tracker data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'Update Diamond Report tracker data'
+          file_pattern: 'data/tracker.json data/daily-results.json'
