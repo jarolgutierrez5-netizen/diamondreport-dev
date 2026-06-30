@@ -1538,8 +1538,44 @@ let hrpFilterActive = 'all';
 let latestPitcherKData = {}; // pitcherId -> { ks, isFinal, isLive } — kept fresh by loadKsToday, read by renderKProps for the W-L tally
 let prSortCol = null, prSortDir = 1, prRows = [];
 const lineupCache = {};
+let repoLineupsData = null;
+let repoLineupsLoaded = false;
 const lineupMeta  = {}; // pitcherId -> {pitcherName, gamePk, side, oppTeamId, pitcherHr9, pitcherIp}
 const expandedRows = new Set();
+
+async function loadRepoLineups() {
+  if (repoLineupsLoaded) return repoLineupsData;
+  repoLineupsLoaded = true;
+  try {
+    const res = await fetch(`data/lineups.json?ts=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('lineups.json not found');
+    repoLineupsData = await res.json();
+    return repoLineupsData;
+  } catch (e) {
+    repoLineupsData = null;
+    return null;
+  }
+}
+
+function getRepoLineupForGame(gamePk, teamSide) {
+  const game = repoLineupsData?.games?.[String(gamePk)];
+  const team = game?.teams?.[teamSide];
+  if (!team?.lineup?.length) return null;
+  return {
+    lineup: team.lineup.map(b => ({
+      name: b.name || b.fullName || '–',
+      id: b.id,
+      pos: b.pos || b.position || '–',
+      stats: b.stats || {},
+      last10HR: b.last10HR ?? null,
+      todayHR: b.todayHR || 0,
+      source: team.source || game.source || 'repo-lineups'
+    })),
+    teamAbbr: team.abbr || '',
+    source: team.source || game.source || 'repo-lineups',
+    updatedAt: repoLineupsData?.generatedAt || game.updatedAt || null
+  };
+}
 
 async function loadPitcherReport() {
   const el = document.getElementById('pr-content');
@@ -1815,12 +1851,22 @@ async function fetchAndRenderLineup(pitcherId, pitcherName, gamePk, side, oppTea
 
   try {
     const oppSide = side === 'away' ? 'home' : 'away';
+    await loadRepoLineups();
+    const repoLineup = getRepoLineupForGame(gamePk, oppSide);
     const box = await fetchJSON(`https://diamondreport.app/api/v1/game/${gamePk}/boxscore`);
     const teamBox = box.teams?.[oppSide];
     let batters = (teamBox?.batters || []).map(id => teamBox.players[`ID${id}`]).filter(Boolean);
 
+    if (!batters.length && repoLineup?.lineup?.length) {
+      const cacheKey = `${gamePk}-${side}`;
+      lineupCache[cacheKey] = { lineup: repoLineup.lineup, oppSide, teamAbbr: repoLineup.teamAbbr, source: repoLineup.source, updatedAt: repoLineup.updatedAt };
+      renderLineup(`panel-${pitcherId}`, lineupCache[cacheKey], pitcherHr9, pitcherIp, null, pitcherId, pitcherName);
+      return;
+    }
+
     if (!batters.length) {
-      const rosterData = await fetchJSON(`https://diamondreport.app/api/v1/teams/${oppTeamId}/roster?rosterType=active&hydrate=stats(group=hitting,type=season,season=2026)`);
+      const seasonYear = new Date().toLocaleDateString('en-CA', {timeZone:'America/Chicago'}).slice(0,4);
+      const rosterData = await fetchJSON(`https://diamondreport.app/api/v1/teams/${oppTeamId}/roster?rosterType=active&hydrate=stats(group=hitting,type=season,season=${seasonYear})`);
       batters = (rosterData.roster || [])
         .filter(p => !['P','TWP'].includes(p.position?.abbreviation))
         .sort((a,b) => (b.stats?.[0]?.splits?.[0]?.stat?.atBats||0) - (a.stats?.[0]?.splits?.[0]?.stat?.atBats||0))
@@ -2078,7 +2124,7 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
         <span><span style="color:var(--accent2)">💥 HR TODAY</span> = homered this game</span>
         <span><span style="color:#90ee60">L10</span> = HRs in last 10 games</span>
         <span>⚔ for matchup</span>
-        <span class="lineup-timestamp" style="font-family:'JetBrains Mono',monospace;color:var(--border)">Last updated ${now}</span>
+        <span class="lineup-timestamp" style="font-family:'JetBrains Mono',monospace;color:var(--border)">Last updated ${now}${data.source ? ` • ${data.source}` : ''}</span>
       </div>
     </div>
     ${cards}`;
