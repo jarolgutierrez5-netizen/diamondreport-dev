@@ -826,9 +826,6 @@
       <p class="section-title" style="margin-bottom:0">TODAY'S <span>GAMES</span></p>
       <div id="scores-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
     </div>
-    </div>
-    </div>
-
     <div class="live-badge"><div class="live-dot"></div>LIVE NOW</div>
     <div class="games-grid" id="live-games"><div style="color:var(--muted);font-size:13px">Loading scores…</div></div>
     <p class="section-title" style="font-size:18px;margin-top:20px;">UPCOMING <span>GAMES</span></p>
@@ -4440,48 +4437,143 @@ function showTab(id, el) {
     return 'pending';
   }
 
-  function extractDRPicksAccuracy(){
-    const root=document.getElementById('gameprops-content');
-    if(!root) return [];
+
+  const DRP_DEDUPE_VERSION = 'DRP_MATCHUP_STATS_V3';
+
+  function drpNormalizeTeam(t){
+    t = String(t || '').toUpperCase().trim();
+    if(t === 'CHW') return 'CWS';
+    if(t === 'KCR') return 'KC';
+    if(t === 'SDP') return 'SD';
+    if(t === 'SFG') return 'SF';
+    if(t === 'TBR') return 'TB';
+    if(t === 'WAS') return 'WSH';
+    return t;
+  }
+
+  function drpExtractTeams(raw){
     const TEAM_ABBRS = new Set(['ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR','LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG','STL','TB','TBR','TEX','TOR','WSH','WAS']);
-    const normTeam = t => {
-      t = String(t || '').toUpperCase().trim();
-      if(t === 'CHW') return 'CWS';
-      if(t === 'KCR') return 'KC';
-      if(t === 'SDP') return 'SD';
-      if(t === 'SFG') return 'SF';
-      if(t === 'TBR') return 'TB';
-      if(t === 'WAS') return 'WSH';
-      return t;
-    };
-    const cards=[...root.querySelectorAll('.gp-card')];
-    return cards.map((card,i)=>{
-      const t=card.innerText || '';
-      if(!/DIAMOND REPORT PICK|DR PICK|PICK/i.test(t)) return null;
-      const lines=t.split('\n').map(norm).filter(Boolean);
-      const idx=lines.findIndex(l=>/DIAMOND REPORT PICK|DR PICK|PICK/i.test(l));
-      let pick='';
-      for(let j=Math.max(0,idx+1);j<Math.min(lines.length,idx+6);j++){
-        if(/^[A-Z]{2,3}$/.test(lines[j])) { pick=lines[j]; break; }
+    const NON_TEAMS = new Set(['MLB','DR','PICK','WIN','LIVE','ERA','PROJ','OVER','UNDER','PUSH','LINE','VS','AT','THE','TODAY','SP','FINAL','TOSS','UP','LEAN']);
+    const teams = [];
+    [...String(raw || '').toUpperCase().matchAll(/\b[A-Z]{2,3}\b/g)].forEach(m => {
+      const t = drpNormalizeTeam(m[0]);
+      if(TEAM_ABBRS.has(t) && !NON_TEAMS.has(t) && !teams.includes(t)) teams.push(t);
+    });
+    return teams.slice(0,2);
+  }
+
+  function drpMatchupLabel(rec){
+    const teams = [];
+    if(Array.isArray(rec?.teams)){
+      rec.teams.map(drpNormalizeTeam).forEach(t => { if(t && !teams.includes(t)) teams.push(t); });
+    }
+    drpExtractTeams(`${rec?.label || ''} ${rec?.pick || ''}`).forEach(t => { if(!teams.includes(t)) teams.push(t); });
+    return teams.length >= 2 ? `${teams[0]} @ ${teams[1]}` : '';
+  }
+
+  function drpStableKey(rec){
+    const date = rec.date || dayKey();
+    const matchup = drpMatchupLabel(rec);
+    const pick = drpNormalizeTeam(rec.pick || '');
+    return matchup && pick ? `${date}|DRP|${matchup}|${pick}` : '';
+  }
+
+  function dedupeDRPMarket(store){
+    store.market ||= { drp: [], kprop: [] };
+    const map = new Map();
+
+    (store.market.drp || []).forEach(r => {
+      const matchup = drpMatchupLabel(r);
+      if(!matchup) return;
+      r.label = matchup;
+      r.pick = drpNormalizeTeam(r.pick || '');
+      r.key = drpStableKey(r);
+      if(!r.key) return;
+
+      const existing = map.get(r.key);
+      const score = r.result === 'win' || r.result === 'loss' ? 3 : r.result === 'push' ? 2 : 1;
+      const existingScore = existing ? (existing.result === 'win' || existing.result === 'loss' ? 3 : existing.result === 'push' ? 2 : 1) : 0;
+      if(!existing || score >= existingScore) map.set(r.key, { ...(existing || {}), ...r });
+    });
+
+    store.market.drp = [...map.values()];
+  }
+
+  function currentDRPicksFromPage(){
+    const root = document.getElementById('gameprops-content');
+    if(!root) return [];
+    const cards = [...root.querySelectorAll('.gp-card')];
+
+    const rows = cards.map((card, i) => {
+      const t = card.innerText || '';
+      if(!/DIAMOND REPORT PICK|DR PICK|PICK/i.test(t) || isPlaceholderText(t)) return null;
+
+      const lines = t.split('\n').map(norm).filter(Boolean);
+      const idx = lines.findIndex(l => /DIAMOND REPORT PICK|DR PICK|PICK/i.test(l));
+
+      let pick = '';
+      for(let j=Math.max(0, idx + 1); j < Math.min(lines.length, idx + 6); j++){
+        if(/^[A-Z]{2,3}$/.test(lines[j])){
+          pick = drpNormalizeTeam(lines[j]);
+          break;
+        }
       }
-      const teamsInCard = [...new Set((t.match(/\b[A-Z]{2,3}\b/g) || [])
-        .map(normTeam)
-        .filter(x => TEAM_ABBRS.has(x) && !['MLB','DR','WIN','O','U'].includes(x)))];
-      const matchup = teamsInCard.length >= 2 ? `${teamsInCard[0]} @ ${teamsInCard[1]}` : (lines.find(l => /\b[A-Z]{2,3}\b\s+(?:@|VS|V)\s+\b[A-Z]{2,3}\b/i.test(l)) || lines.slice(0,3).join(' / '));
-      // Stable storage key: teams sorted alphabetically so the same game always
-      // produces the identical key, regardless of which team is listed first
-      // in the rendered card text (home/away order can vary between syncs)
-      const sortedTeamKey = teamsInCard.length >= 2 ? [...teamsInCard].sort().join('-') : matchup;
-      return {
-        key: `${dayKey()}|DRP|${sortedTeamKey}`,
+
+      const teams = drpExtractTeams(t);
+      if(teams.length < 2 || !pick) return null;
+
+      const rec = {
         type: 'drp',
-        label: matchup || `Game Pick ${i+1}`,
-        pick: pick || '—',
-        teams: teamsInCard,
-        result: 'pending',
-        date: dayKey()
+        label: `${teams[0]} @ ${teams[1]}`,
+        pick,
+        teams,
+        date: dayKey(),
+        result: 'pending'
       };
+      rec.key = drpStableKey(rec);
+      rec.result = resolveDRPickResult(rec);
+      return rec;
     }).filter(Boolean);
+
+    return [...new Map(rows.map(r => [r.key, r])).values()];
+  }
+
+  function migrateDRPDedupe(store){
+    store.debug ||= {};
+    store.market ||= { drp: [], kprop: [] };
+
+    if(store.debug.drpDedupeVersion !== DRP_DEDUPE_VERSION){
+      store.market.drp = (store.market.drp || []).filter(r => drpMatchupLabel(r));
+      store.debug.drpDedupeVersion = DRP_DEDUPE_VERSION;
+    }
+    dedupeDRPMarket(store);
+  }
+
+  function syncCurrentDRPicks(store){
+    store.market ||= { drp: [], kprop: [] };
+    migrateDRPDedupe(store);
+
+    const pagePicks = currentDRPicksFromPage();
+    pagePicks.forEach(rec => {
+      const existing = store.market.drp.find(x => x.key === rec.key);
+      if(existing) Object.assign(existing, rec);
+      else store.market.drp.push(rec);
+    });
+
+    dedupeDRPMarket(store);
+    return pagePicks;
+  }
+
+  function drpStatsFromRows(rows){
+    const unique = [...new Map((rows || []).map(r => [drpStableKey(r), r]).filter(x => x[0])).values()];
+    const graded = unique.filter(x => x.result === 'win' || x.result === 'loss');
+    const wins = graded.filter(x => x.result === 'win').length;
+    return { list: unique, wins, losses: Math.max(graded.length - wins, 0), total: graded.length, pending: unique.length - graded.length };
+  }
+
+
+  function extractDRPicksAccuracy(){
+    return currentDRPicksFromPage();
   }
 
   function extractKPropsAccuracy(){
@@ -4511,88 +4603,33 @@ function showTab(id, el) {
 
   function upsertMarketPick(store, rec){
     store.market ||= { drp: [], kprop: [] };
-    const newResult = rec.type === 'kprop' ? resolveKPropResult(rec) : resolveDRPickResult(rec);
+
+    if(rec.type === 'drp'){
+      rec.key = drpStableKey(rec);
+      if(!rec.key) return;
+      rec.label = drpMatchupLabel(rec);
+    }
+
+    rec.result = rec.type === 'kprop' ? resolveKPropResult(rec) : resolveDRPickResult(rec);
+    rec.finalChecked = rec.result !== 'pending';
+
     const bucket = rec.type === 'kprop' ? store.market.kprop : store.market.drp;
     const existing = bucket.find(x => x.key === rec.key);
+    if(existing) Object.assign(existing, rec);
+    else bucket.push(rec);
 
-    if (!existing) {
-      rec.result = newResult;
-      rec.finalChecked = rec.result !== 'pending';
-      bucket.push(rec);
-    } else {
-      // Never let a 'pending' result overwrite an already-resolved win/loss —
-      // this happens when one device (e.g. mobile, narrower DOM) fails to find the
-      // K count text and would otherwise silently erase a correct grading made elsewhere
-      const existingIsResolved = existing.result === 'win' || existing.result === 'loss';
-      const finalResult = (newResult === 'pending' && existingIsResolved) ? existing.result : newResult;
-      Object.assign(existing, rec, { result: finalResult, finalChecked: finalResult !== 'pending' });
-    }
-  }
-
-  // One-time cleanup: collapse any legacy duplicate DRP entries that were created
-  // with index-based keys, flipped team order, or malformed labels from older
-  // versions of the extraction logic (e.g. labels with pitcher names baked in,
-  // or only one team detected). Always prefers a clean two-team match.
-  function dedupeLegacyMarketPicks(store){
-    store.market ||= { drp: [], kprop: [] };
-    const TEAM_ABBRS = new Set(['ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR','LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG','STL','TB','TBR','TEX','TOR','WSH','WAS','AZ']);
-    const normTeam = t => {
-      t = String(t||'').toUpperCase().trim();
-      if(t==='CHW') return 'CWS'; if(t==='KCR') return 'KC'; if(t==='SDP') return 'SD';
-      if(t==='SFG') return 'SF'; if(t==='TBR') return 'TB'; if(t==='WAS') return 'WSH';
-      if(t==='AZ') return 'ARI';
-      return t;
-    };
-    // Extract the cleanest possible team pair from a record, checking label first then key
-    const extractTeamPair = rec => {
-      const fromText = txt => [...new Set((String(txt||'').match(/\b[A-Z]{2,3}\b/g) || [])
-        .map(normTeam).filter(t => TEAM_ABBRS.has(normTeam(t))))];
-      let teams = fromText(rec.label);
-      if (teams.length < 2) teams = fromText(rec.key);
-      return teams.length >= 2 ? [...teams].sort().slice(0,2).join('-') : null;
-    };
-
-    const seen = new Map(); // stableKey -> best record so far
-    (store.market.drp || []).forEach(rec => {
-      const pair = extractTeamPair(rec);
-      if (!pair) return; // discard unresolvable garbage records entirely
-      const stableKey = `${rec.date}|DRP|${pair}`;
-      const prior = seen.get(stableKey);
-      if (!prior) {
-        seen.set(stableKey, rec);
-      } else {
-        // Prefer: resolved result over pending, then prefer the one with a clean "TEAM @ TEAM" label
-        const recResolved = rec.result !== 'pending';
-        const priorResolved = prior.result !== 'pending';
-        const recCleanLabel = /^[A-Z]{2,3}\s*@\s*[A-Z]{2,3}$/.test((rec.label||'').trim());
-        const priorCleanLabel = /^[A-Z]{2,3}\s*@\s*[A-Z]{2,3}$/.test((prior.label||'').trim());
-        if ((recResolved && !priorResolved) || (recResolved === priorResolved && recCleanLabel && !priorCleanLabel)) {
-          seen.set(stableKey, rec);
-        }
-      }
-    });
-    store.market.drp = [...seen.values()];
-
-    // Same cleanup for K Props: collapse legacy line-based duplicate keys down to one per pitcher per day
-    const kpropSeen = new Map();
-    (store.market.kprop || []).forEach(rec => {
-      const pitcherKey = `${rec.date}|KPROP|${(rec.label||'').toLowerCase().trim()}`;
-      const prior = kpropSeen.get(pitcherKey);
-      if (!prior) {
-        kpropSeen.set(pitcherKey, rec);
-      } else if (rec.result !== 'pending' && prior.result === 'pending') {
-        kpropSeen.set(pitcherKey, rec);
-      }
-    });
-    store.market.kprop = [...kpropSeen.values()]
-      // resolveKPropResult never legitimately returns 'push' — any stored 'push' value is
-      // leftover from an old code version and should be reset to 'pending' so the next
-      // sync can properly re-grade it as win/loss once a final K count is available
-      .map(rec => rec.result === 'push' ? { ...rec, result: 'pending', finalChecked: false } : rec);
+    if(rec.type === 'drp') dedupeDRPMarket(store);
   }
 
   function marketStats(store, type, date){
     store.market ||= { drp: [], kprop: [] };
+
+    if(type === 'drp'){
+      dedupeDRPMarket(store);
+      const rows = (store.market.drp || []).filter(x => !date || x.date === date);
+      return drpStatsFromRows(rows);
+    }
+
     const list = (store.market[type] || []).filter(x => !date || x.date === date);
     const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
     const wins = graded.filter(x => x.result === 'win').length;
@@ -4659,7 +4696,8 @@ function showTab(id, el) {
     set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} stored picks`);
     setHeaderPct('threat-header-pct', pct(ah,at), at);
 
-    const drpToday=marketStats(store,'drp',day);
+    const currentDRPRows = syncCurrentDRPicks(store);
+    const drpToday=drpStatsFromRows(currentDRPRows);
     const drpAll=marketStats(store,'drp');
     const drpMatchupToday = { ...drpToday, list: drpToday.list.filter(r => drpMatchupLabel(r).includes('@')) };
     drpMatchupToday.total = drpMatchupToday.list.filter(x => x.result === 'win' || x.result === 'loss').length;
@@ -4703,16 +4741,17 @@ function showTab(id, el) {
     // Update sort arrow indicator
     const dateArrowEl = document.querySelector('#drp-th-date .sort-arrow');
     if (dateArrowEl) dateArrowEl.textContent = window.drpTableSortDir === -1 ? '▼' : '▲';
-
+    const drpRows = drpToday.list;
     set('tracker-drp-results', drpRows.length ? drpRows.map(r=>{
-      const isToday = r.date === day;
+      const at=marketAllTimeByKey(store,'drp',r.label);
       return `<tr>
-        <td style="white-space:nowrap;color:${isToday?'var(--accent2)':'var(--muted)'}">${r.date}${isToday?' <span style="font-size:9px;color:var(--accent2)">(Today)</span>':''}</td>
-        <td>${r.matchupLabel}</td>
+        <td>${r.label}</td>
         <td>${r.pick}</td>
         <td>${statusBadge(r)}</td>
+        <td>${drpToday.wins}-${drpToday.losses} (${pct(drpToday.wins,drpToday.total)}%)</td>
+        <td>${at.wins}-${Math.max(at.total-at.wins,0)} (${at.pct}%)</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
+    }).join('') : '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for current Diamond Report matchups.</td></tr>');
 
     set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
       return `<tr>
@@ -4804,6 +4843,7 @@ function showTab(id, el) {
     const store=loadStore();
     try{
       dedupeLegacyMarketPicks(store); // one-time cleanup of old index-keyed duplicate rows
+      migrateDRPDedupe(store);
       const threats=extractHRThreats();
       const homers=extractHRToday();
       const gamePicks=extractGamePicks();
@@ -4991,36 +5031,6 @@ function showTab(id, el) {
 })();
 
 
-
-// Lightweight Diamond Report safety cleanup — no intervals or observers
-(function(){
-  function cleanupDRPMatchupRowsOnce(){
-    const tbody = document.getElementById('tracker-drp-results');
-    if(!tbody) return;
-    [...tbody.querySelectorAll('tr')].forEach(row => {
-      const first = row.querySelector('td');
-      if(!first) return;
-      if(!/@/.test(first.textContent || '')) row.remove();
-    });
-    if(!tbody.querySelector('tr')){
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>';
-    }
-  }
-
-  function runSafetyCleanup(){
-    cleanupDRPMatchupRowsOnce();
-    document.querySelectorAll('#kprops-content .kprop-pred-val').forEach(el => {
-      const raw = (el.textContent || '').trim();
-      if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw) || /^OVER\s+LEAN$/i.test(raw)) el.textContent = 'OVER';
-      if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw) || /^UNDER\s+LEAN$/i.test(raw)) el.textContent = 'UNDER';
-    });
-  }
-
-  window.runDiamondReportSafetyCleanup = runSafetyCleanup;
-  document.addEventListener('click', () => setTimeout(runSafetyCleanup, 50), { passive:true });
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(runSafetyCleanup, 300));
-  else setTimeout(runSafetyCleanup, 300);
-})();
 
 </script>
 </body>
