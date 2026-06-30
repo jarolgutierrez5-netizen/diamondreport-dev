@@ -51,6 +51,8 @@
   .game-status.live { color: var(--live); }
   .game-status.closed { color: var(--muted); }
   .game-status.scheduled { color: var(--accent2); }
+  .game-status.countdown-pulse { color: var(--live); animation: countdownPulse 1.5s ease-in-out infinite; }
+  @keyframes countdownPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
   .matchup { display: flex; align-items: center; justify-content: space-between; }
   .team-block { text-align: center; flex: 1; }
   .team-abbr { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; }
@@ -975,7 +977,14 @@
   <section class="section" id="tracker">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
       <p class="section-title" style="margin-bottom:0">DIAMOND REPORT <span>TRACKER</span></p>
-      <div id="tracker-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Syncing…</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div id="tracker-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Syncing…</div>
+        <button onclick="window.resetTrackerData && window.resetTrackerData()" title="Tracker data is stored per-device. If this device shows different numbers than another, tap to clear and rebuild this device's history." style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;padding:4px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px;white-space:nowrap">↻ RESET DEVICE DATA</button>
+      </div>
+    </div>
+
+    <div style="font-size:10px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+      ℹ️ Tracker history is stored locally on this device/browser only — it is not synced across phones, tablets, or computers. If numbers look different on another device, that device simply has its own separate history. Use "Reset Device Data" above to wipe and rebuild this device's history from scratch.
     </div>
 
     <div class="tracker-grid">
@@ -1296,10 +1305,23 @@ function gameCard(g) {
   </div>`;
 }
 
+function formatCountdown(gameDateMs) {
+  const msLeft = gameDateMs - Date.now();
+  if (msLeft <= 0 || msLeft > 60 * 60 * 1000) return null; // only show inside the 1-hour window
+  const totalMin = Math.floor(msLeft / 60000);
+  const sec = Math.floor((msLeft % 60000) / 1000);
+  if (totalMin >= 1) return `Starts in ${totalMin}m`;
+  return `Starts in ${sec}s`;
+}
+
 function upcomingCard(g) {
   const sl = buildStandingsLookup();
+  const countdown = g.gameDateMs ? formatCountdown(g.gameDateMs) : null;
+  const statusHTML = countdown
+    ? `<div class="game-status scheduled countdown-pulse" data-game-date="${g.gameDateMs}">⏱ ${countdown}</div>`
+    : `<div class="game-status scheduled">UPCOMING</div>`;
   return `<div class="game-card scheduled">
-    <div class="game-status scheduled">UPCOMING</div>
+    ${statusHTML}
     <div class="matchup">
       ${teamBlock(g.awayAbbr, g.awayName, sl)}
       <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--accent2);padding:0 8px">VS</div>
@@ -1340,10 +1362,14 @@ async function loadScores() {
       const dt = new Date(g.gameDate);
       const timeStr = dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', timeZone:'America/Chicago'}) + ' CDT';
       const linescore = g.linescore || {};
-      const inningStr = linescore.currentInning
+      // Only show an inning count once the game has genuinely started — 'Warmup' means
+      // first pitch hasn't happened yet, so any currentInning value from the API during
+      // warmup/delay states is not a real inning and shouldn't be displayed.
+      const trulyInProgress = detailedState === 'In Progress';
+      const inningStr = (trulyInProgress && linescore.currentInning)
         ? `${linescore.inningHalf === 'Bottom' ? '▼' : '▲'} ${linescore.currentInning}`
-        : detailedState === 'In Progress' ? 'LIVE' : null;
-      const isLive   = state === 'Live' || detailedState === 'In Progress' || detailedState === 'Warmup';
+        : trulyInProgress ? 'LIVE' : null;
+      const isLive   = state === 'Live' || trulyInProgress;
       const isFinal  = state === 'Final' || detailedState === 'Final' || detailedState === 'Game Over';
 
       const card = {
@@ -1356,6 +1382,7 @@ async function loadScores() {
         homeScore: home.score ?? null,
         inning: inningStr,
         time: timeStr,
+        gameDateMs: dt.getTime(), // raw start time, used for the "starts in X min" countdown
         status: isLive ? 'live' : isFinal ? 'final' : 'upcoming'
       };
 
@@ -1454,6 +1481,22 @@ async function loadScores() {
 
 loadScores();
 setInterval(loadScores, 30000);
+
+// Tick countdown labels every second so they count down smoothly between full data refreshes
+setInterval(() => {
+  document.querySelectorAll('.game-status[data-game-date]').forEach(el => {
+    const gameDateMs = Number(el.getAttribute('data-game-date'));
+    const countdown = formatCountdown(gameDateMs);
+    if (countdown) {
+      el.textContent = `⏱ ${countdown}`;
+    } else {
+      // Countdown window expired (game started or passed 1hr-out) — next loadScores() will
+      // correctly move this card to the live/upcoming bucket; just clear the live pulse for now
+      el.textContent = 'UPCOMING';
+      el.classList.remove('countdown-pulse');
+    }
+  });
+}, 1000);
 
 // Auto-refresh all open lineup panels every 60 seconds (picks up live HRs)
 setInterval(() => {
@@ -2318,6 +2361,7 @@ async function loadGameProps() {
     const tallyHTML = totalFinal > 0 ? `
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
         <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">TODAY'S RECORD</span>
+        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">${new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</span>
         <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:${correctCount===totalFinal?'#2ecc71':correctCount>totalFinal/2?'var(--accent2)':'var(--accent)'}">${correctCount}-${totalFinal-correctCount}</span>
         <span style="font-size:11px;color:var(--muted)">${totalFinal} of ${totalGames} games final</span>
         <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">${totalFinal>0?Math.round(correctCount/totalFinal*100)+'% accuracy':''}</span>
@@ -2891,6 +2935,7 @@ async function loadKsToday() {
           const ks     = parseInt(p.stats?.pitching?.strikeOuts) || 0;
           const ip     = p.stats?.pitching?.inningsPitched || '0.0';
           const hrs    = parseInt(p.stats?.pitching?.homeRuns) || 0;
+          const runs   = parseInt(p.stats?.pitching?.runs) || 0;
           const pitches = parseInt(p.stats?.pitching?.numberOfPitches) || 0;
           const isRelieved = !gameLive && !gameFinal && parseFloat(ip) > 0 && p.stats?.pitching?.inningsPitched;
           const relievedInning = parseFloat(ip) > 0 ? Math.ceil(parseFloat(ip)) : null;
@@ -2898,7 +2943,7 @@ async function loadKsToday() {
             name: p.person?.fullName || '–',
             id: p.person?.id,
             teamAbbr: abbr,
-            ks, ip, hrs, pitches, relievedInning,
+            ks, ip, hrs, runs, pitches, relievedInning,
             gameLabel, timeStr,
             gameTimestamp: dt.getTime(),
             isSP: (team.pitchers || [])[0] === id,
@@ -2987,7 +3032,7 @@ async function loadKsToday() {
               ? `<span style="font-size:8px;color:var(--accent2);font-family:'JetBrains Mono',monospace;white-space:nowrap">SP · ${p.timeStr} CDT</span>`
               : `<span style="font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap">${p.isSP?'SP · ':''}${p.ip} IP${p.pitches>0?' · '+p.pitches+' pitches':''}</span>`
             }
-            ${p.hrs>0?`<span style="background:#2a0d0d;color:var(--accent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;border:1px solid #e6394644;white-space:nowrap">💥 ${p.hrs} HR${p.hrs>1?'s':''} allowed</span>`:''}
+            ${p.runs>0?`<span style="background:#2a0d0d;color:var(--accent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;border:1px solid #e6394644;white-space:nowrap">⚾ ${p.runs} Run${p.runs>1?'s':''} Allowed${p.hrs>0?` (${p.hrs} HR${p.hrs>1?'s':''})`:''}</span>`:''}
             ${!p.isSP&&p.relievedInning?`<span style="background:var(--bg);color:var(--muted);font-size:8px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);white-space:nowrap">Relieved in ${p.relievedInning}</span>`:''}
           </div>
         </div>
@@ -3385,18 +3430,10 @@ function renderHRPTable() {
     {key:'name',      label:'BATTER', r:false, sortable:false},
   ];
 
-  // Apply active filter
+  // 'all' shows every batter with no extra prioritization beyond the default sort below.
+  // Clicking TOP HR THREAT / FAVORABLE MATCHUP / DROUGHT no longer hides anyone — it just
+  // re-prioritizes the full list so matching players float to the top.
   let displayRows = [...hrpRows];
-  if (hrpFilter === 'drought') displayRows = displayRows.filter(r => r.isDrought);
-  else if (hrpFilter === 'favorable') displayRows = displayRows.filter(r => r.isFavorable);
-  else if (hrpFilter === 'top') {
-    // Top HR Threat: include every batter tagged TOP HR THREAT from Pitcher Report,
-    // plus the top 30% by HR probability as a fallback when lineup tags are not available.
-    const sorted0 = [...hrpRows].sort((a,b) => b.hrProb - a.hrProb);
-    const threshold = sorted0.length > 0 ? sorted0[Math.max(0, Math.floor(sorted0.length * 0.3) - 1)]?.hrProb || 0 : 0;
-    displayRows = displayRows.filter(r => r.topHrThreat || r.hrProb >= threshold);
-    if (displayRows.length === 0) displayRows = [...hrpRows]; // fallback to all if none qualify
-  }
 
   // Update button active states
   ['top','drought','favorable','all'].forEach(f => {
@@ -3405,11 +3442,23 @@ function renderHRPTable() {
   });
 
   const sorted = [...displayRows].sort((a,b) => {
-    // Default priority: TOP HR THREAT rows first, then highest HR probability.
-    // This keeps the most important bats at the top without requiring the user to open Pitcher Report first.
-    const aTop = (a.topHrThreat || a.hrProb >= 8) ? 1 : 0;
-    const bTop = (b.topHrThreat || b.hrProb >= 8) ? 1 : 0;
-    if (aTop !== bTop) return bTop - aTop;
+    // Active filter priority: whichever filter is selected, matching players go first.
+    if (hrpFilter === 'drought') {
+      const aMatch = a.isDrought ? 1 : 0, bMatch = b.isDrought ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+    } else if (hrpFilter === 'favorable') {
+      const aMatch = a.isFavorable ? 1 : 0, bMatch = b.isFavorable ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+    } else if (hrpFilter === 'top') {
+      const aMatch = (a.topHrThreat || a.hrProb >= 8) ? 1 : 0;
+      const bMatch = (b.topHrThreat || b.hrProb >= 8) ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+    } else {
+      // Default ('all'): TOP HR THREAT rows still float up first, same baseline as before.
+      const aTop = (a.topHrThreat || a.hrProb >= 8) ? 1 : 0;
+      const bTop = (b.topHrThreat || b.hrProb >= 8) ? 1 : 0;
+      if (aTop !== bTop) return bTop - aTop;
+    }
 
     const av = a[hrpSortCol], bv = b[hrpSortCol];
     if (av==null&&bv==null) return 0;
@@ -3825,6 +3874,7 @@ function renderKProps() {
   const kpTallyHTML = kpFinal > 0 ? `
     <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
       <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">TODAY'S RECORD</span>
+      <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">${new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</span>
       <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:${kpCorrect===kpFinal?'#2ecc71':kpCorrect>kpFinal/2?'var(--accent2)':'var(--accent)'}">${kpCorrect}-${kpFinal-kpCorrect}</span>
       <span style="font-size:11px;color:var(--muted)">${kpFinal} of ${kPropsData.length} final</span>
       <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">${Math.round(kpCorrect/kpFinal*100)}% accuracy</span>
@@ -3851,11 +3901,47 @@ function renderKProps() {
         </div>
         <div class="kprop-summary">${reason.summary || ''}</div>`;
 
-      const resultBadge = kpResults[p.pitcherId] === true
-        ? `<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#0d2a1a;border:1px solid #2ecc71;color:#2ecc71;border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px">✓ CORRECT — ${p.pitcherName.split(' ').pop()} finished ${latestPitcherKData[p.pitcherId].ks} K</div>`
-        : kpResults[p.pitcherId] === false
-        ? `<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#2a0d0d;border:1px solid #e63946;color:#e63946;border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px">✗ WRONG — ${p.pitcherName.split(' ').pop()} finished ${latestPitcherKData[p.pitcherId].ks} K</div>`
-        : '';
+      // ── Live/Final K Count label ──
+      // Color rules:
+      //  - Projected OVER: turns green the moment actual K count exceeds the DR Line —
+      //    once it's happened it can't be undone, so no need to wait for the game to end.
+      //  - Projected UNDER: stays neutral while live (can't confirm "stayed under" until
+      //    the game ends — a pitcher could still come back out and add Ks), turns green
+      //    only once final and the K count actually finished under the line, or red if
+      //    they exceeded it by the end.
+      //  - PUSH predictions don't get graded — always neutral.
+      const live = latestPitcherKData[p.pitcherId];
+      let kCountHTML = '';
+      if (live && (live.isLive || live.isFinal) && p.pred !== 'PUSH') {
+        const ks = live.ks;
+        let kColor, kBg, kBorder, kIcon, kLabel;
+        if (p.pred === 'OVER') {
+          if (ks > p.ouLine) {
+            kColor = '#2ecc71'; kBg = '#0d2a1a'; kBorder = '#2ecc71'; kIcon = '✅';
+            kLabel = live.isFinal ? 'Final' : 'Live';
+          } else if (live.isFinal) {
+            kColor = '#e63946'; kBg = '#2a0d0d'; kBorder = '#e63946'; kIcon = '❌';
+            kLabel = 'Final';
+          } else {
+            kColor = 'var(--muted)'; kBg = 'var(--bg)'; kBorder = 'var(--border)'; kIcon = '⏳';
+            kLabel = 'Live';
+          }
+        } else { // UNDER
+          if (live.isFinal) {
+            if (ks < p.ouLine) {
+              kColor = '#2ecc71'; kBg = '#0d2a1a'; kBorder = '#2ecc71'; kIcon = '✅';
+            } else {
+              kColor = '#e63946'; kBg = '#2a0d0d'; kBorder = '#e63946'; kIcon = '❌';
+            }
+            kLabel = 'Final';
+          } else {
+            // Still live — can't confirm "stayed under" yet, even if currently under the line
+            kColor = 'var(--muted)'; kBg = 'var(--bg)'; kBorder = 'var(--border)'; kIcon = '⏳';
+            kLabel = 'Live';
+          }
+        }
+        kCountHTML = `<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:${kBg};border:1px solid ${kBorder};color:${kColor};border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px">${kIcon} ${kLabel} K Count: ${ks}</div>`;
+      }
 
       return `<div class="kprop-row">
         <img src="${hs(p.pitcherId)}" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);flex-shrink:0" onerror="this.style.visibility='hidden'" alt="">
@@ -3871,7 +3957,7 @@ function renderKProps() {
           <div class="kprop-pred-val" style="font-size:${p.pred==='PUSH'?'16px':'24px'}">${predLabel}</div>
           <div class="kprop-pred-lbl">${p.projK} PROJ</div>
         </div>
-        <div class="kprop-reasoning">${reasonHTML}${resultBadge}</div>
+        <div class="kprop-reasoning">${reasonHTML}${kCountHTML}</div>
       </div>`;
     }).join('')}</div>`;
 }
@@ -3930,7 +4016,7 @@ function showTab(id, el) {
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  localStorage.setItem('activeTab', id);
+  sessionStorage.setItem('activeTab', id);
   if (id === 'matchups' && !matchupLoaded) {
     matchupLoaded = true;
     loadPitcherReport();
@@ -3943,8 +4029,12 @@ function showTab(id, el) {
 }
 
 // Restore last active tab on page load
+// Restore the active tab using sessionStorage (not localStorage) so the behavior is:
+//  - Refresh/reload while browsing → stays on whatever tab you were viewing
+//  - Fresh launch (new tab, new browser session, app reopened from scratch) → always
+//    starts on Live Scores, since sessionStorage is empty for a brand new session
 (function restoreTab() {
-  const saved = localStorage.getItem('activeTab');
+  const saved = sessionStorage.getItem('activeTab');
   if (!saved || saved === 'scores') {
     initPropsTab(); // still warm up Props data even if landing on scores/default tab
     return;
