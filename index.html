@@ -4178,6 +4178,10 @@ function showTab(id, el) {
     current.market ||= { drp:[], kprop:[] };
     current.market.drp ||= [];
     current.market.kprop ||= [];
+    current.allTime ||= {};
+    current.allTime.hr ||= { wins:0, losses:0, total:0 };
+    current.allTime.kprop ||= { wins:0, losses:0, total:0 };
+    current.allTime.drp ||= { wins:0, losses:0, total:0 };
     current.dailyResults ||= [];
     current.debug ||= {};
     return current;
@@ -4228,6 +4232,39 @@ function showTab(id, el) {
     return store;
   }
 
+
+  function normalizedSummary(summary){
+    const wins = Number(summary?.wins ?? summary?.correct ?? 0) || 0;
+    const losses = Number(summary?.losses ?? summary?.incorrect ?? Math.max((Number(summary?.total || 0) || 0) - wins, 0)) || 0;
+    const total = Number(summary?.total || (wins + losses)) || (wins + losses);
+    return { wins, losses, total };
+  }
+
+  function bestSummary(repoSummary, localSummary){
+    const repo = normalizedSummary(repoSummary);
+    const local = normalizedSummary(localSummary);
+    // Prefer the larger completed sample so one device with an empty cache cannot erase repo history.
+    if (local.total > repo.total) return local;
+    return repo;
+  }
+
+  function updateAllTimeSummaryFromRows(store){
+    store = normalizeStore(store);
+    const hrWins = (store.picks || []).filter(p => p.final === true && p.hit === true).length;
+    const hrTotal = (store.picks || []).filter(p => p.final === true).length;
+    const kRows = (store.market?.kprop || []).filter(r => r.result === 'win' || r.result === 'loss');
+    const kWins = kRows.filter(r => r.result === 'win').length;
+    const drpRows = (store.market?.drp || []).filter(r => (r.result === 'win' || r.result === 'loss') && drpMatchupLabel(r).includes('@'));
+    const drpWins = drpRows.filter(r => r.result === 'win').length;
+    const hrExisting = normalizedSummary(store.allTime?.hr);
+    const kExisting = normalizedSummary(store.allTime?.kprop);
+    const drpExisting = normalizedSummary(store.allTime?.drp);
+    store.allTime.hr = hrTotal > hrExisting.total ? { wins:hrWins, losses:Math.max(hrTotal-hrWins,0), total:hrTotal } : hrExisting;
+    store.allTime.kprop = kRows.length > kExisting.total ? { wins:kWins, losses:Math.max(kRows.length-kWins,0), total:kRows.length } : kExisting;
+    store.allTime.drp = drpRows.length > drpExisting.total ? { wins:drpWins, losses:Math.max(drpRows.length-drpWins,0), total:drpRows.length } : drpExisting;
+    return store;
+  }
+
   function mergeStores(local, repo){
     local = normalizeStore(local);
     repo = normalizeStore(repo);
@@ -4238,6 +4275,12 @@ function showTab(id, el) {
       kprop: mergeArraysByKey(repo.market?.kprop, local.market?.kprop, r => r.key || `${r.date}|KPROP|${String(r.label || '').toLowerCase()}`)
     };
     merged.dailyResults = mergeArraysByKey(repo.dailyResults, local.dailyResults, r => r.key || `${r.date}|${r.type || ''}|${r.label || r.player || ''}`);
+    merged.allTime = {
+      hr: bestSummary(repo.allTime?.hr, local.allTime?.hr),
+      kprop: bestSummary(repo.allTime?.kprop, local.allTime?.kprop),
+      drp: bestSummary(repo.allTime?.drp, local.allTime?.drp)
+    };
+    updateAllTimeSummaryFromRows(merged);
     merged.debug ||= {};
     merged.debug.repoDataLoaded = repoTrackerLoaded;
     merged.debug.lastRepoGeneratedAt = repo.generatedAt || null;
@@ -5225,13 +5268,17 @@ function showTab(id, el) {
     const todays=todaysAll.filter(isResolvedHRPick);
     const allResolvedThreats=store.picks.filter(isResolvedHRPick);
     const th=todays.filter(p=>p.hit).length, tt=todays.length;
-    const ah=allResolvedThreats.filter(p=>p.hit).length, at=allResolvedThreats.length;
+    const ahRows=allResolvedThreats.filter(p=>p.hit).length, atRows=allResolvedThreats.length;
     const todayPendingThreats=Math.max(todaysAll.length-tt,0);
-    const allPendingThreats=Math.max(store.picks.length-at,0);
+    const allPendingThreats=Math.max(store.picks.length-atRows,0);
+    const hrSummary = normalizedSummary(store.allTime?.hr);
+    const ah = hrSummary.total > atRows ? hrSummary.wins : ahRows;
+    const at = hrSummary.total > atRows ? hrSummary.total : atRows;
+    const ahLosses = hrSummary.total > atRows ? hrSummary.losses : Math.max(atRows-ahRows,0);
 
     set('tracker-today', `${th}-${Math.max(tt-th,0)}`);
     set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} final Top HR Threats${todayPendingThreats ? ` • ${todayPendingThreats} not final excluded` : ''}`);
-    set('tracker-all', `${ah}-${Math.max(at-ah,0)}`);
+    set('tracker-all', `${ah}-${ahLosses}`);
     set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} final stored picks${allPendingThreats ? ` • ${allPendingThreats} not final excluded` : ''}`);
     setHeaderPct('threat-header-pct', pct(ah,at), at);
 
@@ -5258,9 +5305,11 @@ function showTab(id, el) {
 
     set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
     set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.total} final K props${kpToday.pending ? ` • ${kpToday.pending} not final excluded` : ''}`);
-    set('tracker-kprops-all', `${kpAll.wins}-${kpAll.losses}`);
-    set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.total} final K props${kpAll.pending ? ` • ${kpAll.pending} not final excluded` : ''}`);
-    setHeaderPct('kprops-header-pct', pct(kpAll.wins,kpAll.total), kpAll.total);
+    const kpSummary = normalizedSummary(store.allTime?.kprop);
+    const kpAllDisplay = kpSummary.total > kpAll.total ? kpSummary : kpAll;
+    set('tracker-kprops-all', `${kpAllDisplay.wins}-${kpAllDisplay.losses}`);
+    set('tracker-kprops-all-sub', `${pct(kpAllDisplay.wins,kpAllDisplay.total)}% all-time • ${kpAllDisplay.total} final K props${kpAll.pending ? ` • ${kpAll.pending} not final excluded` : ''}`);
+    setHeaderPct('kprops-header-pct', pct(kpAllDisplay.wins,kpAllDisplay.total), kpAllDisplay.total);
 
     const teamExtremes = diamondReportTeamExtremes(drpMatchupAll.list);
     set('tracker-drt-favorite', teamExtremes.favorite ? teamExtremes.favorite.team : '—');
