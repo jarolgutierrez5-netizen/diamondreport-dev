@@ -666,6 +666,44 @@
 <meta name="google-adsense-account" content="ca-pub-6433797533342090">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6433797533342090"
      crossorigin="anonymous"></script>
+
+<style id="kcount-color-patch">
+.kprop-kcount.live{
+  background:#1a2438 !important;
+  border:1px solid #3b82f6 !important;
+  color:#60a5fa !important;
+}
+.kprop-kcount.final{
+  background:#14301f !important;
+  border:1px solid #22c55e !important;
+  color:#86efac !important;
+}
+.kprop-kcount.pending{
+  background:#2b2438 !important;
+  border:1px solid #a855f7 !important;
+  color:#c084fc !important;
+}
+</style>
+
+
+<style id="kcount-result-color-patch">
+.kprop-kcount.correct{
+  background:#14301f !important;
+  border:1px solid #22c55e !important;
+  color:#86efac !important;
+}
+.kprop-kcount.wrong{
+  background:#351216 !important;
+  border:1px solid #ef4444 !important;
+  color:#fca5a5 !important;
+}
+.kprop-kcount.neutral{
+  background:#2b2438 !important;
+  border:1px solid #a855f7 !important;
+  color:#c084fc !important;
+}
+</style>
+
 </head>
 <body>
 
@@ -962,6 +1000,37 @@
           </thead>
           <tbody id="tracker-results"><tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for HR Potential data…</td></tr></tbody>
         </table>
+      </div>
+    </div>
+
+
+    <div class="tracker-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <h3 style="margin-bottom:0">Next Day Prediction Model — Uses Tracker History + Site Data</h3>
+        <span class="tracker-pill hit">Stored Tracker Data Active</span>
+      </div>
+      <div class="tracker-sub" style="margin-bottom:12px">
+        Blends stored Tracker hit rates with HR Potential, Diamond Report Picks, K Props, live scores, pitcher report, game environment, and market/odds signals already available in the site.
+      </div>
+      <div class="tracker-grid">
+        <div class="tracker-card">
+          <h3>Next Day HR Potential</h3>
+          <div id="tracker-nextday-hrp" class="tracker-scroll">
+            <div style="color:var(--muted);font-size:12px">Waiting for model data…</div>
+          </div>
+        </div>
+        <div class="tracker-card">
+          <h3>Next Day Diamond Report Picks</h3>
+          <div id="tracker-nextday-drp" class="tracker-scroll">
+            <div style="color:var(--muted);font-size:12px">Waiting for model data…</div>
+          </div>
+        </div>
+        <div class="tracker-card">
+          <h3>Next Day K Props</h3>
+          <div id="tracker-nextday-kprops" class="tracker-scroll">
+            <div style="color:var(--muted);font-size:12px">Waiting for model data…</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3826,7 +3895,7 @@ function showTab(id, el) {
     'StatMuse', 'Brooks Baseball', 'Baseball Prospectus / PECOTA', 'RotoWire lineups/injuries',
     'Sportsbook odds', 'Weather', 'Umpire data', 'Betting market movement'
   ];
-  const MODEL_INPUTS = ['HR Potential', 'HRs Today', 'Diamond Report Picks', 'Player hit rate', 'Team hit rate', 'Lineup status', 'Game environment', 'Odds edge'];
+  const MODEL_INPUTS = ['Stored Tracker History', 'HR Potential', 'HRs Today', 'Diamond Report Picks', 'K Props', 'Player hit rate', 'Team hit rate', 'Lineup status', 'Game environment', 'Odds edge'];
 
   const dayKey = () => new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
   const norm = s => String(s || '').replace(/\s+/g,' ').trim();
@@ -3991,6 +4060,113 @@ function showTab(id, el) {
       }
     }
   }
+
+
+  function trackerHistoryBoost(store, player, team){
+    const pl = store.players[String(player || '').toLowerCase()] || { hits:0, total:0 };
+    const tm = store.teams[team] || { hits:0, total:0 };
+    const playerRate = pct(pl.hits, pl.total);
+    const teamRate = pct(tm.hits, tm.total);
+    const sampleBoost = Math.min(10, (pl.total || 0) + (tm.total || 0));
+    return {
+      playerRate,
+      teamRate,
+      sampleBoost,
+      score: Math.round(playerRate * 0.35 + teamRate * 0.25 + sampleBoost)
+    };
+  }
+
+  function nextDayHRPotentialModel(store, currentThreats){
+    return currentThreats
+      .map(p => {
+        const h = trackerHistoryBoost(store, p.player, p.team);
+        const base = Number(p.hrPct || 0);
+        const modelScore = Math.min(99, Math.round(base * 0.55 + h.score * 0.45 + Math.max(0, 11 - (p.rank || 10)) * 1.2));
+        return { ...p, modelScore, playerRate:h.playerRate, teamRate:h.teamRate, sampleBoost:h.sampleBoost };
+      })
+      .sort((a,b) => b.modelScore - a.modelScore)
+      .slice(0, 10);
+  }
+
+  function nextDayDRPicksModel(store, gamePicks){
+    const teamHistory = Object.values(store.teams || {}).reduce((acc,t)=>{
+      acc[t.team] = { rate:pct(t.hits,t.total), hits:t.hits, total:t.total };
+      return acc;
+    }, {});
+    return (gamePicks || [])
+      .map(p => {
+        const hist = teamHistory[p.team] || { rate:0, hits:0, total:0 };
+        const modelScore = Math.min(99, Math.round((p.winPct || 0) * 0.70 + hist.rate * 0.25 + Math.min(5, hist.total)));
+        return { ...p, modelScore, hist };
+      })
+      .sort((a,b)=>b.modelScore-a.modelScore)
+      .slice(0, 8);
+  }
+
+  function nextDayKPropsModel(store){
+    store.market ||= { drp: [], kprop: [] };
+    const grouped = {};
+    (store.market.kprop || []).forEach(r => {
+      const key = String(r.label || '').toLowerCase();
+      grouped[key] ||= { label:r.label, wins:0, total:0, over:0, under:0, lastPick:r.pick, lastLine:r.line };
+      if(r.result === 'win' || r.result === 'loss'){
+        grouped[key].total++;
+        if(r.result === 'win') grouped[key].wins++;
+      }
+      if(/OVER/i.test(r.pick)) grouped[key].over++;
+      if(/UNDER/i.test(r.pick)) grouped[key].under++;
+      grouped[key].lastPick = r.pick;
+      grouped[key].lastLine = r.line;
+    });
+    return Object.values(grouped)
+      .map(r => {
+        const rate = pct(r.wins, r.total);
+        const direction = r.over >= r.under ? 'OVER' : 'UNDER';
+        const modelScore = Math.min(99, Math.round(rate * 0.75 + Math.min(20, r.total * 3)));
+        return { ...r, rate, direction, modelScore };
+      })
+      .sort((a,b)=>b.modelScore-a.modelScore)
+      .slice(0, 10);
+  }
+
+  function renderNextDayModels(store, currentThreats, gamePicks){
+    const hrp = nextDayHRPotentialModel(store, currentThreats);
+    set('tracker-nextday-hrp', hrp.length ? hrp.map((p,i)=>`
+      <div class="stat-row">
+        <div class="stat-row-num">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-weight:800">${p.player}</div>
+          <div style="color:var(--muted);font-size:11px">${p.team || '—'} • current HR ${p.hrPct || 0}% • player tracker ${p.playerRate}% • team tracker ${p.teamRate}%</div>
+        </div>
+        <span class="tracker-pill ${p.modelScore>=35?'hit':p.modelScore>=20?'pending':'miss'}">${p.modelScore}%</span>
+      </div>
+    `).join('') : '<div style="color:var(--muted);font-size:12px">Waiting for HR Potential and Tracker history.</div>');
+
+    const drp = nextDayDRPicksModel(store, gamePicks);
+    set('tracker-nextday-drp', drp.length ? drp.map((p,i)=>`
+      <div class="stat-row">
+        <div class="stat-row-num">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-weight:800">${p.team}</div>
+          <div style="color:var(--muted);font-size:11px">site win ${p.winPct || 0}% • tracker team ${p.hist.rate}% • ${p.lean || 'pick'}</div>
+        </div>
+        <span class="tracker-pill ${p.modelScore>=55?'hit':p.modelScore>=45?'pending':'miss'}">${p.modelScore}%</span>
+      </div>
+    `).join('') : '<div style="color:var(--muted);font-size:12px">Waiting for Diamond Report Picks and final Tracker data.</div>');
+
+    const kp = nextDayKPropsModel(store);
+    set('tracker-nextday-kprops', kp.length ? kp.map((p,i)=>`
+      <div class="stat-row">
+        <div class="stat-row-num">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-weight:800">${p.label}</div>
+          <div style="color:var(--muted);font-size:11px">${p.direction} lean • tracker ${p.wins}/${p.total} (${p.rate}%) • last line ${p.lastLine || '—'}</div>
+        </div>
+        <span class="tracker-pill ${p.modelScore>=55?'hit':p.modelScore>=35?'pending':'miss'}">${p.modelScore}%</span>
+      </div>
+    `).join('') : '<div style="color:var(--muted);font-size:12px">Waiting for stored K Props results.</div>');
+  }
+
 
   function predictionScore(p, store){
     const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0};
@@ -4332,6 +4508,8 @@ function showTab(id, el) {
       </div>`;
     }).join('') : '<div style="color:var(--muted);font-size:12px">Upcoming player HR predictions populate from HR Potential once loaded.</div>');
 
+    renderNextDayModels(store, currentThreats, gamePicks);
+
     set('tracker-refresh',
       `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} • HRP ${currentThreats.length} • HRs ${homers.size} • Picks ${gamePicks.length} • Finals ${[...new Set(Object.values(finalGameMap()).filter(x=>!Array.isArray(x)).map(x=>x.away+'@'+x.home))].length}`
     );
@@ -4357,7 +4535,9 @@ function showTab(id, el) {
       console.error('Tracker sync failed:', e);
       store.debug.lastError = e.message || String(e);
       saveStore(store);
-      set('tracker-refresh', `Tracker error: ${e.message || e}`);
+      renderNextDayModels(store, currentThreats, gamePicks);
+
+    set('tracker-refresh', `Tracker error: ${e.message || e}`);
       return { threats:[], homers:new Set(), gamePicks:[] };
     }
   }
@@ -4550,6 +4730,114 @@ function showTab(id, el) {
   window.hideLiveScoresBanner = hideLiveScoresBanner;
   hideLiveScoresBanner();
   setInterval(hideLiveScoresBanner, 1000);
+})();
+
+
+// Diamond Report K Count result color logic
+(function(){
+  function n(text){
+    const m = String(text || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? Number(m[1]) : null;
+  }
+
+  function getActualK(row){
+    const badge = row.querySelector('.kprop-kcount');
+    return n(badge ? badge.textContent : '');
+  }
+
+  function getDRLine(row){
+    return n(row.querySelector('.kprop-line-val')?.textContent || '');
+  }
+
+  function getProjectedK(row){
+    return n(row.querySelector('.kprop-pred-val')?.textContent || row.innerText || '');
+  }
+
+  function getPickDirection(row){
+    const txt = (row.querySelector('.kprop-pred-val')?.textContent || row.innerText || '').toUpperCase();
+    if(/\bOVER\b/.test(txt)) return 'OVER';
+    if(/\bUNDER\b/.test(txt)) return 'UNDER';
+
+    const proj = getProjectedK(row);
+    const line = getDRLine(row);
+    if(proj !== null && line !== null) return proj > line ? 'OVER' : 'UNDER';
+    return null;
+  }
+
+  function applyKCountResultColors(){
+    document.querySelectorAll('#kprops-content .kprop-row').forEach(row => {
+      const badge = row.querySelector('.kprop-kcount');
+      if(!badge) return;
+
+      const actual = getActualK(row);
+      const line = getDRLine(row);
+      const direction = getPickDirection(row);
+
+      badge.classList.remove('correct','wrong','neutral');
+
+      if(actual === null || line === null || !direction){
+        badge.classList.add('neutral');
+        return;
+      }
+
+      const actualOver = actual > line;
+      const actualUnder = actual < line;
+
+      if((actualOver && direction === 'OVER') || (actualUnder && direction === 'UNDER')){
+        badge.classList.add('correct');
+      } else if((actualUnder && direction === 'OVER') || (actualOver && direction === 'UNDER')){
+        badge.classList.add('wrong');
+      } else {
+        badge.classList.add('neutral');
+      }
+    });
+  }
+
+  window.applyKCountResultColors = applyKCountResultColors;
+
+  function run(){
+    if(typeof window.applyKCountLabels === 'function') window.applyKCountLabels();
+    applyKCountResultColors();
+  }
+
+  function hook(fnName){
+    const original = window[fnName];
+    if(typeof original !== 'function' || original.__kCountResultColorHooked) return;
+    const wrapped = async function(...args){
+      const result = await original.apply(this,args);
+      setTimeout(run, 250);
+      return result;
+    };
+    wrapped.__kCountResultColorHooked = true;
+    window[fnName] = wrapped;
+  }
+
+  function start(){
+    run();
+    ['loadKProps','renderKProps','renderKPropRows','loadScores','renderScores','loadLiveScores','loadPitcherReport'].forEach(hook);
+    setInterval(run, 1000);
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+
+
+// Keep static projection label instead of live K label
+(function(){
+  function normalizeProjLabels(){
+    document.querySelectorAll('#kprops-content .kprop-pred-val, #kprops-content .kprop-pick, #kprops-content *').forEach(el=>{
+      if(!el || !el.textContent) return;
+      const t = el.textContent.trim();
+      if(/^\d+(\.\d+)?K\s+LIVE$/i.test(t)){
+        const m=t.match(/^(\d+(?:\.\d+)?)K/i);
+        if(m) el.textContent = `${m[1]} PROJ`;
+      }
+    });
+  }
+  const run=()=>normalizeProjLabels();
+  run();
+  setInterval(run,1000);
 })();
 
 </script>
