@@ -15,3 +15,14 @@ Important: GitHub Pages is static. The browser cannot directly write back to `da
 4. Replace the file contents with the exported JSON.
 5. Commit and wait for Pages to deploy.
 6. On iPhone, use a hard refresh or tap Reload Repo Data.
+
+## Tracker V3.1 auto backup
+
+The Tracker now keeps a rolling local auto-backup snapshot in the browser and attempts one automatic JSON download per day when the Tracker saves. The Tracker Source Stack includes:
+
+- Export backup
+- Auto backup ON/OFF
+- Latest auto backup
+- Import backup
+
+Note: iOS/Safari and some desktop browser settings may block automatic downloads unless triggered by a tap/click. Even when a download is blocked, the latest snapshot remains saved locally and can be downloaded with **Latest auto backup**.

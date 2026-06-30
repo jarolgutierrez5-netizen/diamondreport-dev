@@ -4059,6 +4059,9 @@ function showTab(id, el) {
 // Diamond Report Tracker Engine — debugged live tally + source-weighted model
 (function(){
   const STORE_KEY = 'diamondReportTrackerV4';
+  const AUTO_BACKUP_PREF_KEY = 'diamondReportTrackerAutoBackupEnabled';
+  const AUTO_BACKUP_LAST_KEY = 'diamondReportTrackerAutoBackupLastDate';
+  const AUTO_BACKUP_SNAPSHOT_KEY = 'diamondReportTrackerLatestAutoBackup';
   const LEGACY_STORE_KEYS = ['diamondReportTrackerV3', 'diamondReportTrackerV2', 'diamondReportTracker'];
   const TRACKER_DATA_URL = './data/tracker.json';
   let repoTrackerSeed = null;
@@ -4202,6 +4205,7 @@ function showTab(id, el) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
     catch(e){ console.warn('Tracker localStorage save failed:', e); }
     window.__diamondTrackerStore = store;
+    maybeAutoExportBackup(store);
   }
 
   async function initPersistentTrackerData(){
@@ -4219,15 +4223,73 @@ function showTab(id, el) {
     }
   }
 
-  window.exportDiamondTrackerData = function(){
-    const blob = new Blob([JSON.stringify(loadStore(), null, 2)], { type:'application/json' });
+  function cloneStoreForBackup(store){
+    const backup = normalizeStore(JSON.parse(JSON.stringify(store || loadStore())));
+    backup.generatedAt = new Date().toISOString();
+    backup.debug ||= {};
+    backup.debug.backupType = 'Diamond Report Tracker Backup';
+    backup.debug.backupCreatedAt = backup.generatedAt;
+    backup.debug.repoDataLoaded = repoTrackerLoaded;
+    return backup;
+  }
+
+  function downloadTrackerBackup(store, prefix='tracker'){
+    const backup = cloneStoreForBackup(store);
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `tracker-${dayKey()}.json`;
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = `${prefix}-${dayKey()}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function autoBackupEnabled(){
+    try {
+      const val = localStorage.getItem(AUTO_BACKUP_PREF_KEY);
+      if (val === null) return true; // enabled by default so Tracker creates a daily safety backup automatically
+      return val === '1';
+    } catch(e){ return true; }
+  }
+
+  function saveAutoBackupSnapshot(store){
+    try { localStorage.setItem(AUTO_BACKUP_SNAPSHOT_KEY, JSON.stringify(cloneStoreForBackup(store))); }
+    catch(e){ console.warn('Auto backup snapshot save failed:', e); }
+  }
+
+  function maybeAutoExportBackup(store, force=false){
+    if (!autoBackupEnabled() && !force) return;
+    const backup = cloneStoreForBackup(store);
+    saveAutoBackupSnapshot(backup);
+    try {
+      const today = dayKey();
+      const last = localStorage.getItem(AUTO_BACKUP_LAST_KEY);
+      if (!force && last === today) return;
+      localStorage.setItem(AUTO_BACKUP_LAST_KEY, today);
+      // Delay until the page settles. Some browsers may still require a user gesture for downloads,
+      // but the local snapshot above is always kept even when the download is blocked.
+      setTimeout(() => downloadTrackerBackup(backup, 'tracker-auto-backup'), force ? 50 : 1200);
+    } catch(e){ console.warn('Auto backup export failed:', e); }
+  }
+
+  window.exportDiamondTrackerData = function(){
+    downloadTrackerBackup(loadStore(), 'tracker');
+  };
+
+  window.exportLatestDiamondTrackerAutoBackup = function(){
+    try {
+      const snapshot = JSON.parse(localStorage.getItem(AUTO_BACKUP_SNAPSHOT_KEY) || 'null');
+      downloadTrackerBackup(snapshot || loadStore(), 'tracker-latest-auto-backup');
+    } catch(e){ downloadTrackerBackup(loadStore(), 'tracker-latest-auto-backup'); }
+  };
+
+  window.toggleDiamondTrackerAutoBackup = function(){
+    const next = !autoBackupEnabled();
+    try { localStorage.setItem(AUTO_BACKUP_PREF_KEY, next ? '1' : '0'); } catch(e){}
+    if (next) maybeAutoExportBackup(loadStore(), true);
+    if (window.syncDiamondTracker) window.syncDiamondTracker();
   };
 
 
@@ -5135,6 +5197,8 @@ function showTab(id, el) {
     const sourceStatus = [
       `<span class="tracker-pill ${repoTrackerLoaded?'hit':'pending'}">${repoTrackerLoaded?'✅':'💾'} Repo tracker.json ${repoTrackerLoaded?'loaded':'fallback: browser cache'}</span>`,
       `<span class="tracker-pill hit" onclick="window.exportDiamondTrackerData && window.exportDiamondTrackerData()" style="cursor:pointer">⬇ Export backup</span>`,
+      `<span class="tracker-pill ${autoBackupEnabled()?'hit':'pending'}" onclick="window.toggleDiamondTrackerAutoBackup && window.toggleDiamondTrackerAutoBackup()" style="cursor:pointer">${autoBackupEnabled()?'✅':'⏸'} Auto backup ${autoBackupEnabled()?'ON':'OFF'}</span>`,
+      `<span class="tracker-pill hit" onclick="window.exportLatestDiamondTrackerAutoBackup && window.exportLatestDiamondTrackerAutoBackup()" style="cursor:pointer">💾 Latest auto backup</span>`,
       `<span class="tracker-pill hit" onclick="window.importDiamondTrackerData && window.importDiamondTrackerData()" style="cursor:pointer">⬆ Import backup</span>`,
       `<span class="tracker-pill pending" onclick="window.resetDiamondTrackerLocalCache && window.resetDiamondTrackerLocalCache()" style="cursor:pointer">♻ Reload repo data</span>`,
       ...SOURCES.map(src => {
