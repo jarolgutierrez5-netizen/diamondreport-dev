@@ -975,14 +975,11 @@
   <section class="section" id="tracker">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
       <p class="section-title" style="margin-bottom:0">DIAMOND REPORT <span>TRACKER</span></p>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div id="tracker-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Syncing…</div>
-        <button onclick="window.resetTrackerData && window.resetTrackerData()" title="Tracker data is stored per-device. If this device shows different numbers than another, tap to clear and rebuild this device's history." style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;padding:4px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px;white-space:nowrap">↻ RESET DEVICE DATA</button>
-      </div>
+      <div id="tracker-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Syncing…</div>
     </div>
 
     <div style="font-size:10px;color:var(--muted);margin-bottom:14px;line-height:1.5">
-      ℹ️ Tracker history is stored locally on this device/browser only — it is not synced across phones, tablets, or computers. If numbers look different on another device, that device simply has its own separate history. Use "Reset Device Data" above to wipe and rebuild this device's history from scratch.
+      ℹ️ Tracker history is stored locally on this device/browser only — it is not synced across phones, tablets, or computers. If numbers look different on another device, that device simply has its own separate history.
     </div>
 
     <div class="tracker-grid">
@@ -5080,13 +5077,6 @@ function showTab(id, el) {
     }
     return changed;
   }
-
-  window.resetTrackerData=function(){
-    if(confirm('Reset all Tracker history?')){
-      localStorage.removeItem(STORE_KEY);
-      sync();
-    }
-  };
 
   window.syncDiamondTracker=sync;
 
