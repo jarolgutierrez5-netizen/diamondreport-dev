@@ -5144,14 +5144,29 @@ function showTab(id, el) {
 
   function render(store, currentThreats, homers, gamePicks){
     const day=dayKey();
-    const todays=store.picks.filter(p=>p.date===day);
+    const teamStates = teamGameStatusMap();
+
+    // Accuracy cards must count FINAL games only. Pending/upcoming/live picks stay visible
+    // in the tables, but they are excluded from the numerator and denominator so the
+    // Tracker never penalizes or inflates accuracy before a game is final.
+    const isResolvedHRPick = (p) => {
+      if (!p) return false;
+      if (p.date !== day) return true; // prior-day stored picks are historical/final by definition
+      return teamStates[p.team] === 'final';
+    };
+
+    const todaysAll=store.picks.filter(p=>p.date===day);
+    const todays=todaysAll.filter(isResolvedHRPick);
+    const allResolvedThreats=store.picks.filter(isResolvedHRPick);
     const th=todays.filter(p=>p.hit).length, tt=todays.length;
-    const ah=store.picks.filter(p=>p.hit).length, at=store.picks.length;
+    const ah=allResolvedThreats.filter(p=>p.hit).length, at=allResolvedThreats.length;
+    const todayPendingThreats=Math.max(todaysAll.length-tt,0);
+    const allPendingThreats=Math.max(store.picks.length-at,0);
 
     set('tracker-today', `${th}-${Math.max(tt-th,0)}`);
-    set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} Top HR Threats tracked`);
+    set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} final Top HR Threats${todayPendingThreats ? ` • ${todayPendingThreats} not final excluded` : ''}`);
     set('tracker-all', `${ah}-${Math.max(at-ah,0)}`);
-    set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} stored picks`);
+    set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} final stored picks${allPendingThreats ? ` • ${allPendingThreats} not final excluded` : ''}`);
     setHeaderPct('threat-header-pct', pct(ah,at), at);
 
     const drpToday=marketStats(store,'drp',day);
@@ -5170,15 +5185,15 @@ function showTab(id, el) {
     const kpAll=marketStats(store,'kprop');
 
     set('tracker-drp-today', `${drpMatchupToday.wins}-${drpMatchupToday.losses}`);
-    set('tracker-drp-today-sub', `${pct(drpMatchupToday.wins,drpMatchupToday.total)}% today • ${drpMatchupToday.pending} waiting final`);
+    set('tracker-drp-today-sub', `${pct(drpMatchupToday.wins,drpMatchupToday.total)}% today • ${drpMatchupToday.total} final matchups${drpMatchupToday.pending ? ` • ${drpMatchupToday.pending} not final excluded` : ''}`);
     set('tracker-drp-all', `${drpMatchupAll.wins}-${drpMatchupAll.losses}`);
-    set('tracker-drp-all-sub', `${pct(drpMatchupAll.wins,drpMatchupAll.total)}% all-time • ${drpMatchupAll.pending} waiting final`);
+    set('tracker-drp-all-sub', `${pct(drpMatchupAll.wins,drpMatchupAll.total)}% all-time • ${drpMatchupAll.total} final matchups${drpMatchupAll.pending ? ` • ${drpMatchupAll.pending} not final excluded` : ''}`);
     setHeaderPct('drp-header-pct', pct(drpMatchupAll.wins,drpMatchupAll.total), drpMatchupAll.total);
 
     set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
-    set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.pending} waiting final`);
+    set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.total} final K props${kpToday.pending ? ` • ${kpToday.pending} not final excluded` : ''}`);
     set('tracker-kprops-all', `${kpAll.wins}-${kpAll.losses}`);
-    set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.pending} waiting final`);
+    set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.total} final K props${kpAll.pending ? ` • ${kpAll.pending} not final excluded` : ''}`);
     setHeaderPct('kprops-header-pct', pct(kpAll.wins,kpAll.total), kpAll.total);
 
     const statusBadge = r => resultBadgeFromFinal(r.result);
@@ -5249,9 +5264,7 @@ function showTab(id, el) {
     set('tracker-underdog', dog ? dog.team : '—');
     set('tracker-underdog-sub', dog ? `${dog.winPct || 0}% projected win • value/underdog slot` : 'Waiting for Diamond Report Picks');
 
-    const teamStates = teamGameStatusMap();
-
-    const rows=(todays.length?todays:currentThreats).map(p=>{
+    const rows=(todaysAll.length?todaysAll:currentThreats).map(p=>{
       const hitNow = p.hit || homers.has(p.player.toLowerCase());
       const gameState = teamStates[p.team] || 'upcoming';
       let status;

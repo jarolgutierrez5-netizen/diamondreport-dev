@@ -34,3 +34,16 @@ data/lineups.json
 ## Manual backup
 
 A manual backup button remains available for emergencies only. It will download only when clicked.
+
+## V3.5 Tracker final-only accuracy optimization
+
+The Tracker accuracy cards now use completed games only for their win/loss counts:
+
+- Today's Top HR Threat Accuracy
+- All-Time HR Accuracy
+- Diamond Report Picks Today
+- Diamond Report Picks All-Time
+- K Props Today
+- K Props All-Time
+
+Upcoming and live games remain visible in the Tracker tables, but they are excluded from the numerator and denominator until a final result is available. The card subtitles show how many pending/not-final entries were excluded.
