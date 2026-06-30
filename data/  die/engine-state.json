@@ -1,1 +1,9 @@
-
+{
+  "hrEngine": "ACTIVE",
+  "kEngine": "ACTIVE",
+  "moneylineEngine": "ACTIVE",
+  "trackerEngine": "ACTIVE",
+  "lineupEngine": "ACTIVE",
+  "learningEngine": "ACTIVE",
+  "githubSync": "ACTIVE"
+}
