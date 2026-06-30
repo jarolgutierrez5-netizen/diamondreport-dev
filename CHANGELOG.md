@@ -1,44 +1,16 @@
 # Changelog
 
-## Diamond Report DIE v5.2 — Full Developer Responsive Build
-
-### Added
-- v5.2 responsive optimization patch for mobile, tablet, and desktop.
-
-### Improved
-- Layout stability.
-- Table/card overflow handling.
-- Tracker and DIE responsiveness.
-- HR Potential, K Props, Pitcher Report, and game-card scaling.
-
----
+## DIE v5.3 — Mobile HR Potential + K's Today Fix
+- Optimized HR Potential for phones.
+- Optimized K's Today for phones.
+- Prevented HR Potential from causing full-page horizontal overflow.
+- Converted K's Today rows to a compact mobile grid.
+- Preserved v5.2 responsive foundation and v5.1 API guard.
 
 # Changelog
 
-## Diamond Report DIE v5.1 — Developer Foundation + API Optimizer
-
-### Added
-- 💎 Diamond Intelligence Engine (DIE) developer panel inside Tracker.
-- Engine status, prediction counts, learning queue, pipeline status, model weights, learning journal, and API Guard stats.
-- API request optimizer:
-  - Response caching
-  - In-flight request deduplication
-  - Hidden-tab throttling
-  - Stale-cache fallback
-  - Developer request stats
-
-### Included from previous full base
-- Persistent Tracker data files.
-- Lineup intelligence data file.
-- Statcast hot-hitter data file.
-- Tracker updater script.
-- Lineup updater script.
-- Statcast hot-hitter updater script.
-- GitHub workflows for tracker, lineup, and Statcast hot-hitter updates.
-
-### Removed
-- Temporary packaging artifacts: `script_0.js`, `script_1.js`, `script_2.js`.
-
-## Upload
-This ZIP is a full developer repo snapshot. Replace the developer repo contents with the files in this package.
-
+## DIE v5.2 — Responsive Full Repo
+- Added site-wide responsive stability patch.
+- Optimized mobile, tablet, laptop, and desktop breakpoints.
+- Preserved DIE v5.1 Foundation + API Request Optimizer.
+- Included `data/die/` starter engine files.
