@@ -490,6 +490,87 @@
     min-width: 0;
   }
 
+
+  /* Breaking HR ticker: moving banner, not stacked list */
+  .breaking-banner {
+    display: none;
+    background: linear-gradient(90deg,#260000 0%,#120000 55%,#260000 100%);
+    border: 1px solid #ff6b00;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 16px;
+    height: 54px;
+  }
+  .breaking-banner-inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+  .breaking-label {
+    background: linear-gradient(135deg,#ff6b00,#991b1b);
+    color: white;
+    font-family: 'Bebas Neue',sans-serif;
+    font-size: 15px;
+    letter-spacing: 2px;
+    padding: 0 18px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    z-index: 3;
+  }
+  .breaking-label::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+  .breaking-window {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .breaking-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 34px;
+    padding-left: 100%;
+    animation: breaking-scroll 28s linear infinite;
+    white-space: nowrap;
+  }
+  .breaking-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-family: 'Bebas Neue',sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  .breaking-player {
+    color: #ff6b00;
+  }
+  .breaking-time {
+    color: #8fa3c8;
+    font-family: 'JetBrains Mono',monospace;
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+  @keyframes breaking-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+  @media (max-width:768px) {
+    .breaking-banner { height: 46px; }
+    .breaking-label { font-size: 12px; padding: 0 12px; }
+    .breaking-item { font-size: 16px; letter-spacing: 1px; }
+  }
+
 </style>
 <meta name="google-adsense-account" content="ca-pub-6433797533342090">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6433797533342090"
@@ -571,18 +652,14 @@
     </div>
 
     <!-- Banner temporarily removed -->
-    <div id="scores-alert-banner" style="display:none;background:linear-gradient(90deg,#0a0e1a 0%,#0f172a 40%,#0a0e1a 100%);border:1px solid #1e3a5f;border-radius:8px;overflow:hidden;position:relative;margin-bottom:16px">
-      <div style="position:absolute;left:0;top:0;bottom:0;width:50px;background:linear-gradient(90deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="position:absolute;right:0;top:0;bottom:0;width:50px;background:linear-gradient(270deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="display:flex;align-items:center">
-        <div style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;padding:10px 16px;flex-shrink:0;display:flex;align-items:center;gap:6px;border-right:1px solid #7f1d1d;z-index:3;animation:shimmer 1.5s infinite">
-          <span style="display:inline-block;width:8px;height:8px;background:#fff;border-radius:50%;animation:pulse 1s infinite;flex-shrink:0"></span>
-          LIVE
-        </div>
-        <div style="overflow:hidden;flex:1">
-          <div id="scores-alert-track" style="display:inline-flex;align-items:center;gap:0;padding:8px 20px;animation:marquee 30s linear infinite"></div>
+    <div id="scores-alert-banner" class="breaking-banner">
+      <div class="breaking-banner-inner">
+        <div class="breaking-label">LIVE</div>
+        <div class="breaking-window">
+          <div id="scores-alert-track" class="breaking-track"></div>
         </div>
       </div>
+    </div>
     </div>
 
     <div class="live-badge"><div class="live-dot"></div>LIVE NOW</div>
@@ -603,42 +680,11 @@
   <section class="section" id="props">
 
     <!-- Live Games Banner -->
-    <div id="props-live-banner" style="display:none;background:linear-gradient(90deg,#0a0e1a 0%,#0f172a 40%,#0a0e1a 100%);border:1px solid #1e3a5f;border-radius:8px;overflow:hidden;position:relative;margin-bottom:20px">
-      <div style="position:absolute;left:0;top:0;bottom:0;width:50px;background:linear-gradient(90deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="position:absolute;right:0;top:0;bottom:0;width:50px;background:linear-gradient(270deg,#0a0e1a,transparent);z-index:2;pointer-events:none"></div>
-      <div style="display:flex;align-items:center">
-        <div style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;padding:10px 16px;flex-shrink:0;display:flex;align-items:center;gap:6px;border-right:1px solid #7f1d1d;z-index:3;animation:shimmer 1.5s infinite">
-          <span style="display:inline-block;width:8px;height:8px;background:#fff;border-radius:50%;animation:pulse 1s infinite;flex-shrink:0"></span>
-          LIVE
-        </div>
-        <div style="overflow:hidden;flex:1">
-          <div id="props-live-games" style="display:inline-flex;align-items:center;gap:0;padding:6px 20px;animation:marquee 30s linear infinite"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- HR Potential filters -->
-    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <button onclick="filterHRP('top')" id="filter-top-btn" style="background:var(--surface2);border:1px solid #f4a261;color:#f4a261;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">⚡ TOP HR THREAT</button>
-      <button onclick="filterHRP('drought')" id="filter-drought-btn" style="background:var(--surface2);border:1px solid #e63946;color:#e63946;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🔴 DROUGHT</button>
-      <button onclick="filterHRP('favorable')" id="filter-favorable-btn" style="background:var(--surface2);border:1px solid #2ecc71;color:#2ecc71;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🟢 FAVORABLE MATCHUP FOR BATTER</button>
-      <button onclick="filterHRP('all')" id="filter-all-btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">ALL</button>
-      <div id="props-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
-    </div>
-
-    <!-- HR Potential + K's Today side by side -->
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start" class="props-grid">
-      <!-- HR Potential column -->
-      <div>
-        <p class="section-title" style="font-size:18px;margin-bottom:10px">HR <span>POTENTIAL</span></p>
-        <div id="hr-potential-content" style="max-height:560px;overflow-y:auto;overflow-x:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px;background:var(--surface)"><div class="mu-empty"><span class="spin"></span>Loading HR potential…</div></div>
-      </div>
-
-      <!-- K's Today sidebar -->
-      <div>
-        <p class="section-title" style="font-size:18px;margin-bottom:10px">K'S <span>TODAY</span></p>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:560px;overflow-y:auto;overscroll-behavior:contain">
-          <div id="ks-today-props"><div class="mu-empty"><span class="spin"></span>Loading…</div></div>
+    <div id="props-live-banner" class="breaking-banner">
+      <div class="breaking-banner-inner">
+        <div class="breaking-label">LIVE</div>
+        <div class="breaking-window">
+          <div id="props-live-games" class="breaking-track"></div>
         </div>
       </div>
     </div>
@@ -3497,6 +3543,65 @@ function showTab(id, el) {
   tabEl.classList.add('active');
   if (saved === 'matchups' && !matchupLoaded) { matchupLoaded = true; loadPitcherReport(); }
   if (saved === 'props') initPropsTab();
+})();
+
+
+// Diamond Report breaking HR ticker override: moving banner + last 5 minutes only
+(function(){
+  const FIVE_MIN = 5 * 60 * 1000;
+
+  function timeAgo(ts){
+    const diff = Math.max(0, Date.now() - ts);
+    const sec = Math.floor(diff / 1000);
+    if (sec < 60) return `${sec}s ago`;
+    return `${Math.floor(sec / 60)}m ago`;
+  }
+
+  window.renderBreakingHRTicker = function(alerts){
+    const now = Date.now();
+    const recent = (alerts || [])
+      .map(a => {
+        const ts = a.timestamp || a.time || a.eventTime || a.about?.startTime || a.playEndTime;
+        const parsed = ts ? new Date(ts).getTime() : now;
+        return { ...a, _ts: Number.isFinite(parsed) ? parsed : now };
+      })
+      .filter(a => now - a._ts <= FIVE_MIN)
+      .sort((a,b) => b._ts - a._ts)
+      .slice(0, 5);
+
+    const html = recent.map(a => {
+      const player = a.player || a.name || a.batter || a.description || 'Home Run';
+      return `<span class="breaking-item">🚨 BREAKING <span class="breaking-player">${player}</span> HIT A HOME RUN! 💥 <span class="breaking-time">${timeAgo(a._ts)}</span></span>`;
+    }).join('');
+
+    ['scores-alert-track','props-live-games'].forEach(id => {
+      const track = document.getElementById(id);
+      if (!track) return;
+      const banner = track.closest('.breaking-banner');
+      if (!recent.length) {
+        if (banner) banner.style.display = 'none';
+        track.innerHTML = '';
+        return;
+      }
+      track.innerHTML = html + html;
+      if (banner) banner.style.display = 'block';
+    });
+  };
+
+  // Last-resort cleanup for older code that writes list-style chips into the ticker.
+  function normalizeExistingTicker(){
+    ['scores-alert-track','props-live-games'].forEach(id => {
+      const track = document.getElementById(id);
+      if (!track || !track.innerHTML.trim()) return;
+      track.classList.add('breaking-track');
+      [...track.children].forEach(child => {
+        child.classList.add('breaking-item');
+        child.style.display = 'inline-flex';
+        child.style.margin = '0';
+      });
+    });
+  }
+  setInterval(normalizeExistingTicker, 1000);
 })();
 
 </script>
