@@ -680,7 +680,6 @@
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
-    font-family: 'JetBrains Mono', monospace;
   }
   .tracker-pill.hit { border-color: #2ecc71; color: #2ecc71; background: #0d2a1a; }
   .tracker-pill.miss { border-color: #e63946; color: #e63946; background: #2a0d0d; }
@@ -696,7 +695,6 @@
     color: var(--muted);
     margin-left: 8px;
     vertical-align: middle;
-    font-family: 'JetBrains Mono', monospace;
   }
   .tracker-header-pct.good { border-color: #2ecc71; color: #2ecc71; background: #0d2a1a; }
   .tracker-header-pct.bad { border-color: #e63946; color: #e63946; background: #2a0d0d; }
@@ -2420,7 +2418,7 @@ async function loadGameProps() {
               ${winLogo}
               <div style="display:flex;flex-direction:column;align-items:center">
                 <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;color:#2ecc71">${winnerAbbr}</span>
-                <span style="font-size:9px;color:#2ecc71;opacity:.8;font-family:'JetBrains Mono',monospace">${winnerPct}% WIN</span>
+                <span style="font-size:9px;color:#2ecc71;opacity:.8">${winnerPct}% WIN</span>
               </div>
             </div>
             <span style="font-size:10px;font-weight:700;color:${confColor};letter-spacing:.5px">${confidence}</span>
