@@ -1,22 +1,17 @@
-# Diamond Report Persistent Tracker
+# Diamond Report Tracker V3
 
-This package keeps the app as a static site while adding persistent Tracker data files.
+Upload all files/folders in this ZIP to the root of your GitHub Pages repository.
 
-## Files added
+What changed:
+- `index.html` now has Export Tracker, Import Tracker, and Reload Repo Data controls in the Tracker source stack.
+- `data/tracker.json` is the repo seed every device can read.
+- AZ/ARI is normalized to prevent duplicate `AZ @ SF` / `ARI @ SF` rows.
+- Tracker rendering de-dupes DRP rows by date, matchup, and pick.
 
-- `index.html` — updated app with persistent Tracker loader and legacy localStorage migration.
-- `data/tracker.json` — repo-backed Tracker source of truth.
-- `data/daily-results.json` — historical grading results.
-- `data/model-data.json` — reserved for learned model metrics.
-- `scripts/update-tracker.mjs` — GitHub Action updater that grades pending DR Picks and K Props from final MLB data.
-- `.github/workflows/update-tracker.yml` — scheduled updater.
-
-## Important note
-
-A static browser page cannot directly commit new data to GitHub without a backend or GitHub Action. The updated `index.html` now loads `data/tracker.json`, migrates old `diamondReportTrackerV3` browser data into `diamondReportTrackerV4`, and keeps a browser backup. The GitHub Action can update repo JSON once predictions are present in `data/tracker.json`.
-
-## Deploy
-
-Upload the full folder contents to your repo root. Keep the `/data`, `/scripts`, and `/.github/workflows` folders.
-
-After pushing, open GitHub Actions and run **Update Diamond Report Tracker** manually once to confirm it has write permission.
+Important: GitHub Pages is static. The browser cannot directly write back to `data/tracker.json`. To move desktop history to iPhone:
+1. Open Diamond Report on the desktop/device that has the full history.
+2. Tracker → Export backup.
+3. Open GitHub → `data/tracker.json` → Edit.
+4. Replace the file contents with the exported JSON.
+5. Commit and wait for Pages to deploy.
+6. On iPhone, use a hard refresh or tap Reload Repo Data.

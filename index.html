@@ -4230,6 +4230,36 @@ function showTab(id, el) {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
 
+
+  window.importDiamondTrackerData = function(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      try {
+        const imported = normalizeStore(JSON.parse(await file.text()));
+        const merged = mergeStores(loadStore(), imported);
+        saveStore(merged);
+        if (window.syncDiamondTracker) window.syncDiamondTracker();
+        alert('Tracker backup imported on this device. To share it across iPhone/desktop, copy this exported JSON into data/tracker.json on GitHub and redeploy.');
+      } catch (e) {
+        alert('Import failed. Make sure this is a valid Diamond Report tracker JSON backup.');
+        console.error('Tracker import failed:', e);
+      }
+    };
+    input.click();
+  };
+
+  window.resetDiamondTrackerLocalCache = function(){
+    if (!confirm('Clear only this browser tracker cache? Repo data in data/tracker.json will remain.')) return;
+    try { localStorage.removeItem(STORE_KEY); } catch(e){}
+    const merged = mergeStores(safeStore(), repoTrackerSeed || safeStore());
+    saveStore(merged);
+    if (window.syncDiamondTracker) window.syncDiamondTracker();
+  };
+
   function isPlaceholderText(s){
     return /loading|waiting|no data|no hr potential|check back|error/i.test(String(s || ''));
   }
@@ -4726,6 +4756,7 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
+      if(t === 'AZ') return 'ARI';
       return t;
     };
 
@@ -4818,6 +4849,7 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
+      if(t === 'AZ') return 'ARI';
       return t;
     };
     const cards=[...root.querySelectorAll('.gp-card')];
@@ -4986,6 +5018,7 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
+      if(t === 'AZ') return 'ARI';
       return t;
     };
     const teams = [];
@@ -5055,9 +5088,18 @@ function showTab(id, el) {
     const statusBadge = r => resultBadgeFromFinal(r.result);
 
     // Show ALL stored DRP picks (not just today) so the Date column has something to sort
-    const drpRowsAll = drpAll.list
+    const drpRowMap = new Map();
+    drpAll.list
       .map(r => ({ ...r, matchupLabel: drpMatchupLabel(r) }))
-      .filter(r => r.matchupLabel && r.matchupLabel.includes('@'));
+      .filter(r => r.matchupLabel && r.matchupLabel.includes('@'))
+      .forEach(r => {
+        const key = `${r.date}|${r.matchupLabel}|${r.pick}`;
+        const prior = drpRowMap.get(key);
+        const resolved = r.result === 'win' || r.result === 'loss';
+        const priorResolved = prior && (prior.result === 'win' || prior.result === 'loss');
+        if (!prior || (resolved && !priorResolved)) drpRowMap.set(key, r);
+      });
+    const drpRowsAll = [...drpRowMap.values()];
 
     // Apply current sort (default: date descending — most recent first)
     window.drpTableSortDir = window.drpTableSortDir || -1;
@@ -5093,6 +5135,8 @@ function showTab(id, el) {
     const sourceStatus = [
       `<span class="tracker-pill ${repoTrackerLoaded?'hit':'pending'}">${repoTrackerLoaded?'✅':'💾'} Repo tracker.json ${repoTrackerLoaded?'loaded':'fallback: browser cache'}</span>`,
       `<span class="tracker-pill hit" onclick="window.exportDiamondTrackerData && window.exportDiamondTrackerData()" style="cursor:pointer">⬇ Export backup</span>`,
+      `<span class="tracker-pill hit" onclick="window.importDiamondTrackerData && window.importDiamondTrackerData()" style="cursor:pointer">⬆ Import backup</span>`,
+      `<span class="tracker-pill pending" onclick="window.resetDiamondTrackerLocalCache && window.resetDiamondTrackerLocalCache()" style="cursor:pointer">♻ Reload repo data</span>`,
       ...SOURCES.map(src => {
         const connected = src.live && ((src.name.includes('MLB Stats') ? (currentThreats.length || homers.size) : true));
         return `<span class="tracker-pill ${connected?'hit':'pending'}">${connected?'✅':'🔌 (planned)'} ${src.name}</span>`;
