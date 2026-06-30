@@ -4424,7 +4424,7 @@ function showTab(id, el) {
     set('tracker-drp-results', drpToday.list.length ? drpToday.list.map(r=>{
       const at=marketAllTimeByKey(store,'drp',r.label);
       return `<tr>
-        <td>${r.label}</td>
+        <td>${window.drTeamsOnlyLabel ? window.drTeamsOnlyLabel(r) : r.label}</td>
         <td>${r.pick}</td>
         <td>${statusBadge(r)}</td>
         <td>${drpToday.wins}-${drpToday.losses} (${pct(drpToday.wins,drpToday.total)}%)</td>
@@ -4435,7 +4435,7 @@ function showTab(id, el) {
     set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
       const at=marketAllTimeByKey(store,'kprop',r.label);
       return `<tr>
-        <td>${r.label}</td>
+        <td>${window.drTeamsOnlyLabel ? window.drTeamsOnlyLabel(r) : r.label}</td>
         <td>${r.pick}</td>
         <td>${r.line || '—'}</td>
         <td>${statusBadge(r)}</td>
@@ -4881,6 +4881,97 @@ function showTab(id, el) {
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startKPropRecommendationPatch);
   else startKPropRecommendationPatch();
+})();
+
+
+// Diamond Report Picks Tracker cleanup: team-only labels, no starting pitchers
+(function(){
+  const TEAM_ABBRS = new Set([
+    'ARI','ATH','ATL','BAL','BOS','CHC','CWS','CHW','CIN','CLE','COL','DET','HOU','KC','KCR',
+    'LAA','LAD','MIA','MIL','MIN','NYM','NYY','OAK','PHI','PIT','SD','SDP','SEA','SF','SFG',
+    'STL','TB','TBR','TEX','TOR','WSH','WAS'
+  ]);
+  const NON_TEAMS = new Set(['MLB','DR','PICK','WIN','LIVE','ERA','PROJ','OVER','UNDER','PUSH','LINE','VS','AT','THE','TODAY']);
+
+  function normalizeTeam(t){
+    t = String(t || '').toUpperCase().trim();
+    if(t === 'CHW') return 'CWS';
+    if(t === 'KCR') return 'KC';
+    if(t === 'SDP') return 'SD';
+    if(t === 'SFG') return 'SF';
+    if(t === 'TBR') return 'TB';
+    if(t === 'WAS') return 'WSH';
+    return t;
+  }
+
+  function extractTeamsOnly(value){
+    const raw = String(value || '').toUpperCase();
+    const tokens = [...raw.matchAll(/\b[A-Z]{2,3}\b/g)]
+      .map(m => normalizeTeam(m[0]))
+      .filter(t => TEAM_ABBRS.has(t) && !NON_TEAMS.has(t));
+
+    const unique = [];
+    tokens.forEach(t => { if(!unique.includes(t)) unique.push(t); });
+    return unique.slice(0, 2);
+  }
+
+  window.drTeamsOnlyLabel = function(rec){
+    const fromTeams = Array.isArray(rec?.teams) ? rec.teams.map(normalizeTeam).filter(t => TEAM_ABBRS.has(t)) : [];
+    const cleanTeams = [];
+    fromTeams.forEach(t => { if(!cleanTeams.includes(t)) cleanTeams.push(t); });
+
+    const fallbackTeams = extractTeamsOnly(`${rec?.label || ''} ${rec?.pick || ''}`);
+    fallbackTeams.forEach(t => { if(!cleanTeams.includes(t)) cleanTeams.push(t); });
+
+    if(cleanTeams.length >= 2) return `${cleanTeams[0]} @ ${cleanTeams[1]}`;
+    if(cleanTeams.length === 1) return cleanTeams[0];
+    return rec?.pick || '—';
+  };
+
+  function cleanupTrackerDRPTable(){
+    const tbody = document.getElementById('tracker-drp-results');
+    if(!tbody) return;
+
+    const seen = new Set();
+    [...tbody.querySelectorAll('tr')].forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if(cells.length < 2) return;
+
+      const teams = extractTeamsOnly(cells[0].innerText + ' ' + cells[1].innerText);
+      if(teams.length >= 2) cells[0].textContent = `${teams[0]} @ ${teams[1]}`;
+      else if(teams.length === 1) cells[0].textContent = teams[0];
+
+      // remove duplicate visible rows after cleanup
+      const key = [...cells].map(td => td.innerText.trim()).slice(0, 2).join('|');
+      if(seen.has(key)) row.remove();
+      else seen.add(key);
+    });
+  }
+
+  window.cleanupTrackerDRPTable = cleanupTrackerDRPTable;
+
+  function hook(fnName){
+    const original = window[fnName];
+    if(typeof original !== 'function' || original.__drpTeamOnlyHooked) return;
+    const wrapped = async function(...args){
+      const result = await original.apply(this,args);
+      setTimeout(cleanupTrackerDRPTable, 150);
+      return result;
+    };
+    wrapped.__drpTeamOnlyHooked = true;
+    window[fnName] = wrapped;
+  }
+
+  function start(){
+    cleanupTrackerDRPTable();
+    ['syncDiamondTracker','renderTracker','loadGameProps','renderGameProps'].forEach(hook);
+    const target = document.getElementById('tracker-drp-results');
+    if(target) new MutationObserver(cleanupTrackerDRPTable).observe(target, { childList:true, subtree:true, characterData:true });
+    setInterval(cleanupTrackerDRPTable, 1000);
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
 
 </script>
