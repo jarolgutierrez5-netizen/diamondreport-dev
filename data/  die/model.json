@@ -1,14 +1,7 @@
 {
   "engine": "Diamond Intelligence Engine",
-  "version": "5.0.0",
+  "version": "5.2.0",
   "status": "ACTIVE",
   "build": "Developer",
-  "lastLearning": null,
-  "lastCalibration": null,
-  "predictionsStored": 0,
-  "gamesLearned": 0,
-  "confidenceScore": 0,
-  "calibrationScore": 0,
-  "health": 100,
-  "currentSeason": 2026
+  "health": 100
 }
