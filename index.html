@@ -748,6 +748,33 @@
       </div>
     </div>
 
+
+    <!-- HR Potential filters -->
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <button onclick="filterHRP('top')" id="filter-top-btn" style="background:var(--surface2);border:1px solid #f4a261;color:#f4a261;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">⚡ TOP HR THREAT</button>
+      <button onclick="filterHRP('drought')" id="filter-drought-btn" style="background:var(--surface2);border:1px solid #e63946;color:#e63946;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🔴 DROUGHT</button>
+      <button onclick="filterHRP('favorable')" id="filter-favorable-btn" style="background:var(--surface2);border:1px solid #2ecc71;color:#2ecc71;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">🟢 FAVORABLE MATCHUP FOR BATTER</button>
+      <button onclick="filterHRP('all')" id="filter-all-btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px">ALL</button>
+      <div id="props-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Loading…</div>
+    </div>
+
+    <!-- HR Potential + K's Today side by side -->
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start" class="props-grid">
+      <div>
+        <p class="section-title" style="font-size:18px;margin-bottom:10px">HR <span>POTENTIAL</span></p>
+        <div id="hr-potential-content" style="max-height:560px;overflow-y:auto;overflow-x:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px;background:var(--surface)">
+          <div class="mu-empty"><span class="spin"></span>Loading HR potential…</div>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-title" style="font-size:18px;margin-bottom:10px">K'S <span>TODAY</span></p>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:560px;overflow-y:auto;overscroll-behavior:contain">
+          <div id="ks-today-props"><div class="mu-empty"><span class="spin"></span>Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- HRs Today + Projections Hit — side by side on desktop, stacked on mobile -->
     <div style="margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px" class="hrs-today-grid">
 
@@ -3712,9 +3739,9 @@ function showTab(id, el) {
 })();
 
 
-// Diamond Report Tracker Engine — live tally + source-weighted model
+// Diamond Report Tracker Engine — debugged live tally + source-weighted model
 (function(){
-  const STORE_KEY = 'diamondReportTrackerV2';
+  const STORE_KEY = 'diamondReportTrackerV3';
   const SOURCES = [
     'MLB Stats API / Live play-by-play', 'Baseball Savant / Statcast', 'FanGraphs', 'Baseball-Reference',
     'StatMuse', 'Brooks Baseball', 'Baseball Prospectus / PECOTA', 'RotoWire lineups/injuries',
@@ -3722,41 +3749,107 @@ function showTab(id, el) {
   ];
   const MODEL_INPUTS = ['HR Potential', 'HRs Today', 'Diamond Report Picks', 'Player hit rate', 'Team hit rate', 'Lineup status', 'Game environment', 'Odds edge'];
 
-  const dayKey = () => new Date().toISOString().slice(0,10);
+  const dayKey = () => new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
   const norm = s => String(s || '').replace(/\s+/g,' ').trim();
   const pct = (h,t) => t ? Math.round((h/t)*100) : 0;
   const num = s => { const m=String(s||'').match(/(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : 0; };
   const set = (id, html) => { const el=document.getElementById(id); if(el) el.innerHTML=html; };
 
-  function loadStore(){
-    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || { picks: [], players:{}, teams:{}, days:{} }; }
-    catch(e){ return { picks: [], players:{}, teams:{}, days:{} }; }
+  function safeStore(){
+    return { picks: [], players:{}, teams:{}, days:{}, debug:{ lastError:'', lastSync:'' } };
   }
-  function saveStore(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+
+  function loadStore(){
+    try {
+      const current = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (!current || typeof current !== 'object') return safeStore();
+      current.picks ||= [];
+      current.players ||= {};
+      current.teams ||= {};
+      current.days ||= {};
+      current.debug ||= {};
+      return current;
+    } catch(e){
+      return safeStore();
+    }
+  }
+
+  function saveStore(s){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+    catch(e){ console.warn('Tracker localStorage save failed:', e); }
+  }
+
+  function isPlaceholderText(s){
+    return /loading|waiting|no data|no hr potential|check back|error/i.test(String(s || ''));
+  }
 
   function extractHRThreats(){
+    // Primary source: the existing in-memory HR model. This is more reliable than scraping table text.
+    try {
+      if (Array.isArray(hrpRows) && hrpRows.length) {
+        return [...hrpRows]
+          .sort((a,b) => {
+            const aTop = (a.topHrThreat || a.hrProb >= 8) ? 1 : 0;
+            const bTop = (b.topHrThreat || b.hrProb >= 8) ? 1 : 0;
+            if (aTop !== bTop) return bTop - aTop;
+            return (b.hrProb || 0) - (a.hrProb || 0);
+          })
+          .slice(0, 10)
+          .map((r,i) => ({
+            id: r.id,
+            player: norm(r.name),
+            team: r.teamAbbr || '',
+            hrPct: Number((r.hrProb || 0).toFixed ? r.hrProb.toFixed(1) : r.hrProb || 0),
+            rank: i + 1,
+            source: 'hrpRows',
+            topHrThreat: !!(r.topHrThreat || r.hrProb >= 8)
+          }))
+          .filter(p => p.player && !isPlaceholderText(p.player));
+      }
+    } catch(e){ console.warn('Tracker hrpRows extraction failed:', e); }
+
+    // Fallback source: visible HR Potential table.
     const rows=[...document.querySelectorAll('#hr-potential-content tbody tr')];
-    let picks=rows.map((row,i)=>{
+    return rows.map((row,i)=>{
       const txt=row.innerText || '';
       const nameEl=row.querySelector('.hrp-batter-name');
       const player=norm(nameEl ? nameEl.textContent : (txt.split('\n')[0] || ''));
-      const team=(txt.match(/\b[A-Z]{2,3}\b/)||[''])[0];
+      const teamEl = row.querySelector('.hrp-batter-sub span');
+      const teamFromSub = teamEl ? (teamEl.textContent.match(/\b[A-Z]{2,3}\b/) || [''])[0] : '';
+      const team=(teamFromSub || (txt.match(/\b[A-Z]{2,3}\b/)||[''])[0] || '').replace(/HR|L10/g,'');
       const hrPct=num(txt);
-      return { player, team, hrPct, rank:i+1, source:'HR Potential' };
-    }).filter(p => p.player && !/loading|waiting|no data/i.test(p.player));
-    return picks.slice(0,10);
+      return { player, team, hrPct, rank:i+1, source:'DOM', topHrThreat:/TOP HR THREAT/i.test(txt) };
+    }).filter(p => p.player && !isPlaceholderText(p.player)).slice(0,10);
   }
 
   function extractHRToday(){
+    const hitSet = new Set();
+
+    // Primary source: visible HRs Today cards.
     const root=document.getElementById('hrs-today-content');
-    const hitSet=new Set();
-    if(!root) return hitSet;
-    const text=root.innerText || '';
-    [...root.querySelectorAll('.stat-row, tr')].forEach(row=>{
-      const first=norm((row.innerText||'').split('\n')[0]);
-      if(first && !/loading|no home|waiting/i.test(first) && first.length < 60) hitSet.add(first.toLowerCase());
-    });
-    [...text.matchAll(/([A-Z][a-z.'-]+(?:\s+[A-Z][a-z.'-]+){1,3})\s+hit a home run/gi)].forEach(m=>hitSet.add(norm(m[1]).toLowerCase()));
+    if(root){
+      [...root.querySelectorAll('.stat-row')].forEach(row=>{
+        const nameSpan = row.querySelector('span[style*="font-size:13px"], div[style*="font-size:13px"]');
+        const fromSpan = norm(nameSpan ? nameSpan.textContent.replace(/^✓\s*/,'') : '');
+        const first=norm((row.innerText||'').split('\n')[0]).replace(/^✓\s*/,'');
+        const name = fromSpan || first;
+        if(name && !isPlaceholderText(name) && name.length < 60 && !/^\d+$/.test(name)) hitSet.add(name.toLowerCase());
+      });
+
+      const text=root.innerText || '';
+      [...text.matchAll(/([A-Z][a-z.'-]+(?:\s+[A-Z][a-z.'-]+){1,3})\s+hit a home run/gi)]
+        .forEach(m=>hitSet.add(norm(m[1]).toLowerCase()));
+    }
+
+    // Secondary source: bannerHRs object, when live games are active.
+    try {
+      if (bannerHRs && typeof bannerHRs === 'object') {
+        Object.values(bannerHRs).forEach(h => {
+          if (h && h.name) hitSet.add(norm(h.name).toLowerCase());
+        });
+      }
+    } catch(e){}
+
     return hitSet;
   }
 
@@ -3767,13 +3860,16 @@ function showTab(id, el) {
     const picks=[];
     cards.forEach(card=>{
       const t=card.innerText || '';
-      if(!/DIAMOND REPORT PICK/i.test(t)) return;
+      if(!/DIAMOND REPORT PICK|DR PICK|PICK/i.test(t)) return;
       const lines=t.split('\n').map(norm).filter(Boolean);
-      const idx=lines.findIndex(l=>/DIAMOND REPORT PICK/i.test(l));
-      let team=(lines[idx+1]||'').match(/^[A-Z]{2,3}$/) ? lines[idx+1] : '';
-      const winLine=lines.find(l=>/%\s*WIN/i.test(l));
-      const winPct=winLine ? num(winLine) : 0;
-      const lean=/LEAN|UNDERDOG|DOG/i.test(t) ? 'underdog' : 'favorite';
+      const idx=lines.findIndex(l=>/DIAMOND REPORT PICK|DR PICK|PICK/i.test(l));
+      let team='';
+      for(let j=idx+1;j<Math.min(lines.length, idx+5);j++){
+        if(/^[A-Z]{2,3}$/.test(lines[j])) { team=lines[j]; break; }
+      }
+      const winLine=lines.find(l=>/%\s*WIN|CONFIDENCE|EDGE/i.test(l));
+      const winPct=winLine ? num(winLine) : num(t);
+      const lean=/UNDERDOG|DOG|\+\d|VALUE/i.test(t) ? 'underdog' : 'favorite';
       if(team) picks.push({team, winPct, lean});
     });
     return picks;
@@ -3784,22 +3880,35 @@ function showTab(id, el) {
     const key=`${day}|${pick.player.toLowerCase()}|${pick.team}`;
     store.days[day] ||= { keys:[] };
     const existing=store.picks.find(p=>p.key===key);
+
     if(!existing){
-      const rec={ key, date:day, ...pick, hit };
-      store.picks.push(rec); store.days[day].keys.push(key);
-      store.players[pick.player.toLowerCase()] ||= { player:pick.player, team:pick.team, hits:0, total:0 };
-      store.players[pick.player.toLowerCase()].total++;
-      if(hit) store.players[pick.player.toLowerCase()].hits++;
+      const rec={ key, date:day, ...pick, hit:!!hit };
+      store.picks.push(rec);
+      if (!store.days[day].keys.includes(key)) store.days[day].keys.push(key);
+
+      const playerKey = pick.player.toLowerCase();
+      store.players[playerKey] ||= { player:pick.player, team:pick.team, hits:0, total:0 };
+      store.players[playerKey].total++;
+      if(hit) store.players[playerKey].hits++;
+
       if(pick.team){
         store.teams[pick.team] ||= { team:pick.team, hits:0, total:0, correctPlayers:{} };
         store.teams[pick.team].total++;
-        if(hit){ store.teams[pick.team].hits++; store.teams[pick.team].correctPlayers[pick.player]=(store.teams[pick.team].correctPlayers[pick.player]||0)+1; }
+        if(hit){
+          store.teams[pick.team].hits++;
+          store.teams[pick.team].correctPlayers[pick.player]=(store.teams[pick.team].correctPlayers[pick.player]||0)+1;
+        }
       }
-    } else if(existing.hit !== hit){
+    } else if(existing.hit !== !!hit){
       const delta=hit ? 1 : -1;
-      existing.hit=hit;
-      const pl=store.players[pick.player.toLowerCase()]; if(pl) pl.hits += delta;
-      const tm=store.teams[pick.team]; if(tm){ tm.hits += delta; if(hit) tm.correctPlayers[pick.player]=(tm.correctPlayers[pick.player]||0)+1; }
+      existing.hit=!!hit;
+      const playerKey = pick.player.toLowerCase();
+      const pl=store.players[playerKey]; if(pl) pl.hits = Math.max(0, pl.hits + delta);
+      const tm=store.teams[pick.team];
+      if(tm){
+        tm.hits = Math.max(0, tm.hits + delta);
+        if(hit) tm.correctPlayers[pick.player]=(tm.correctPlayers[pick.player]||0)+1;
+      }
     }
   }
 
@@ -3808,61 +3917,140 @@ function showTab(id, el) {
     const tm=store.teams[p.team] || {hits:0,total:0};
     const playerRate=pct(pl.hits,pl.total);
     const teamRate=pct(tm.hits,tm.total);
-    // Source-weighted score, using the data currently available in the page and stored tracker history.
     return Math.min(99, Math.round((p.hrPct||0)*0.55 + playerRate*0.25 + teamRate*0.15 + Math.max(0, 11-p.rank)*0.5));
   }
 
-  function render(store, currentThreats){
+  function render(store, currentThreats, homers, gamePicks){
     const day=dayKey();
     const todays=store.picks.filter(p=>p.date===day);
     const th=todays.filter(p=>p.hit).length, tt=todays.length;
     const ah=store.picks.filter(p=>p.hit).length, at=store.picks.length;
-    set('tracker-today', `${th}-${Math.max(tt-th,0)}`); set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} Top HR Threats tracked`);
-    set('tracker-all', `${ah}-${Math.max(at-ah,0)}`); set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} stored picks`);
 
-    set('tracker-source-stack', SOURCES.map((s,i)=>`<span class="tracker-pill ${i===0?'hit':'pending'}">${i===0?'✅':'🔌'} ${s}</span>`).join(''));
+    set('tracker-today', `${th}-${Math.max(tt-th,0)}`);
+    set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} Top HR Threats tracked`);
+    set('tracker-all', `${ah}-${Math.max(at-ah,0)}`);
+    set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} stored picks`);
+
+    const sourceStatus = SOURCES.map((s,i)=>{
+      const connected =
+        (i===0 && (currentThreats.length || homers.size)) ||
+        (s.includes('Sportsbook') && gamePicks.length) ||
+        (s.includes('Weather') && document.getElementById('gameprops-content')?.innerText?.match(/°|MPH|weather/i));
+      return `<span class="tracker-pill ${connected?'hit':'pending'}">${connected?'✅':'🔌'} ${s}</span>`;
+    }).join('');
+    set('tracker-source-stack', sourceStatus);
     set('tracker-model-inputs', MODEL_INPUTS.map(s=>`<span class="tracker-pill hit">${s}</span>`).join(''));
 
-    const gamePicks=extractGamePicks();
     const fav=[...gamePicks].sort((a,b)=>b.winPct-a.winPct)[0];
     const dog=gamePicks.filter(p=>p.lean==='underdog').sort((a,b)=>b.winPct-a.winPct)[0] || [...gamePicks].sort((a,b)=>a.winPct-b.winPct)[0];
-    set('tracker-favorite', fav ? fav.team : '—'); set('tracker-favorite-sub', fav ? `${fav.winPct}% projected win • strongest favorite` : 'Waiting for Diamond Report Picks');
-    set('tracker-underdog', dog ? dog.team : '—'); set('tracker-underdog-sub', dog ? `${dog.winPct}% projected win • value/underdog slot` : 'Waiting for Diamond Report Picks');
+    set('tracker-favorite', fav ? fav.team : '—');
+    set('tracker-favorite-sub', fav ? `${fav.winPct || 0}% projected win • strongest favorite` : 'Waiting for Diamond Report Picks');
+    set('tracker-underdog', dog ? dog.team : '—');
+    set('tracker-underdog-sub', dog ? `${dog.winPct || 0}% projected win • value/underdog slot` : 'Waiting for Diamond Report Picks');
 
     const rows=(todays.length?todays:currentThreats).map(p=>{
       const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0};
       const tm=store.teams[p.team] || {hits:0,total:0};
-      const status=p.hit ? '<span class="tracker-pill hit">✅ Right</span>' : '<span class="tracker-pill pending">⏳ Wrong/Pending</span>';
-      return `<tr><td>${p.player}</td><td>${p.team||'—'}</td><td>${p.hrPct||0}%</td><td>${status}</td><td>${pl.hits}-${Math.max(pl.total-pl.hits,0)} (${pct(pl.hits,pl.total)}%)</td><td>${tm.hits}-${Math.max(tm.total-tm.hits,0)} (${pct(tm.hits,tm.total)}%)</td></tr>`;
+      const hitNow = p.hit || homers.has(p.player.toLowerCase());
+      const status=hitNow ? '<span class="tracker-pill hit">✅ Right</span>' : '<span class="tracker-pill pending">⏳ Wrong/Pending</span>';
+      return `<tr>
+        <td>${p.player}</td>
+        <td>${p.team||'—'}</td>
+        <td>${p.hrPct||0}%</td>
+        <td>${status}</td>
+        <td>${pl.hits}-${Math.max(pl.total-pl.hits,0)} (${pct(pl.hits,pl.total)}%)</td>
+        <td>${tm.hits}-${Math.max(tm.total-tm.hits,0)} (${pct(tm.hits,tm.total)}%)</td>
+      </tr>`;
     }).join('') || '<tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for HR Potential data to load.</td></tr>';
     set('tracker-results', rows);
 
     const teams=Object.values(store.teams).sort((a,b)=>pct(b.hits,b.total)-pct(a.hits,a.total)||b.total-a.total).slice(0,8);
     set('tracker-team-results', teams.length ? teams.map((t,i)=>{
       const top=Object.entries(t.correctPlayers||{}).sort((a,b)=>b[1]-a[1])[0];
-      return `<div class="stat-row"><div class="stat-row-num">${i+1}</div><div style="flex:1"><div style="font-weight:800">${t.team}</div><div style="color:var(--muted);font-size:11px">Correct HR picks: ${t.hits}/${t.total}${top ? ' • best player: '+top[0] : ''}</div></div><span class="tracker-pill ${pct(t.hits,t.total)>=25?'hit':'pending'}">${pct(t.hits,t.total)}%</span></div>`;
+      return `<div class="stat-row">
+        <div class="stat-row-num">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-weight:800">${t.team}</div>
+          <div style="color:var(--muted);font-size:11px">Correct HR picks: ${t.hits}/${t.total}${top ? ' • best player: '+top[0] : ''}</div>
+        </div>
+        <span class="tracker-pill ${pct(t.hits,t.total)>=25?'hit':'pending'}">${pct(t.hits,t.total)}%</span>
+      </div>`;
     }).join('') : '<div style="color:var(--muted);font-size:12px">Correct teams will appear after a Top HR Threat hits.</div>');
 
     const preds=currentThreats.map(p=>({ ...p, score:predictionScore(p,store) })).sort((a,b)=>b.score-a.score).slice(0,10);
     set('tracker-predictions', preds.length ? preds.map((p,i)=>{
-      const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0}; const tm=store.teams[p.team] || {hits:0,total:0};
-      return `<div class="stat-row"><div class="stat-row-num">${i+1}</div><div style="flex:1"><div style="font-weight:800">${p.player}</div><div style="color:var(--muted);font-size:11px">${p.team||'—'} • base HR ${p.hrPct||0}% • player ${pct(pl.hits,pl.total)}% • team ${pct(tm.hits,tm.total)}%</div></div><span class="tracker-pill ${p.score>=35?'hit':p.score>=20?'pending':'miss'}">${p.score}%</span></div>`;
+      const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0};
+      const tm=store.teams[p.team] || {hits:0,total:0};
+      return `<div class="stat-row">
+        <div class="stat-row-num">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-weight:800">${p.player}</div>
+          <div style="color:var(--muted);font-size:11px">${p.team||'—'} • base HR ${p.hrPct||0}% • player ${pct(pl.hits,pl.total)}% • team ${pct(tm.hits,tm.total)}%</div>
+        </div>
+        <span class="tracker-pill ${p.score>=35?'hit':p.score>=20?'pending':'miss'}">${p.score}%</span>
+      </div>`;
     }).join('') : '<div style="color:var(--muted);font-size:12px">Upcoming player HR predictions populate from HR Potential once loaded.</div>');
 
-    set('tracker-refresh', `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`);
+    set('tracker-refresh',
+      `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} • HRP ${currentThreats.length} • HRs ${homers.size} • Picks ${gamePicks.length}`
+    );
   }
 
   function sync(){
     const store=loadStore();
-    const threats=extractHRThreats();
-    const homers=extractHRToday();
-    threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
-    saveStore(store); render(store, threats);
+    try{
+      const threats=extractHRThreats();
+      const homers=extractHRToday();
+      const gamePicks=extractGamePicks();
+      threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
+      store.debug.lastError = '';
+      store.debug.lastSync = new Date().toISOString();
+      saveStore(store);
+      render(store, threats, homers, gamePicks);
+      return { threats, homers, gamePicks };
+    } catch(e){
+      console.error('Tracker sync failed:', e);
+      store.debug.lastError = e.message || String(e);
+      saveStore(store);
+      set('tracker-refresh', `Tracker error: ${e.message || e}`);
+      return { threats:[], homers:new Set(), gamePicks:[] };
+    }
   }
-  window.resetTrackerData=function(){ if(confirm('Reset all Tracker history?')){ localStorage.removeItem(STORE_KEY); sync(); } };
+
+  window.resetTrackerData=function(){
+    if(confirm('Reset all Tracker history?')){
+      localStorage.removeItem(STORE_KEY);
+      sync();
+    }
+  };
   window.syncDiamondTracker=sync;
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', sync); else sync();
-  setInterval(sync, 30000);
+
+  function hookAfter(fnName){
+    try{
+      const original = window[fnName];
+      if (typeof original !== 'function' || original.__trackerHooked) return;
+      const wrapped = async function(...args){
+        const result = await original.apply(this,args);
+        setTimeout(sync, 250);
+        return result;
+      };
+      wrapped.__trackerHooked = true;
+      window[fnName] = wrapped;
+    } catch(e){}
+  }
+
+  function start(){
+    sync();
+    setTimeout(sync, 1500);
+    setTimeout(sync, 5000);
+    hookAfter('renderHRPTable');
+    hookAfter('loadHRsToday');
+    hookAfter('loadGameProps');
+    setInterval(sync, 30000);
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
 
 </script>
