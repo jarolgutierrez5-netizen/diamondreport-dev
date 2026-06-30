@@ -1,107 +1,18 @@
-# Diamond Report DIE v5.2 — Full Developer Responsive Build
-
-## Responsive Optimization Included
-This build has been optimized for:
-- Mobile phones
-- Tablets
-- Desktop/laptop screens
-
-## Improvements
-- Reduced horizontal page overflow.
-- Improved scroll behavior inside tables/cards.
-- Better mobile Tracker/DIE layout.
-- Better tablet grid behavior.
-- Better desktop spacing.
-- Improved K Props, HR Potential, Pitcher Report, game cards, and modal responsiveness.
-- Preserves API Request Optimizer.
-
----
-
-# Diamond Report DIE v5.1 — Full Developer Repo Snapshot
-
-This package is a **full developer repository snapshot**, not a small patch.
-
-## Includes
-
-```text
-index.html
-README.md
-CHANGELOG.md
-
-data/
-  tracker.json
-  daily-results.json
-  model-data.json
-  lineups.json
-  lineup-intelligence.json
-  statcast-hot-hitters.json
-
-scripts/
-  updateTracker.js
-  updateLineups.js
-  updateStatcastHotHitters.js
-
-.github/workflows/
-  tracker-update.yml
-  lineup-update.yml
-  statcast-hot-hitters-update.yml
-```
-
-## V5.1 Features
-- 💎 Diamond Intelligence Engine (DIE) foundation inside Tracker.
-- API Request Optimizer to reduce production/developer call volume.
-- Caching, request deduplication, hidden-tab throttling, and stale-cache fallback.
-- DIE API Guard stats for network calls, cache hits, deduped calls, and cache size.
-
-## Upload to GitHub
-Replace the contents of your **developer repo** with this package.
-
-Do **not** upload temporary files named:
-
-```text
-script_0.js
-script_1.js
-script_2.js
-```
-
-They are intentionally not included in this full repo package.
-
----
-
-# Diamond Report v5.1 — API Request Optimizer
+# Diamond Report DIE v5.2 — Full Developer Repo
 
 ## What changed
-This update adds a request guard to reduce unnecessary API calls and help prevent live production from hitting request limits.
+- Added a final responsive stability patch for phone, tablet, laptop, and desktop.
+- Preserves the uploaded latest `index.html` as the master app file.
+- Keeps the DIE Developer panel and API Request Optimizer.
+- Adds/keeps `data/die/` starter brain files for the Diamond Intelligence Engine.
 
-## Added protections
-- Caches repeat GET requests for short safe windows.
-- Deduplicates simultaneous requests to the same URL.
-- Throttles repeated calls to the same endpoint.
-- Slows background-tab polling.
-- Serves stale cached data if a live request fails.
-- Adds developer request stats to the DIE panel when available.
+## Responsive fixes
+- Phone: single-column Tracker/DIE/cards so sections do not disappear or clip.
+- Tablet: balanced two-column layout.
+- Laptop/Desktop: wider multi-column dashboard.
+- HR Potential and Pitcher Report scroll inside their sections instead of forcing the whole page wider.
+- K Props rows are compressed and reorganized on phones.
+- Header/nav are protected from overflow.
 
-## Default cache windows
-- MLB live/schedule data: about 90 seconds
-- Repo JSON files: about 5 minutes
-- Weather data: about 30 minutes
-- Statcast / hot-hitter snapshots: about 60 minutes
-- Odds / market data: about 5 minutes
-
-## Developer console helpers
-```js
-DiamondRequestStats
-DiamondClearRequestCache()
-DiamondShouldRefreshLiveData()
-```
-
-## Upload to GitHub
-Replace:
-
-```text
-index.html
-README.md
-```
-
-No data-folder changes are required for this request optimizer.
-
+## Upload
+This is a full Developer repo snapshot. Replace the Developer repo contents with this package.
