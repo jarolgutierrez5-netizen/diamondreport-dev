@@ -1,5 +1,12 @@
 # Changelog
 
+## DIE v6.2 — Mobile K Count Fix
+- Added visible strikeout count to mobile K's Today cards.
+- Changed mobile K stat row to K / IP / Pitches / Runs.
+- Preserved v6.1 mobile labels and internal section scroll behavior.
+
+# Changelog
+
 ## DIE v6.1 — Mobile Labels + Section Scroll Fix
 - Restored missing HR Potential labels in mobile card view.
 - Added internal scrolling to HR Potential mobile cards.

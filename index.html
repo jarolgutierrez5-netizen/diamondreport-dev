@@ -4019,6 +4019,150 @@ video {
 })();
 </script>
 
+
+<style id="v6-2-mobile-k-count-fix">
+/* ============================================================
+   Diamond Report DIE v6.2 — Mobile K Count Fix
+   - Adds visible strikeout count to K's Today mobile cards.
+   - Replaces the 3-box row with K / IP / Pitches / Runs layout.
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .mks-progress {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .mks-badge.k-count {
+    border-color: #22c55e99 !important;
+    color: #86efac !important;
+    background: rgba(13,42,26,.78) !important;
+  }
+
+  .mks-badge .mks-badge-label {
+    display: block !important;
+    font-size: 7px !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+    opacity: .8 !important;
+    margin-bottom: 2px !important;
+  }
+
+  .mks-badge .mks-badge-value {
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    line-height: 1.1 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .mks-progress {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .mks-badge .mks-badge-value {
+    font-size: 10px !important;
+  }
+}
+</style>
+
+<script id="v6-2-mobile-k-count-fix-script">
+(function () {
+  function text(el) {
+    return el ? (el.textContent || '').replace(/\s+/g, ' ').trim() : '';
+  }
+
+  function extractK(rowText, row) {
+    var kBadge = row.querySelector('.kprop-kcount');
+    var badgeText = text(kBadge);
+
+    var patterns = [
+      /(?:^|\s)(\d+)\s*K(?:s|\'s)?(?:\s|$)/i,
+      /Strikeouts?\s*[:\-]?\s*(\d+)/i,
+      /K\s*Count\s*[:\-]?\s*(\d+)/i,
+      /Current\s*K(?:s|\'s)?\s*[:\-]?\s*(\d+)/i,
+      /(\d+)\s*strikeouts?/i
+    ];
+
+    for (var i = 0; i < patterns.length; i++) {
+      var m = badgeText.match(patterns[i]) || rowText.match(patterns[i]);
+      if (m) return m[1] + ' K';
+    }
+
+    return '0 K';
+  }
+
+  function metricBox(cls, label, value) {
+    return '<div class="mks-badge ' + cls + '">' +
+      '<span class="mks-badge-label">' + label + '</span>' +
+      '<span class="mks-badge-value">' + value + '</span>' +
+    '</div>';
+  }
+
+  function patchKCards() {
+    if (window.innerWidth > 768) return;
+
+    var src = document.getElementById('ks-today-props');
+    var mobile = document.getElementById('mobile-ks-cards');
+    if (!src || !mobile) return;
+
+    var rows = Array.from(src.querySelectorAll('.ks-today-row,.kprop-row,.stat-row'));
+    var cards = Array.from(mobile.querySelectorAll('.mks-card'));
+
+    cards.forEach(function(card, idx) {
+      var row = rows[idx];
+      if (!row) return;
+
+      var rowText = text(row);
+      var progress = card.querySelector('.mks-progress');
+      if (!progress) return;
+
+      var k = extractK(rowText, row);
+      var ip = (rowText.match(/\d+(?:\.\d+)?\s*IP/i) || ['-- IP'])[0];
+      var pitches = (rowText.match(/\d+\s*pitches/i) || ['-- pitches'])[0];
+      var runs = (rowText.match(/\d+\s*Run[s]?\s*Allowed/i) || ['Runs --'])[0];
+
+      progress.innerHTML =
+        metricBox('k-count', 'K', k) +
+        metricBox('live', 'IP', ip.replace(/\s*IP/i, ' IP')) +
+        metricBox('warn', 'Pitches', pitches.replace(/\s*pitches/i, '')) +
+        metricBox((runs.includes('0') || runs === 'Runs --') ? 'good' : 'live', 'Runs', runs.replace(/\s*Allowed/i, ''));
+
+      var oldNote = card.querySelector('.mks-note');
+      if (oldNote && /K/i.test(text(oldNote))) oldNote.style.display = 'none';
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(patchKCards, 400);
+    setTimeout(patchKCards, 1200);
+    setTimeout(patchKCards, 2600);
+  });
+
+  window.addEventListener('load', function () {
+    setTimeout(patchKCards, 500);
+    setTimeout(patchKCards, 1600);
+  });
+
+  window.addEventListener('resize', function () {
+    clearTimeout(window.__drV62Resize);
+    window.__drV62Resize = setTimeout(patchKCards, 250);
+  });
+
+  var obs = new MutationObserver(function () {
+    clearTimeout(window.__drV62Obs);
+    window.__drV62Obs = setTimeout(patchKCards, 250);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('mobile-ks-cards');
+    if (el) obs.observe(el, { childList: true, subtree: true, characterData: true });
+  });
+})();
+</script>
+
 </head>
 <body>
 
