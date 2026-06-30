@@ -4264,7 +4264,9 @@ function showTab(id, el) {
       const teamsInCard = [...new Set((t.match(/\b[A-Z]{2,3}\b/g) || []).filter(x => !['MLB','DR','WIN','O','U'].includes(x)))];
       const matchup = lines.find(l => /\b[A-Z]{2,3}\b\s+(?:@|VS|V)\s+\b[A-Z]{2,3}\b/i.test(l)) || (teamsInCard.length >= 2 ? `${teamsInCard[0]} @ ${teamsInCard[1]}` : lines.slice(0,3).join(' / '));
       return {
-        key: `${dayKey()}|DRP|${i}|${pick}|${matchup}`,
+        // Stable key: based on the actual matchup + pick, not DOM position — prevents duplicate rows
+        // when cards re-render in a different order across syncs
+        key: `${dayKey()}|DRP|${matchup}`,
         type: 'drp',
         label: matchup || `Game Pick ${i+1}`,
         pick: pick || '—',
@@ -4306,6 +4308,30 @@ function showTab(id, el) {
     const existing = bucket.find(x => x.key === rec.key);
     if(!existing) bucket.push(rec);
     else Object.assign(existing, rec);
+  }
+
+  // One-time cleanup: collapse any legacy duplicate DRP entries that were created
+  // with index-based keys (same matchup+date logged multiple times under different keys)
+  function dedupeLegacyMarketPicks(store){
+    store.market ||= { drp: [], kprop: [] };
+    const seen = new Map();
+    const cleaned = [];
+    (store.market.drp || []).forEach(rec => {
+      const stableKey = `${rec.date}|DRP|${rec.label}`;
+      const prior = seen.get(stableKey);
+      if (!prior) {
+        seen.set(stableKey, rec);
+        cleaned.push(rec);
+      } else {
+        // Keep the most resolved/recent record for this matchup+date
+        if (rec.result !== 'pending' && prior.result === 'pending') {
+          const idx = cleaned.indexOf(prior);
+          if (idx > -1) cleaned[idx] = rec;
+          seen.set(stableKey, rec);
+        }
+      }
+    });
+    store.market.drp = cleaned;
   }
 
   function marketStats(store, type, date){
@@ -4488,6 +4514,7 @@ function showTab(id, el) {
   function sync(){
     const store=loadStore();
     try{
+      dedupeLegacyMarketPicks(store); // one-time cleanup of old index-keyed duplicate rows
       const threats=extractHRThreats();
       const homers=extractHRToday();
       const gamePicks=extractGamePicks();
