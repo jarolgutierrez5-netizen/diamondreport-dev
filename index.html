@@ -93,6 +93,13 @@
     .nav::-webkit-scrollbar { display: none; }
     .tab { padding: 6px 12px; font-size: 10px; letter-spacing: .5px; white-space: nowrap; flex-shrink: 0; }
 
+    /* Tracker tab — tables scroll horizontally instead of being clipped */
+    .tracker-card { padding: 12px; }
+    .tracker-scroll table { min-width: 0; font-size: 11px; }
+    .tracker-scroll th, .tracker-scroll td { padding: 6px 8px; white-space: nowrap; }
+    .tracker-pill { font-size: 9px; padding: 2px 6px; }
+    .tracker-header-pct { font-size: 10px; padding: 2px 7px; }
+
     /* Main padding */
     main { padding: 10px 12px; }
 
@@ -577,7 +584,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 14px 16px;
-    overflow: hidden;
+    overflow: visible;
   }
   .tracker-card h3 {
     font-size: 10px;
@@ -640,8 +647,13 @@
   }
   .tracker-scroll {
     max-height: 420px;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: auto;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tracker-scroll table {
+    min-width: 480px; /* ensures table doesn't get crushed/clipped on narrow screens — scrolls horizontally instead */
   }
 
 
@@ -4373,16 +4385,24 @@ function showTab(id, el) {
     const finalsExist = isAnyGameFinal();
     if(!finalsExist) return 'pending';
 
-    const name = String(rec.label || '').toLowerCase();
+    const name = String(rec.label || '').toLowerCase().trim();
     const root = document.getElementById('ks-today-props');
     if(!root || !name) return 'pending';
 
     let kCount = null;
-    [...root.querySelectorAll('.ks-today-row, .stat-row, tr, div')].forEach(row => {
-      const t = (row.innerText || '').toLowerCase();
-      if(kCount !== null || !t.includes(name)) return;
-      const m = t.match(/(\d+)\s*(?:k|ks|strikeout|strikeouts)\b/i) || t.match(/\b(\d+)\b/);
-      if(m) kCount = Number(m[1]);
+    // Only scan actual row containers (not every nested div) to avoid false/partial matches
+    // on narrow screens where text can wrap differently
+    const rowEls = root.querySelectorAll('.ks-today-row');
+    const candidates = rowEls.length ? [...rowEls] : [...root.querySelectorAll('.stat-row, tr')];
+
+    candidates.forEach(row => {
+      if (kCount !== null) return;
+      const rowText = norm(row.innerText || '').toLowerCase();
+      // Require the player name to appear as the start of the row's text (the name is always
+      // rendered first), not just "somewhere" in it — avoids accidental substring collisions
+      if (!rowText.startsWith(name) && !rowText.includes(name)) return;
+      const m = rowText.match(/(\d+)\s*(?:k|ks|strikeout|strikeouts)\b/i) || rowText.match(/\b(\d+)\b/);
+      if (m) kCount = Number(m[1]);
     });
 
     if(kCount === null || !Number.isFinite(kCount)) return 'pending';
@@ -4474,12 +4494,22 @@ function showTab(id, el) {
 
   function upsertMarketPick(store, rec){
     store.market ||= { drp: [], kprop: [] };
-    rec.result = rec.type === 'kprop' ? resolveKPropResult(rec) : resolveDRPickResult(rec);
-    rec.finalChecked = rec.result !== 'pending';
+    const newResult = rec.type === 'kprop' ? resolveKPropResult(rec) : resolveDRPickResult(rec);
     const bucket = rec.type === 'kprop' ? store.market.kprop : store.market.drp;
     const existing = bucket.find(x => x.key === rec.key);
-    if(!existing) bucket.push(rec);
-    else Object.assign(existing, rec);
+
+    if (!existing) {
+      rec.result = newResult;
+      rec.finalChecked = rec.result !== 'pending';
+      bucket.push(rec);
+    } else {
+      // Never let a 'pending' result overwrite an already-resolved win/loss —
+      // this happens when one device (e.g. mobile, narrower DOM) fails to find the
+      // K count text and would otherwise silently erase a correct grading made elsewhere
+      const existingIsResolved = existing.result === 'win' || existing.result === 'loss';
+      const finalResult = (newResult === 'pending' && existingIsResolved) ? existing.result : newResult;
+      Object.assign(existing, rec, { result: finalResult, finalChecked: finalResult !== 'pending' });
+    }
   }
 
   // One-time cleanup: collapse any legacy duplicate DRP entries that were created
@@ -4537,7 +4567,11 @@ function showTab(id, el) {
         kpropSeen.set(pitcherKey, rec);
       }
     });
-    store.market.kprop = [...kpropSeen.values()];
+    store.market.kprop = [...kpropSeen.values()]
+      // resolveKPropResult never legitimately returns 'push' — any stored 'push' value is
+      // leftover from an old code version and should be reset to 'pending' so the next
+      // sync can properly re-grade it as win/loss once a final K count is available
+      .map(rec => rec.result === 'push' ? { ...rec, result: 'pending', finalChecked: false } : rec);
   }
 
   function marketStats(store, type, date){
