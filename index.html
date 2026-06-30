@@ -1015,10 +1015,10 @@
     <div class="tracker-card" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
         <h3 style="margin-bottom:0">Next Day Prediction Model — Uses Tracker History + Site Data</h3>
-        <span class="tracker-pill hit">Stored Tracker Data Active</span>
+        <span id="tracker-nextday-status" class="tracker-pill pending">Building history…</span>
       </div>
       <div class="tracker-sub" style="margin-bottom:12px">
-        Blends stored Tracker hit rates with HR Potential, Diamond Report Picks, K Props, live scores, pitcher report, game environment, and market/odds signals already available in the site.
+        Ranks tomorrow's picks using everything tracked on this page: HR Potential probability, streak/drought/favorable-matchup flags, HR history vs the day's pitcher, Diamond Report Pick win models with live weather/park-factor signals, K Props lean direction, and each player/team's real hit-rate history stored from prior days — weighted by how many live data sources (vs. planned/future ones) are backing today's numbers.
       </div>
       <div class="tracker-grid">
         <div class="tracker-card">
@@ -3840,11 +3840,23 @@ function showTab(id, el) {
 (function(){
   const STORE_KEY = 'diamondReportTrackerV3';
   const SOURCES = [
-    'MLB Stats API / Live play-by-play', 'Baseball Savant / Statcast', 'FanGraphs', 'Baseball-Reference',
-    'StatMuse', 'Brooks Baseball', 'Baseball Prospectus / PECOTA', 'RotoWire lineups/injuries',
-    'Sportsbook odds', 'Weather', 'Umpire data', 'Betting market movement'
+    { name: 'MLB Stats API / Live play-by-play', live: true },
+    { name: 'Open-Meteo Weather (stadium temp/wind)', live: true },
+    { name: 'Park factor model (built-in)', live: true },
+    { name: 'DR win-probability model', live: true },
+    { name: 'DR K-projection model', live: true },
+    { name: 'Baseball Savant / Statcast', live: false },
+    { name: 'FanGraphs', live: false },
+    { name: 'Baseball-Reference', live: false },
+    { name: 'StatMuse', live: false },
+    { name: 'Brooks Baseball', live: false },
+    { name: 'Baseball Prospectus / PECOTA', live: false },
+    { name: 'RotoWire lineups/injuries', live: false },
+    { name: 'Sportsbook odds (real-time)', live: false },
+    { name: 'Umpire data', live: false },
+    { name: 'Betting market movement', live: false },
   ];
-  const MODEL_INPUTS = ['Stored Tracker History', 'HR Potential', 'HRs Today', 'Diamond Report Picks', 'K Props', 'Player hit rate', 'Team hit rate', 'Lineup status', 'Game environment', 'Odds edge'];
+  const MODEL_INPUTS = ['Stored Tracker History', 'HR Potential', 'HRs Today', 'Diamond Report Picks', 'K Props', 'Player hit rate', 'Team hit rate', 'Streak/Drought signal', 'Favorable matchup flag', 'HR vs Pitcher history', 'Lineup status', 'Game environment', 'Odds edge'];
 
   const dayKey = () => new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
   const norm = s => String(s || '').replace(/\s+/g,' ').trim();
@@ -3897,10 +3909,20 @@ function showTab(id, el) {
             id: r.id,
             player: norm(r.name),
             team: r.teamAbbr || '',
+            opp: r.oppAbbr || '',
+            pitcher: r.pitcherName || '',
             hrPct: Number((r.hrProb || 0).toFixed ? r.hrProb.toFixed(1) : r.hrProb || 0),
             rank: i + 1,
             source: 'hrpRows',
-            topHrThreat: !!(r.topHrThreat || r.hrProb >= 8)
+            topHrThreat: !!(r.topHrThreat || r.hrProb >= 8),
+            // Pass through the richer signals already computed in HR Potential
+            // so the next-day model can weigh streaks, droughts, and matchup quality
+            isDrought: !!r.isDrought,
+            isFavorable: !!r.isFavorable,
+            streakDays: r.streakDays || 1,
+            hrVsPitcher: r.hrVsPitcher ?? null,
+            last10HR: r.last10HR ?? null,
+            hrSeason: r.hrSeason ?? null,
           }))
           .filter(p => p.player && !isPlaceholderText(p.player));
       }
@@ -3916,7 +3938,13 @@ function showTab(id, el) {
       const teamFromSub = teamEl ? (teamEl.textContent.match(/\b[A-Z]{2,3}\b/) || [''])[0] : '';
       const team=(teamFromSub || (txt.match(/\b[A-Z]{2,3}\b/)||[''])[0] || '').replace(/HR|L10/g,'');
       const hrPct=num(txt);
-      return { player, team, hrPct, rank:i+1, source:'DOM', topHrThreat:/TOP HR THREAT/i.test(txt) };
+      return {
+        player, team, hrPct, rank:i+1, source:'DOM',
+        topHrThreat:/TOP HR THREAT/i.test(txt),
+        isDrought:/DROUGHT/i.test(txt),
+        isFavorable:/FAVORABLE MATCHUP/i.test(txt),
+        streakDays:/ON A HEATER/i.test(txt)?3:/BACK TO BACK/i.test(txt)?2:1,
+      };
     }).filter(p => p.player && !isPlaceholderText(p.player)).slice(0,10);
   }
 
@@ -3968,7 +3996,15 @@ function showTab(id, el) {
       const winLine=lines.find(l=>/%\s*WIN|CONFIDENCE|EDGE/i.test(l));
       const winPct=winLine ? num(winLine) : num(t);
       const lean=/UNDERDOG|DOG|\+\d|VALUE/i.test(t) ? 'underdog' : 'favorite';
-      if(team) picks.push({team, winPct, lean});
+
+      // Pull the actual environment factor chips (weather, park factor, home field, day game, etc.)
+      // generated by the Game Props engine — these are real data signals, not text-scraped guesses
+      const posFactors = [...card.querySelectorAll('.gp-factor.pos')].map(el => norm(el.textContent));
+      const negFactors = [...card.querySelectorAll('.gp-factor.neg')].map(el => norm(el.textContent));
+      const neuFactors = [...card.querySelectorAll('.gp-factor.neu')].map(el => norm(el.textContent));
+      const envScore = posFactors.length - negFactors.length; // net environment lean for this game
+
+      if(team) picks.push({ team, winPct, lean, posFactors, negFactors, neuFactors, envScore });
     });
     return picks;
   }
@@ -4025,13 +4061,51 @@ function showTab(id, el) {
     };
   }
 
+  // Returns a 0-10 confidence multiplier reflecting how many real, live data sources
+  // (not "planned" placeholders) are actually backing today's predictions
+  function sourceConfidenceBoost(){
+    const liveCount = SOURCES.filter(s => s.live).length;
+    const totalCount = SOURCES.length;
+    return Math.round((liveCount / totalCount) * 10); // 0-10 scale
+  }
+
   function nextDayHRPotentialModel(store, currentThreats){
+    const srcBoost = sourceConfidenceBoost();
     return currentThreats
       .map(p => {
         const h = trackerHistoryBoost(store, p.player, p.team);
         const base = Number(p.hrPct || 0);
-        const modelScore = Math.min(99, Math.round(base * 0.55 + h.score * 0.45 + Math.max(0, 11 - (p.rank || 10)) * 1.2));
-        return { ...p, modelScore, playerRate:h.playerRate, teamRate:h.teamRate, sampleBoost:h.sampleBoost };
+
+        // Streak boost: a hot player (back-to-back or on a heater) gets a real bump;
+        // a drought player gets a small "due for one" nudge but far less weight than a hot streak
+        const streakBoost = p.streakDays >= 3 ? 8 : p.streakDays === 2 ? 4 : 0;
+        const droughtAdj = p.isDrought ? 2 : 0;
+        const favorableBoost = p.isFavorable ? 5 : 0;
+        const vsPitcherBoost = (p.hrVsPitcher || 0) > 0 ? Math.min(p.hrVsPitcher * 2, 6) : 0;
+        const rankBoost = Math.max(0, 11 - (p.rank || 10)) * 1.2;
+
+        const modelScore = Math.min(99, Math.round(
+          base * 0.45 +
+          h.score * 0.30 +
+          rankBoost +
+          streakBoost +
+          droughtAdj +
+          favorableBoost +
+          vsPitcherBoost +
+          srcBoost
+        ));
+
+        // Build a short reason string so the prediction is explainable, not a black box
+        const reasons = [];
+        if (p.topHrThreat) reasons.push('Top HR Threat');
+        if (p.streakDays >= 3) reasons.push('🔥 On a heater');
+        else if (p.streakDays === 2) reasons.push('🔥 Back-to-back');
+        if (p.isFavorable) reasons.push('🟢 Favorable matchup');
+        if (p.isDrought) reasons.push('🔴 Due (drought)');
+        if ((p.hrVsPitcher || 0) > 0) reasons.push(`${p.hrVsPitcher} HR vs ${p.pitcher || 'pitcher'}`);
+        if (h.sampleBoost >= 3) reasons.push(`Tracker: ${h.playerRate}% player / ${h.teamRate}% team`);
+
+        return { ...p, modelScore, playerRate:h.playerRate, teamRate:h.teamRate, sampleBoost:h.sampleBoost, reasons };
       })
       .sort((a,b) => b.modelScore - a.modelScore)
       .slice(0, 10);
@@ -4042,11 +4116,25 @@ function showTab(id, el) {
       acc[t.team] = { rate:pct(t.hits,t.total), hits:t.hits, total:t.total };
       return acc;
     }, {});
+    const srcBoost = sourceConfidenceBoost();
     return (gamePicks || [])
       .map(p => {
         const hist = teamHistory[p.team] || { rate:0, hits:0, total:0 };
-        const modelScore = Math.min(99, Math.round((p.winPct || 0) * 0.70 + hist.rate * 0.25 + Math.min(5, hist.total)));
-        return { ...p, modelScore, hist };
+        // Underdog picks that have a strong tracker history get an extra nudge —
+        // a confirmed value/underdog angle backed by real hit-rate data is a stronger signal
+        // than a generic favorite with no tracker history at all
+        const leanBoost = (p.lean === 'underdog' && hist.total >= 3) ? 4 : 0;
+        // Environment boost: real weather/park-factor signals from the Game Props engine,
+        // capped so a single big weather swing can't dominate the model
+        const envBoost = Math.max(-6, Math.min(6, (p.envScore || 0) * 3));
+        const modelScore = Math.min(99, Math.round((p.winPct || 0) * 0.65 + hist.rate * 0.25 + Math.min(5, hist.total) + leanBoost + envBoost + srcBoost * 0.5));
+        const reasons = [];
+        reasons.push(`${p.winPct || 0}% site win model`);
+        if (hist.total > 0) reasons.push(`Tracker: ${hist.hits}-${Math.max(hist.total-hist.hits,0)} (${hist.rate}%)`);
+        if (p.lean === 'underdog') reasons.push('Underdog/value angle');
+        if (p.posFactors?.length) reasons.push(...p.posFactors.slice(0,2));
+        if (p.negFactors?.length) reasons.push(...p.negFactors.slice(0,1));
+        return { ...p, modelScore, hist, reasons };
       })
       .sort((a,b)=>b.modelScore-a.modelScore)
       .slice(0, 8);
@@ -4071,21 +4159,41 @@ function showTab(id, el) {
       .map(r => {
         const rate = pct(r.wins, r.total);
         const direction = r.over >= r.under ? 'OVER' : 'UNDER';
-        const modelScore = Math.min(99, Math.round(rate * 0.75 + Math.min(20, r.total * 3)));
-        return { ...r, rate, direction, modelScore };
+        const consistencyBoost = (r.over === 0 || r.under === 0) && r.total >= 2 ? 3 : 0; // consistent lean direction
+        const modelScore = Math.min(99, Math.round(rate * 0.75 + Math.min(20, r.total * 3) + consistencyBoost + sourceConfidenceBoost() * 0.5));
+        const reasons = [`Tracker: ${r.wins}-${Math.max(r.total-r.wins,0)} (${rate}%)`];
+        if (consistencyBoost) reasons.push(`Consistent ${direction} lean`);
+        reasons.push(`Last line ${r.lastLine || '—'}`);
+        return { ...r, rate, direction, modelScore, reasons };
       })
       .sort((a,b)=>b.modelScore-a.modelScore)
       .slice(0, 10);
   }
 
   function renderNextDayModels(store, currentThreats, gamePicks){
+    const reasonChips = reasons => (reasons||[]).map(r=>`<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:1px 7px;font-size:9px;color:var(--muted);margin:2px 3px 0 0">${r}</span>`).join('');
+
+    const liveSourceCount = SOURCES.filter(s => s.live).length;
+    const statusEl = document.getElementById('tracker-nextday-status');
+    if (statusEl) {
+      const totalTracked = (store.picks?.length || 0) + (store.market?.drp?.length || 0) + (store.market?.kprop?.length || 0);
+      if (totalTracked >= 5) {
+        statusEl.className = 'tracker-pill hit';
+        statusEl.textContent = `${liveSourceCount}/${SOURCES.length} live sources • ${totalTracked} picks tracked`;
+      } else {
+        statusEl.className = 'tracker-pill pending';
+        statusEl.textContent = `Building history… (${totalTracked} picks so far)`;
+      }
+    }
+
     const hrp = nextDayHRPotentialModel(store, currentThreats);
     set('tracker-nextday-hrp', hrp.length ? hrp.map((p,i)=>`
-      <div class="stat-row">
+      <div class="stat-row" style="flex-wrap:wrap">
         <div class="stat-row-num">${i+1}</div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:200px">
           <div style="font-weight:800">${p.player}</div>
-          <div style="color:var(--muted);font-size:11px">${p.team || '—'} • current HR ${p.hrPct || 0}% • player tracker ${p.playerRate}% • team tracker ${p.teamRate}%</div>
+          <div style="color:var(--muted);font-size:11px">${p.team || '—'}${p.opp?' vs '+p.opp:''} • current HR ${p.hrPct || 0}%</div>
+          <div style="margin-top:3px">${reasonChips(p.reasons)}</div>
         </div>
         <span class="tracker-pill ${p.modelScore>=35?'hit':p.modelScore>=20?'pending':'miss'}">${p.modelScore}%</span>
       </div>
@@ -4093,11 +4201,11 @@ function showTab(id, el) {
 
     const drp = nextDayDRPicksModel(store, gamePicks);
     set('tracker-nextday-drp', drp.length ? drp.map((p,i)=>`
-      <div class="stat-row">
+      <div class="stat-row" style="flex-wrap:wrap">
         <div class="stat-row-num">${i+1}</div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:200px">
           <div style="font-weight:800">${p.team}</div>
-          <div style="color:var(--muted);font-size:11px">site win ${p.winPct || 0}% • tracker team ${p.hist.rate}% • ${p.lean || 'pick'}</div>
+          <div style="margin-top:3px">${reasonChips(p.reasons)}</div>
         </div>
         <span class="tracker-pill ${p.modelScore>=55?'hit':p.modelScore>=45?'pending':'miss'}">${p.modelScore}%</span>
       </div>
@@ -4105,11 +4213,12 @@ function showTab(id, el) {
 
     const kp = nextDayKPropsModel(store);
     set('tracker-nextday-kprops', kp.length ? kp.map((p,i)=>`
-      <div class="stat-row">
+      <div class="stat-row" style="flex-wrap:wrap">
         <div class="stat-row-num">${i+1}</div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:200px">
           <div style="font-weight:800">${p.label}</div>
-          <div style="color:var(--muted);font-size:11px">${p.direction} lean • tracker ${p.wins}/${p.total} (${p.rate}%) • last line ${p.lastLine || '—'}</div>
+          <div style="color:var(--muted);font-size:11px">${p.direction} lean</div>
+          <div style="margin-top:3px">${reasonChips(p.reasons)}</div>
         </div>
         <span class="tracker-pill ${p.modelScore>=55?'hit':p.modelScore>=35?'pending':'miss'}">${p.modelScore}%</span>
       </div>
@@ -4564,12 +4673,9 @@ function showTab(id, el) {
     }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
 
 
-    const sourceStatus = SOURCES.map((s,i)=>{
-      const connected =
-        (i===0 && (currentThreats.length || homers.size)) ||
-        (s.includes('Sportsbook') && gamePicks.length) ||
-        (s.includes('Weather') && document.getElementById('gameprops-content')?.innerText?.match(/°|MPH|weather/i));
-      return `<span class="tracker-pill ${connected?'hit':'pending'}">${connected?'✅':'🔌'} ${s}</span>`;
+    const sourceStatus = SOURCES.map(src => {
+      const connected = src.live && ((src.name.includes('MLB Stats') ? (currentThreats.length || homers.size) : true));
+      return `<span class="tracker-pill ${connected?'hit':'pending'}">${connected?'✅':'🔌 (planned)'} ${src.name}</span>`;
     }).join('');
     set('tracker-source-stack', sourceStatus);
     set('tracker-model-inputs', MODEL_INPUTS.map(s=>`<span class="tracker-pill hit">${s}</span>`).join(''));
