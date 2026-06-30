@@ -617,6 +617,21 @@
   .tracker-pill.hit { border-color: #2ecc71; color: #2ecc71; background: #0d2a1a; }
   .tracker-pill.miss { border-color: #e63946; color: #e63946; background: #2a0d0d; }
   .tracker-pill.pending { border-color: #f4a261; color: #f4a261; background: #2a1800; }
+  .tracker-header-pct {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .tracker-header-pct.good { border-color: #2ecc71; color: #2ecc71; background: #0d2a1a; }
+  .tracker-header-pct.bad { border-color: #e63946; color: #e63946; background: #2a0d0d; }
+  .tracker-header-pct.mid { border-color: #f4a261; color: #f4a261; background: #2a1800; }
   .tracker-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
@@ -950,31 +965,31 @@
     </div>
 
     <div class="tracker-card" style="margin-bottom:16px">
-      <h3>Diamond Report Picks — Daily + All-Time Accuracy</h3>
+      <h3>Diamond Report Picks — Daily + All-Time Accuracy <span id="drp-header-pct" class="tracker-header-pct"></span></h3>
       <div class="tracker-scroll">
         <table>
           <thead>
             <tr>
               <th onclick="sortDRPTable('date')" style="cursor:pointer;white-space:nowrap" id="drp-th-date">Date <span class="sort-arrow"></span></th>
-              <th>Game/Pick</th><th>Pick</th><th>Status</th><th>Today</th><th>All-Time</th>
+              <th>Game/Pick</th><th>Pick</th><th>Status</th>
             </tr>
           </thead>
           <tbody id="tracker-drp-results">
-            <tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for Diamond Report Picks data…</td></tr>
+            <tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for Diamond Report Picks data…</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
     <div class="tracker-card" style="margin-bottom:16px">
-      <h3>K Props — Daily + All-Time Accuracy</h3>
+      <h3>K Props — Daily + All-Time Accuracy <span id="kprops-header-pct" class="tracker-header-pct"></span></h3>
       <div class="tracker-scroll">
         <table>
           <thead>
-            <tr><th>Pitcher</th><th>Pick</th><th>Line</th><th>Status</th><th>All-Time</th></tr>
+            <tr><th>Pitcher</th><th>Pick</th><th>Line</th><th>Status</th></tr>
           </thead>
           <tbody id="tracker-kprops-results">
-            <tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
+            <tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -982,16 +997,16 @@
 
     <div class="tracker-card" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        <h3 style="margin-bottom:0">Top HR Threat Players — Daily + All-Time Tally</h3>
+        <h3 style="margin-bottom:0">Top HR Threat Players — Daily + All-Time Tally <span id="threat-header-pct" class="tracker-header-pct"></span></h3>
       </div>
       <div class="tracker-scroll">
         <table>
           <thead>
             <tr>
-              <th>Player</th><th>Team</th><th>Today HR%</th><th>Today</th><th>Player All-Time</th><th>Team All-Time</th>
+              <th>Player</th><th>Team</th><th>Today HR%</th><th>Status</th>
             </tr>
           </thead>
-          <tbody id="tracker-results"><tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for HR Potential data…</td></tr></tbody>
+          <tbody id="tracker-results"><tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for HR Potential data…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -4463,6 +4478,15 @@ function showTab(id, el) {
   }
 
 
+  function setHeaderPct(id, winPct, sampleSize){
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!sampleSize) { el.textContent = ''; el.className = 'tracker-header-pct'; return; }
+    const cls = winPct >= 60 ? 'good' : winPct >= 45 ? 'mid' : 'bad';
+    el.textContent = `${winPct}% all-time`;
+    el.className = `tracker-header-pct ${cls}`;
+  }
+
   function render(store, currentThreats, homers, gamePicks){
     const day=dayKey();
     const todays=store.picks.filter(p=>p.date===day);
@@ -4473,6 +4497,7 @@ function showTab(id, el) {
     set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} Top HR Threats tracked`);
     set('tracker-all', `${ah}-${Math.max(at-ah,0)}`);
     set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} stored picks`);
+    setHeaderPct('threat-header-pct', pct(ah,at), at);
 
     const drpToday=marketStats(store,'drp',day);
     const drpAll=marketStats(store,'drp');
@@ -4493,10 +4518,13 @@ function showTab(id, el) {
     set('tracker-drp-today-sub', `${pct(drpMatchupToday.wins,drpMatchupToday.total)}% today • ${drpMatchupToday.pending} waiting final`);
     set('tracker-drp-all', `${drpMatchupAll.wins}-${drpMatchupAll.losses}`);
     set('tracker-drp-all-sub', `${pct(drpMatchupAll.wins,drpMatchupAll.total)}% all-time • ${drpMatchupAll.pending} waiting final`);
+    setHeaderPct('drp-header-pct', pct(drpMatchupAll.wins,drpMatchupAll.total), drpMatchupAll.total);
+
     set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
     set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.pending} waiting final`);
     set('tracker-kprops-all', `${kpAll.wins}-${kpAll.losses}`);
     set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.pending} waiting final`);
+    setHeaderPct('kprops-header-pct', pct(kpAll.wins,kpAll.total), kpAll.total);
 
     const statusBadge = r => resultBadgeFromFinal(r.result);
 
@@ -4517,28 +4545,23 @@ function showTab(id, el) {
     if (dateArrowEl) dateArrowEl.textContent = window.drpTableSortDir === -1 ? '▼' : '▲';
 
     set('tracker-drp-results', drpRows.length ? drpRows.map(r=>{
-      const at=marketAllTimeByKey(store,'drp',r.matchupLabel);
       const isToday = r.date === day;
       return `<tr>
         <td style="white-space:nowrap;color:${isToday?'var(--accent2)':'var(--muted)'}">${r.date}${isToday?' <span style="font-size:9px;color:var(--accent2)">(Today)</span>':''}</td>
         <td>${r.matchupLabel}</td>
         <td>${r.pick}</td>
         <td>${statusBadge(r)}</td>
-        <td>${drpMatchupToday.wins}-${drpMatchupToday.losses} (${pct(drpMatchupToday.wins,drpMatchupToday.total)}%)</td>
-        <td>${at.wins}-${Math.max(at.total-at.wins,0)} (${at.pct}%)</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
+    }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
 
     set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
-      const at=marketAllTimeByKey(store,'kprop',r.label);
       return `<tr>
         <td>${r.label}</td>
         <td>${r.pick}</td>
         <td>${r.line || '—'}</td>
         <td>${statusBadge(r)}</td>
-        <td>${at.wins}-${Math.max(at.total-at.wins,0)} (${at.pct}%)</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
+    }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
 
 
     const sourceStatus = SOURCES.map((s,i)=>{
@@ -4559,12 +4582,8 @@ function showTab(id, el) {
     set('tracker-underdog-sub', dog ? `${dog.winPct || 0}% projected win • value/underdog slot` : 'Waiting for Diamond Report Picks');
 
     const teamStates = teamGameStatusMap();
-    const todayHits = (todays.length?todays:currentThreats).filter(p => p.hit || homers.has(p.player.toLowerCase())).length;
-    const todayTotal = (todays.length?todays:currentThreats).length;
 
     const rows=(todays.length?todays:currentThreats).map(p=>{
-      const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0};
-      const tm=store.teams[p.team] || {hits:0,total:0};
       const hitNow = p.hit || homers.has(p.player.toLowerCase());
       const gameState = teamStates[p.team] || 'upcoming';
       let status;
@@ -4581,11 +4600,9 @@ function showTab(id, el) {
         <td>${p.player}</td>
         <td>${p.team||'—'}</td>
         <td>${p.hrPct||0}%</td>
-        <td>${status} <span style="color:var(--muted);font-size:11px">${todayHits}-${Math.max(todayTotal-todayHits,0)} (${pct(todayHits,todayTotal)}%)</span></td>
-        <td>${pl.hits}-${Math.max(pl.total-pl.hits,0)} (${pct(pl.hits,pl.total)}%)</td>
-        <td>${tm.hits}-${Math.max(tm.total-tm.hits,0)} (${pct(tm.hits,tm.total)}%)</td>
+        <td>${status}</td>
       </tr>`;
-    }).join('') || '<tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for HR Potential data to load.</td></tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for HR Potential data to load.</td></tr>';
     set('tracker-results', rows);
 
     if(!isAnyGameFinal()){
