@@ -1569,10 +1569,13 @@ function getRepoLineupForGame(gamePk, teamSide) {
       stats: b.stats || {},
       last10HR: b.last10HR ?? null,
       todayHR: b.todayHR || 0,
+      confirmed: team.confirmed === true,
       source: team.source || game.source || 'repo-lineups'
     })),
     teamAbbr: team.abbr || '',
     source: team.source || game.source || 'repo-lineups',
+    confirmed: team.confirmed === true,
+    confirmedAt: team.confirmedAt || null,
     updatedAt: repoLineupsData?.generatedAt || game.updatedAt || null
   };
 }
@@ -1990,6 +1993,10 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
   const panel = document.getElementById(panelId);
   if (!panel) return;
   const { lineup, teamAbbr } = data;
+  const lineupIsOfficial = data.confirmed === true || (lineup || []).some(b => b.confirmed === true);
+  const lineupBadge = lineupIsOfficial
+    ? '<span style="display:inline-flex;align-items:center;gap:4px;background:#0d2a1a;border:1px solid #2ecc71;color:#2ecc71;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;letter-spacing:.6px">✅ OFFICIAL LINEUP</span>'
+    : '<span style="display:inline-flex;align-items:center;gap:4px;background:#2a1800;border:1px solid #f4a261;color:#f4a261;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;letter-spacing:.6px">⏳ PROJECTED LINEUP</span>';
 
   function hrProb(s) {
     const ab = parseInt(s.atBats) || 0;
@@ -2118,13 +2125,13 @@ function renderLineup(panelId, data, pitcherHr9, pitcherIp, oppAbbr, pitcherId, 
   panel.innerHTML = `
     <div style="padding:4px 0 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
       <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)">
-        ${teamAbbr || oppAbbr || ''} BATTING LINEUP
+        ${teamAbbr || oppAbbr || ''} BATTING LINEUP ${lineupBadge}
       </span>
       <div style="display:flex;gap:14px;align-items:center;font-size:10px;color:var(--muted)">
         <span><span style="color:var(--accent2)">💥 HR TODAY</span> = homered this game</span>
         <span><span style="color:#90ee60">L10</span> = HRs in last 10 games</span>
         <span>⚔ for matchup</span>
-        <span class="lineup-timestamp" style="font-family:'JetBrains Mono',monospace;color:var(--border)">Last updated ${now}${data.source ? ` • ${data.source}` : ''}</span>
+        <span class="lineup-timestamp" style="font-family:'JetBrains Mono',monospace;color:var(--border)">Last updated ${now}${data.source ? ` • ${data.source}` : ''}${data.confirmedAt ? ` • confirmed ${new Date(data.confirmedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}` : ''}</span>
       </div>
     </div>
     ${cards}`;
@@ -4668,11 +4675,15 @@ function showTab(id, el) {
     store.nextDayModel ||= { computedForDate: null, computedWhileSettled: false, hrp: null, drp: null, kp: null };
     const snap = store.nextDayModel;
 
-    const shouldRecompute = snap.computedForDate !== today || (todaySettled && !snap.computedWhileSettled);
+    // Do NOT build or show next-day model picks until today's games are final.
+    // This prevents stale/stored K Props from appearing in the morning before any
+    // games have started, and prevents live/incomplete games from influencing
+    // tomorrow's recommendations.
+    const shouldRecompute = todaySettled && (snap.computedForDate !== today || !snap.computedWhileSettled);
 
     if (shouldRecompute) {
       snap.computedForDate = today;
-      snap.computedWhileSettled = todaySettled;
+      snap.computedWhileSettled = true;
       snap.hrp = nextDayHRPotentialModel(store, currentThreats);
       snap.drp = nextDayDRPicksModel(store, gamePicks);
       snap.kp = nextDayKPropsModel(store);
@@ -4694,6 +4705,15 @@ function showTab(id, el) {
         statusEl.className = 'tracker-pill pending';
         statusEl.textContent = `Building history… (${totalTracked} picks so far)`;
       }
+    }
+
+    const canShowNextDay = todaySettled && snap.computedForDate === today && snap.computedWhileSettled;
+
+    if (!canShowNextDay) {
+      set('tracker-nextday-hrp', '<div style="color:var(--muted);font-size:12px">Next Day HR Potential unlocks after today\'s games are final.</div>');
+      set('tracker-nextday-drp', '<div style="color:var(--muted);font-size:12px">Next Day Diamond Report Picks unlock after today\'s games are final.</div>');
+      set('tracker-nextday-kprops', '<div style="color:var(--muted);font-size:12px">Next Day K Props unlock after today\'s games are final. No props are shown before games start or while games are live.</div>');
+      return;
     }
 
     const hrp = snap.hrp || [];
