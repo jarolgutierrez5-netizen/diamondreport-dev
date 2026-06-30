@@ -103,9 +103,11 @@
     .tracker-header-pct { font-size: 9px; padding: 1px 6px; margin-left: 5px; }
     /* Content-heavy cards (next-day prediction lists, team analyzer) need full width — stack to 1 column */
     .tracker-grid-stack { grid-template-columns: 1fr !important; }
-    .tracker-scroll table { min-width: 0; font-size: 10px; }
-    .tracker-scroll th, .tracker-scroll td { padding: 5px 6px; white-space: nowrap; }
-    .tracker-pill { font-size: 8px; padding: 2px 5px; gap: 3px; }
+    .tracker-scroll table { min-width: 0; width: 100%; font-size: 9px; table-layout: fixed; }
+    .tracker-scroll th, .tracker-scroll td { padding: 5px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tracker-pill { font-size: 7px; padding: 2px 4px; gap: 2px; white-space: nowrap; }
+    /* Status column needs the most room; let other columns shrink first */
+    .tracker-scroll table th:last-child, .tracker-scroll table td:last-child { width: 30%; }
     /* Source stack & model input pill rows — let them wrap tightly instead of forcing width */
     #tracker-source-stack, #tracker-model-inputs { gap: 4px !important; }
     #tracker-source-stack .tracker-pill, #tracker-model-inputs .tracker-pill { font-size: 8px; padding: 2px 6px; }
@@ -674,7 +676,7 @@
     -webkit-overflow-scrolling: touch;
   }
   .tracker-scroll table {
-    min-width: 480px; /* ensures table doesn't get crushed/clipped on narrow screens — scrolls horizontally instead */
+    width: 100%;
   }
 
 
@@ -1362,15 +1364,25 @@ async function loadScores() {
           return;
         }
 
-        if (!prev || scoresDiffer(prev, g)) {
-          // Only update this card's inner HTML
-          el.innerHTML = g.status === 'upcoming' ? upcomingCard(g) : gameCard(g);
-        }
-
-        // Check if status bucket changed (e.g. game went from live → final)
+        // Detect bucket transitions FIRST, before deciding whether to patch in place.
+        // A game's element persists in the DOM by id even after moving sections, so we
+        // must explicitly check if its status bucket changed — not just whether content differs.
         if (prev && prev.status !== g.status) {
           if (prev.status === 'live') liveChanged = true;
+          if (prev.status === 'upcoming') upcomingChanged = true;
+          if (g.status === 'live') liveChanged = true;
           if (g.status === 'final') finalChanged = true;
+          if (g.status === 'upcoming') upcomingChanged = true;
+          // Remove the stale element from its old container — the full re-render below
+          // will recreate it in the correct section. Without this, the card stays visually
+          // stuck in its original container (e.g. live-games) even after going final.
+          el.remove();
+          return;
+        }
+
+        if (!prev || scoresDiffer(prev, g)) {
+          // Only update this card's inner HTML — status bucket unchanged
+          el.innerHTML = g.status === 'upcoming' ? upcomingCard(g) : gameCard(g);
         }
       });
 
@@ -3850,22 +3862,28 @@ function showTab(id, el) {
     loadPitcherReport();
   }
   if (id === 'schedule' && !scheduleLoaded) loadSchedule();
-  if (id === 'props') initPropsTab();
+  // Always warm up Props data (Game Props, K Props) in the background, regardless of
+  // which tab is visited — the Tracker tab depends on this data existing in the DOM
+  // and previously only loaded it if the user had manually opened Props first.
+  initPropsTab();
 }
 
 // Restore last active tab on page load
 (function restoreTab() {
   const saved = localStorage.getItem('activeTab');
-  if (!saved || saved === 'scores') return; // scores is default, no action needed
+  if (!saved || saved === 'scores') {
+    initPropsTab(); // still warm up Props data even if landing on scores/default tab
+    return;
+  }
   const tabEl = document.querySelector(`.tab[data-tab='${saved}']`) || document.querySelector(`.tab[onclick*="'${saved}'"]`);
   const sectionEl = document.getElementById(saved);
-  if (!tabEl || !sectionEl) return;
+  if (!tabEl || !sectionEl) { initPropsTab(); return; }
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   sectionEl.classList.add('active');
   tabEl.classList.add('active');
   if (saved === 'matchups' && !matchupLoaded) { matchupLoaded = true; loadPitcherReport(); }
-  if (saved === 'props') initPropsTab();
+  initPropsTab(); // always warm up Props data, not just when saved === 'props'
 })();
 
 
