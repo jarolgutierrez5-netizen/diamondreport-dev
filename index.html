@@ -4467,7 +4467,6 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
-      if(t === 'AZ') return 'ARI';
       return t;
     };
 
@@ -4560,7 +4559,6 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
-      if(t === 'AZ') return 'ARI';
       return t;
     };
     const cards=[...root.querySelectorAll('.gp-card')];
@@ -4729,7 +4727,6 @@ function showTab(id, el) {
       if(t === 'SFG') return 'SF';
       if(t === 'TBR') return 'TB';
       if(t === 'WAS') return 'WSH';
-      if(t === 'AZ') return 'ARI';
       return t;
     };
     const teams = [];
@@ -4953,7 +4950,7 @@ function showTab(id, el) {
   // cases like a normalization bug (e.g. legacy 'AZ' records) that prevented a pick
   // from resolving while its date's games were still in the live DOM — once the day
   // passes, #final-games no longer has that data, so the only remaining source is the API.
-  const TEAM_NORM_MAP = { CHW:'CWS', KCR:'KC', SDP:'SD', SFG:'SF', TBR:'TB', WAS:'WSH', AZ:'ARI' };
+  const TEAM_NORM_MAP = { CHW:'CWS', KCR:'KC', SDP:'SD', SFG:'SF', TBR:'TB', WAS:'WSH' };
   const normTeamGlobal = t => { t = String(t||'').toUpperCase().trim(); return TEAM_NORM_MAP[t] || t; };
 
   async function backfillStalePendingPicks(store){
@@ -4967,7 +4964,7 @@ function showTab(id, el) {
 
     for (const date of dates) {
       try {
-        const data = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore&language=en`);
+        const data = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore,team&language=en`);
         const entry = data.dates?.find(d => d.date === date) || data.dates?.[0];
         const games = entry?.games || [];
         const finalsForDate = {};
