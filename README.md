@@ -1,56 +1,16 @@
-# Diamond Report — V4.2 HR Potential On-Fire Filter
+# Diamond Report v4.4 — UI Cleanup + Responsive Typography
 
-This build adds a dedicated **🔥 ON FIRE** filter to the **HR Potential** section.
+## Changes
+- Removed visible "Last updated" labels from section header areas.
+- Preserved internal refresh logic while hiding timestamp clutter.
+- Added a full typography pass so the website uses the same font system across Live Scores, Pitcher Report, Props, Upcoming Games, and Tracker.
+- Improved mobile, tablet, and desktop responsiveness.
+- Improved Tracker card visibility on iPhone and tablet layouts.
+- Improved HR Potential and Pitcher Report horizontal scrolling on small screens.
 
-## Updated files
+## Update in GitHub
+Replace these files:
+- `index.html`
+- `README.md`
 
-Upload/replace these in GitHub:
-
-```text
-index.html
-README.md
-```
-
-Keep your existing files/folders:
-
-```text
-data/tracker.json
-data/daily-results.json
-data/model-data.json
-data/lineups.json
-data/lineup-intelligence.json
-data/statcast-hot-hitters.json
-scripts/updateTracker.js
-scripts/updateLineups.js
-scripts/updateStatcastHotHitters.js
-.github/workflows/tracker-update.yml
-.github/workflows/lineup-update.yml
-.github/workflows/statcast-hot-hitters-update.yml
-```
-
-## What changed
-
-The HR Potential filter row now includes:
-
-```text
-🔥 ON FIRE
-```
-
-When selected, the HR Potential table shows only hitters with strong hot-hitter indicators:
-
-- On Fire Score >= 70
-- or Hot Hitter boost >= +4.5%
-- or the player is flagged as `isOnFire`
-
-The On-Fire list sorts the hottest batted-ball profiles first, using On Fire Score, hot boost, and HR probability.
-
-The existing filters still work:
-
-- Top HR Threat
-- Drought
-- Favorable Matchup
-- All
-
-## Notes
-
-No data files, scripts, or GitHub workflows need to be replaced for this version.
+No data, scripts, or workflow changes are required for this UI-only update.
