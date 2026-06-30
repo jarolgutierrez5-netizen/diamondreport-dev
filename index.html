@@ -749,9 +749,16 @@
   }
 
 </style>
+<!-- ============================================================ -->
+<!-- ⚠️  GOOGLE ADSENSE — DO NOT REMOVE OR MODIFY THIS BLOCK  ⚠️   -->
+<!-- This verification meta tag + script loader must remain on    -->
+<!-- every page for AdSense to function. Removing or editing      -->
+<!-- ca-pub-6433797533342090 will break ad monetization sitewide. -->
+<!-- ============================================================ -->
 <meta name="google-adsense-account" content="ca-pub-6433797533342090">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6433797533342090"
      crossorigin="anonymous"></script>
+<!-- ============== END ADSENSE HEAD BLOCK — DO NOT REMOVE ============== -->
 
 <style id="kcount-color-patch">
 .kprop-kcount.live{
@@ -827,6 +834,12 @@
 </header>
 
 <!-- Horizontal Ad -->
+<!-- ============================================================ -->
+<!-- ⚠️  GOOGLE ADSENSE AD UNIT — DO NOT REMOVE THIS BLOCK  ⚠️     -->
+<!-- This is the actual ad slot (publisher ca-pub-6433797533342090, -->
+<!-- slot 4578437627). Deleting #ad-container removes ad revenue   -->
+<!-- from the site entirely. Safe to restyle, never safe to delete. -->
+<!-- ============================================================ -->
 <div id="ad-container" style="display:none;background:var(--surface);border-bottom:1px solid var(--border);text-align:center;overflow:hidden;max-height:0;transition:max-height 0.3s ease">
   <ins class="adsbygoogle"
        style="display:block"
@@ -849,6 +862,7 @@
        });
   </script>
 </div>
+<!-- ============== END ADSENSE AD UNIT — DO NOT REMOVE ============== -->
 
 <nav class="nav">
   <div class="tab active" onclick="showTab('scores', this)" data-tab="scores">Live Scores</div>
@@ -4380,7 +4394,48 @@ function showTab(id, el) {
       .slice(0, 10);
   }
 
+  // Returns true if every game found on the page today has reached a final state
+  // (i.e. nothing is still 'live' or 'upcoming'). Used to decide whether it's safe
+  // to recompute the Next Day Prediction Model — recomputing while games are still
+  // in progress risks basing tomorrow's picks on incomplete/volatile in-game data
+  // (a player could still get injured, pulled, or a lineup could shift).
+  function isTodayFullySettled(){
+    const liveRoot = document.getElementById('live-games');
+    const schedRoot = document.getElementById('scheduled-games');
+    const hasLiveCards = liveRoot && liveRoot.querySelectorAll('.game-card').length > 0;
+    const hasUpcomingCards = schedRoot && schedRoot.querySelectorAll('.game-card').length > 0;
+    // If there are no game cards rendered at all yet (page just loaded), don't treat
+    // that as "settled" — wait for real data before deciding either way.
+    const finalRoot = document.getElementById('final-games');
+    const hasAnyData = (finalRoot && finalRoot.querySelectorAll('.game-card').length > 0) || hasLiveCards || hasUpcomingCards;
+    if (!hasAnyData) return false;
+    return !hasLiveCards && !hasUpcomingCards;
+  }
+
   function renderNextDayModels(store, currentThreats, gamePicks){
+    const today = dayKey();
+    const todaySettled = isTodayFullySettled();
+
+    // The Next Day model is frozen per-day: once computed for a given date, it does not
+    // recompute again until either (a) the calendar date changes, or (b) today's games
+    // are fully final for the first time. This prevents tomorrow's predictions from
+    // shifting around mid-game based on incomplete data, while still updating promptly
+    // once today's results are actually locked in (rather than waiting until literal
+    // midnight, which could be hours after the last game actually ends).
+    store.nextDayModel ||= { computedForDate: null, computedWhileSettled: false, hrp: null, drp: null, kp: null };
+    const snap = store.nextDayModel;
+
+    const shouldRecompute = snap.computedForDate !== today || (todaySettled && !snap.computedWhileSettled);
+
+    if (shouldRecompute) {
+      snap.computedForDate = today;
+      snap.computedWhileSettled = todaySettled;
+      snap.hrp = nextDayHRPotentialModel(store, currentThreats);
+      snap.drp = nextDayDRPicksModel(store, gamePicks);
+      snap.kp = nextDayKPropsModel(store);
+      saveStore(store);
+    }
+
     const reasonChips = reasons => (reasons||[]).map(r=>`<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:1px 7px;font-size:9px;color:var(--muted);margin:2px 3px 0 0">${r}</span>`).join('');
 
     const liveSourceCount = SOURCES.filter(s => s.live).length;
@@ -4389,14 +4444,16 @@ function showTab(id, el) {
       const totalTracked = (store.picks?.length || 0) + (store.market?.drp?.length || 0) + (store.market?.kprop?.length || 0);
       if (totalTracked >= 5) {
         statusEl.className = 'tracker-pill hit';
-        statusEl.textContent = `${liveSourceCount}/${SOURCES.length} live sources • ${totalTracked} picks tracked`;
+        statusEl.textContent = todaySettled
+          ? `${liveSourceCount}/${SOURCES.length} live sources • ${totalTracked} picks tracked • Today final ✓`
+          : `${liveSourceCount}/${SOURCES.length} live sources • ${totalTracked} picks tracked • Holding for today's results`;
       } else {
         statusEl.className = 'tracker-pill pending';
         statusEl.textContent = `Building history… (${totalTracked} picks so far)`;
       }
     }
 
-    const hrp = nextDayHRPotentialModel(store, currentThreats);
+    const hrp = snap.hrp || [];
     set('tracker-nextday-hrp', hrp.length ? hrp.map((p,i)=>`
       <div class="stat-row" style="flex-wrap:wrap">
         <div class="stat-row-num">${i+1}</div>
@@ -4409,7 +4466,7 @@ function showTab(id, el) {
       </div>
     `).join('') : '<div style="color:var(--muted);font-size:12px">Waiting for HR Potential and Tracker history.</div>');
 
-    const drp = nextDayDRPicksModel(store, gamePicks);
+    const drp = snap.drp || [];
     set('tracker-nextday-drp', drp.length ? drp.map((p,i)=>`
       <div class="stat-row" style="flex-wrap:wrap">
         <div class="stat-row-num">${i+1}</div>
@@ -4421,7 +4478,7 @@ function showTab(id, el) {
       </div>
     `).join('') : '<div style="color:var(--muted);font-size:12px">Waiting for Diamond Report Picks and final Tracker data.</div>');
 
-    const kp = nextDayKPropsModel(store);
+    const kp = snap.kp || [];
     set('tracker-nextday-kprops', kp.length ? kp.map((p,i)=>`
       <div class="stat-row" style="flex-wrap:wrap">
         <div class="stat-row-num">${i+1}</div>
