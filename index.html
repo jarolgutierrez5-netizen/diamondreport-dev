@@ -743,7 +743,7 @@
     </div>
 
     <!-- Banner temporarily removed -->
-    <div id="scores-alert-banner" class="breaking-banner">
+    <div id="scores-alert-banner" class="breaking-banner" style="display:none!important" hidden>
       <div class="breaking-banner-inner">
         <div class="breaking-label">LIVE</div>
         <div class="breaking-window">
@@ -3787,7 +3787,7 @@ function showTab(id, el) {
       return `<span class="breaking-item">🚨 BREAKING <span class="breaking-player">${player}</span> HIT A HOME RUN! 💥 <span class="breaking-time">${timeAgo(a._ts)}</span></span>`;
     }).join('');
 
-    ['scores-alert-track','props-live-games'].forEach(id => {
+    ['props-live-games'].forEach(id => {
       const track = document.getElementById(id);
       if (!track) return;
       const banner = track.closest('.breaking-banner');
@@ -3803,7 +3803,7 @@ function showTab(id, el) {
 
   // Last-resort cleanup for older code that writes list-style chips into the ticker.
   function normalizeExistingTicker(){
-    ['scores-alert-track','props-live-games'].forEach(id => {
+    ['props-live-games'].forEach(id => {
       const track = document.getElementById(id);
       if (!track || !track.innerHTML.trim()) return;
       track.classList.add('breaking-track');
@@ -4498,6 +4498,58 @@ function showTab(id, el) {
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
+})();
+
+
+// Diamond Report K Props label cleanup: keep PROJ underneath, simplify label to OVER/UNDER
+(function(){
+  function cleanKPropLabels(){
+    document.querySelectorAll('#kprops-content .kprop-pred-val, #kprops-content .kprop-chip, #kprops-content *').forEach(el => {
+      if(!el || !el.childNodes || el.childNodes.length > 1) return;
+      const raw = (el.textContent || '').trim();
+      if(/^PUSH\s*\[\s*OVER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*OVER\s*LEAN$/i.test(raw) || /^OVER\s*LEAN$/i.test(raw)){
+        el.textContent = 'OVER';
+      }
+      if(/^PUSH\s*\[\s*UNDER\s*LEAN\s*\]$/i.test(raw) || /^PUSH\s*\/\s*UNDER\s*LEAN$/i.test(raw) || /^UNDER\s*LEAN$/i.test(raw)){
+        el.textContent = 'UNDER';
+      }
+    });
+  }
+  window.cleanKPropLabels = cleanKPropLabels;
+  function hook(fnName){
+    const original = window[fnName];
+    if(typeof original !== 'function' || original.__kPropLabelHooked) return;
+    const wrapped = async function(...args){
+      const result = await original.apply(this,args);
+      setTimeout(cleanKPropLabels, 100);
+      return result;
+    };
+    wrapped.__kPropLabelHooked = true;
+    window[fnName] = wrapped;
+  }
+  function start(){
+    cleanKPropLabels();
+    ['loadKProps','renderKProps','renderKPropRows'].forEach(hook);
+    setInterval(cleanKPropLabels, 1000);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+
+
+// Diamond Report: Live Scores breaking banner removed
+(function(){
+  function hideLiveScoresBanner(){
+    const banner = document.getElementById('scores-alert-banner');
+    if(!banner) return;
+    banner.hidden = true;
+    banner.style.display = 'none';
+    const track = document.getElementById('scores-alert-track');
+    if(track) track.innerHTML = '';
+  }
+  window.hideLiveScoresBanner = hideLiveScoresBanner;
+  hideLiveScoresBanner();
+  setInterval(hideLiveScoresBanner, 1000);
 })();
 
 </script>
