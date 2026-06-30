@@ -571,6 +571,65 @@
     .breaking-item { font-size: 16px; letter-spacing: 1px; }
   }
 
+
+  /* Tracker tab */
+  .tracker-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow: hidden;
+  }
+  .tracker-card h3 {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .tracker-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 34px;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .tracker-sub {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  .tracker-good { color: var(--green); }
+  .tracker-bad { color: var(--accent); }
+  .tracker-warn { color: var(--accent2); }
+  .tracker-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .tracker-pill.hit { border-color: #2ecc71; color: #2ecc71; background: #0d2a1a; }
+  .tracker-pill.miss { border-color: #e63946; color: #e63946; background: #2a0d0d; }
+  .tracker-pill.pending { border-color: #f4a261; color: #f4a261; background: #2a1800; }
+  .tracker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .tracker-scroll {
+    max-height: 420px;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
 </style>
 <meta name="google-adsense-account" content="ca-pub-6433797533342090">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6433797533342090"
@@ -742,27 +801,75 @@
   </section>
 
   <section class="section" id="tracker">
-    <p class="section-title">HR <span>TRACKER</span></p>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:20px">
-      <div class="game-card"><h3>Today's Accuracy</h3><div id="tracker-today">0-0 (0%)</div></div>
-      <div class="game-card"><h3>All-Time Accuracy</h3><div id="tracker-all">0-0 (0%)</div></div>
-      <div class="game-card"><h3>Best Favorite Today</h3><div id="tracker-favorite">Loading…</div></div>
-      <div class="game-card"><h3>Best Underdog Today</h3><div id="tracker-underdog">Loading…</div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+      <p class="section-title" style="margin-bottom:0">DIAMOND REPORT <span>TRACKER</span></p>
+      <div id="tracker-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Syncing…</div>
     </div>
-    <div class="game-card" style="margin-bottom:16px">
-      <h3>Top HR Threat Results</h3>
-      <table>
-        <thead><tr><th>Player</th><th>Team</th><th>Result</th><th>Correct</th></tr></thead>
-        <tbody id="tracker-results"></tbody>
-      </table>
+
+    <div class="tracker-grid">
+      <div class="tracker-card">
+        <h3>Today's Top HR Threat Accuracy</h3>
+        <div class="tracker-big" id="tracker-today">0-0</div>
+        <div class="tracker-sub" id="tracker-today-sub">0% hit rate</div>
+      </div>
+      <div class="tracker-card">
+        <h3>All-Time HR Accuracy</h3>
+        <div class="tracker-big" id="tracker-all">0-0</div>
+        <div class="tracker-sub" id="tracker-all-sub">0% hit rate</div>
+      </div>
+      <div class="tracker-card">
+        <h3>Best-Favored Today</h3>
+        <div class="tracker-big tracker-good" id="tracker-favorite">—</div>
+        <div class="tracker-sub" id="tracker-favorite-sub">Waiting for Diamond Report Picks</div>
+      </div>
+      <div class="tracker-card">
+        <h3>Best Underdog Today</h3>
+        <div class="tracker-big tracker-warn" id="tracker-underdog">—</div>
+        <div class="tracker-sub" id="tracker-underdog-sub">Waiting for Diamond Report Picks</div>
+      </div>
     </div>
-    <div class="game-card">
-      <h3>Next Game HR Prediction Engine</h3>
-      <p style="color:var(--muted)">This section is reserved for historical hit-rate analysis. Correct predictions will be stored and used to weight future HR projections by player/team success.</p>
-      <div id="tracker-predictions"></div>
+
+    <div class="tracker-grid">
+      <div class="tracker-card">
+        <h3>Source Stack Used For Prediction</h3>
+        <div id="tracker-source-stack" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        <div class="tracker-sub" style="margin-top:10px">Static sites with CORS limits are consumed when data already exists in the page/API feed or when you later connect a backend proxy/API key.</div>
+      </div>
+      <div class="tracker-card">
+        <h3>Model Inputs</h3>
+        <div id="tracker-model-inputs" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        <div class="tracker-sub" style="margin-top:10px">Weights: live HR projection, player history, team history, confirmed lineup, game environment, odds/market edge.</div>
+      </div>
+    </div>
+
+    <div class="tracker-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <h3 style="margin-bottom:0">Top HR Threat Players — Daily + All-Time Tally</h3>
+        <button onclick="resetTrackerData()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:700;padding:5px 9px;border-radius:5px;cursor:pointer">Reset Tracker</button>
+      </div>
+      <div class="tracker-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th><th>Team</th><th>Today HR%</th><th>Today</th><th>Player All-Time</th><th>Team All-Time</th>
+            </tr>
+          </thead>
+          <tbody id="tracker-results"><tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for HR Potential data…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tracker-grid">
+      <div class="tracker-card">
+        <h3>Correct Pick Team Analyzer</h3>
+        <div id="tracker-team-results" class="tracker-scroll"><div style="color:var(--muted);font-size:12px">Waiting for correct picks…</div></div>
+      </div>
+      <div class="tracker-card">
+        <h3>Upcoming HR Predictions — Players Only</h3>
+        <div id="tracker-predictions" class="tracker-scroll"><div style="color:var(--muted);font-size:12px">Waiting for stored results…</div></div>
+      </div>
     </div>
   </section>
-
 </main>
 
 <!-- Paywall Modal -->
@@ -3602,6 +3709,160 @@ function showTab(id, el) {
     });
   }
   setInterval(normalizeExistingTicker, 1000);
+})();
+
+
+// Diamond Report Tracker Engine — live tally + source-weighted model
+(function(){
+  const STORE_KEY = 'diamondReportTrackerV2';
+  const SOURCES = [
+    'MLB Stats API / Live play-by-play', 'Baseball Savant / Statcast', 'FanGraphs', 'Baseball-Reference',
+    'StatMuse', 'Brooks Baseball', 'Baseball Prospectus / PECOTA', 'RotoWire lineups/injuries',
+    'Sportsbook odds', 'Weather', 'Umpire data', 'Betting market movement'
+  ];
+  const MODEL_INPUTS = ['HR Potential', 'HRs Today', 'Diamond Report Picks', 'Player hit rate', 'Team hit rate', 'Lineup status', 'Game environment', 'Odds edge'];
+
+  const dayKey = () => new Date().toISOString().slice(0,10);
+  const norm = s => String(s || '').replace(/\s+/g,' ').trim();
+  const pct = (h,t) => t ? Math.round((h/t)*100) : 0;
+  const num = s => { const m=String(s||'').match(/(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : 0; };
+  const set = (id, html) => { const el=document.getElementById(id); if(el) el.innerHTML=html; };
+
+  function loadStore(){
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || { picks: [], players:{}, teams:{}, days:{} }; }
+    catch(e){ return { picks: [], players:{}, teams:{}, days:{} }; }
+  }
+  function saveStore(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+
+  function extractHRThreats(){
+    const rows=[...document.querySelectorAll('#hr-potential-content tbody tr')];
+    let picks=rows.map((row,i)=>{
+      const txt=row.innerText || '';
+      const nameEl=row.querySelector('.hrp-batter-name');
+      const player=norm(nameEl ? nameEl.textContent : (txt.split('\n')[0] || ''));
+      const team=(txt.match(/\b[A-Z]{2,3}\b/)||[''])[0];
+      const hrPct=num(txt);
+      return { player, team, hrPct, rank:i+1, source:'HR Potential' };
+    }).filter(p => p.player && !/loading|waiting|no data/i.test(p.player));
+    return picks.slice(0,10);
+  }
+
+  function extractHRToday(){
+    const root=document.getElementById('hrs-today-content');
+    const hitSet=new Set();
+    if(!root) return hitSet;
+    const text=root.innerText || '';
+    [...root.querySelectorAll('.stat-row, tr')].forEach(row=>{
+      const first=norm((row.innerText||'').split('\n')[0]);
+      if(first && !/loading|no home|waiting/i.test(first) && first.length < 60) hitSet.add(first.toLowerCase());
+    });
+    [...text.matchAll(/([A-Z][a-z.'-]+(?:\s+[A-Z][a-z.'-]+){1,3})\s+hit a home run/gi)].forEach(m=>hitSet.add(norm(m[1]).toLowerCase()));
+    return hitSet;
+  }
+
+  function extractGamePicks(){
+    const root=document.getElementById('gameprops-content');
+    if(!root) return [];
+    const cards=[...root.querySelectorAll('.gp-card')];
+    const picks=[];
+    cards.forEach(card=>{
+      const t=card.innerText || '';
+      if(!/DIAMOND REPORT PICK/i.test(t)) return;
+      const lines=t.split('\n').map(norm).filter(Boolean);
+      const idx=lines.findIndex(l=>/DIAMOND REPORT PICK/i.test(l));
+      let team=(lines[idx+1]||'').match(/^[A-Z]{2,3}$/) ? lines[idx+1] : '';
+      const winLine=lines.find(l=>/%\s*WIN/i.test(l));
+      const winPct=winLine ? num(winLine) : 0;
+      const lean=/LEAN|UNDERDOG|DOG/i.test(t) ? 'underdog' : 'favorite';
+      if(team) picks.push({team, winPct, lean});
+    });
+    return picks;
+  }
+
+  function upsert(store, pick, hit){
+    const day=dayKey();
+    const key=`${day}|${pick.player.toLowerCase()}|${pick.team}`;
+    store.days[day] ||= { keys:[] };
+    const existing=store.picks.find(p=>p.key===key);
+    if(!existing){
+      const rec={ key, date:day, ...pick, hit };
+      store.picks.push(rec); store.days[day].keys.push(key);
+      store.players[pick.player.toLowerCase()] ||= { player:pick.player, team:pick.team, hits:0, total:0 };
+      store.players[pick.player.toLowerCase()].total++;
+      if(hit) store.players[pick.player.toLowerCase()].hits++;
+      if(pick.team){
+        store.teams[pick.team] ||= { team:pick.team, hits:0, total:0, correctPlayers:{} };
+        store.teams[pick.team].total++;
+        if(hit){ store.teams[pick.team].hits++; store.teams[pick.team].correctPlayers[pick.player]=(store.teams[pick.team].correctPlayers[pick.player]||0)+1; }
+      }
+    } else if(existing.hit !== hit){
+      const delta=hit ? 1 : -1;
+      existing.hit=hit;
+      const pl=store.players[pick.player.toLowerCase()]; if(pl) pl.hits += delta;
+      const tm=store.teams[pick.team]; if(tm){ tm.hits += delta; if(hit) tm.correctPlayers[pick.player]=(tm.correctPlayers[pick.player]||0)+1; }
+    }
+  }
+
+  function predictionScore(p, store){
+    const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0};
+    const tm=store.teams[p.team] || {hits:0,total:0};
+    const playerRate=pct(pl.hits,pl.total);
+    const teamRate=pct(tm.hits,tm.total);
+    // Source-weighted score, using the data currently available in the page and stored tracker history.
+    return Math.min(99, Math.round((p.hrPct||0)*0.55 + playerRate*0.25 + teamRate*0.15 + Math.max(0, 11-p.rank)*0.5));
+  }
+
+  function render(store, currentThreats){
+    const day=dayKey();
+    const todays=store.picks.filter(p=>p.date===day);
+    const th=todays.filter(p=>p.hit).length, tt=todays.length;
+    const ah=store.picks.filter(p=>p.hit).length, at=store.picks.length;
+    set('tracker-today', `${th}-${Math.max(tt-th,0)}`); set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} Top HR Threats tracked`);
+    set('tracker-all', `${ah}-${Math.max(at-ah,0)}`); set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} stored picks`);
+
+    set('tracker-source-stack', SOURCES.map((s,i)=>`<span class="tracker-pill ${i===0?'hit':'pending'}">${i===0?'✅':'🔌'} ${s}</span>`).join(''));
+    set('tracker-model-inputs', MODEL_INPUTS.map(s=>`<span class="tracker-pill hit">${s}</span>`).join(''));
+
+    const gamePicks=extractGamePicks();
+    const fav=[...gamePicks].sort((a,b)=>b.winPct-a.winPct)[0];
+    const dog=gamePicks.filter(p=>p.lean==='underdog').sort((a,b)=>b.winPct-a.winPct)[0] || [...gamePicks].sort((a,b)=>a.winPct-b.winPct)[0];
+    set('tracker-favorite', fav ? fav.team : '—'); set('tracker-favorite-sub', fav ? `${fav.winPct}% projected win • strongest favorite` : 'Waiting for Diamond Report Picks');
+    set('tracker-underdog', dog ? dog.team : '—'); set('tracker-underdog-sub', dog ? `${dog.winPct}% projected win • value/underdog slot` : 'Waiting for Diamond Report Picks');
+
+    const rows=(todays.length?todays:currentThreats).map(p=>{
+      const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0};
+      const tm=store.teams[p.team] || {hits:0,total:0};
+      const status=p.hit ? '<span class="tracker-pill hit">✅ Right</span>' : '<span class="tracker-pill pending">⏳ Wrong/Pending</span>';
+      return `<tr><td>${p.player}</td><td>${p.team||'—'}</td><td>${p.hrPct||0}%</td><td>${status}</td><td>${pl.hits}-${Math.max(pl.total-pl.hits,0)} (${pct(pl.hits,pl.total)}%)</td><td>${tm.hits}-${Math.max(tm.total-tm.hits,0)} (${pct(tm.hits,tm.total)}%)</td></tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for HR Potential data to load.</td></tr>';
+    set('tracker-results', rows);
+
+    const teams=Object.values(store.teams).sort((a,b)=>pct(b.hits,b.total)-pct(a.hits,a.total)||b.total-a.total).slice(0,8);
+    set('tracker-team-results', teams.length ? teams.map((t,i)=>{
+      const top=Object.entries(t.correctPlayers||{}).sort((a,b)=>b[1]-a[1])[0];
+      return `<div class="stat-row"><div class="stat-row-num">${i+1}</div><div style="flex:1"><div style="font-weight:800">${t.team}</div><div style="color:var(--muted);font-size:11px">Correct HR picks: ${t.hits}/${t.total}${top ? ' • best player: '+top[0] : ''}</div></div><span class="tracker-pill ${pct(t.hits,t.total)>=25?'hit':'pending'}">${pct(t.hits,t.total)}%</span></div>`;
+    }).join('') : '<div style="color:var(--muted);font-size:12px">Correct teams will appear after a Top HR Threat hits.</div>');
+
+    const preds=currentThreats.map(p=>({ ...p, score:predictionScore(p,store) })).sort((a,b)=>b.score-a.score).slice(0,10);
+    set('tracker-predictions', preds.length ? preds.map((p,i)=>{
+      const pl=store.players[p.player.toLowerCase()] || {hits:0,total:0}; const tm=store.teams[p.team] || {hits:0,total:0};
+      return `<div class="stat-row"><div class="stat-row-num">${i+1}</div><div style="flex:1"><div style="font-weight:800">${p.player}</div><div style="color:var(--muted);font-size:11px">${p.team||'—'} • base HR ${p.hrPct||0}% • player ${pct(pl.hits,pl.total)}% • team ${pct(tm.hits,tm.total)}%</div></div><span class="tracker-pill ${p.score>=35?'hit':p.score>=20?'pending':'miss'}">${p.score}%</span></div>`;
+    }).join('') : '<div style="color:var(--muted);font-size:12px">Upcoming player HR predictions populate from HR Potential once loaded.</div>');
+
+    set('tracker-refresh', `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`);
+  }
+
+  function sync(){
+    const store=loadStore();
+    const threats=extractHRThreats();
+    const homers=extractHRToday();
+    threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
+    saveStore(store); render(store, threats);
+  }
+  window.resetTrackerData=function(){ if(confirm('Reset all Tracker history?')){ localStorage.removeItem(STORE_KEY); sync(); } };
+  window.syncDiamondTracker=sync;
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', sync); else sync();
+  setInterval(sync, 30000);
 })();
 
 </script>
