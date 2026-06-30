@@ -1266,6 +1266,107 @@ img, svg, canvas, video{
 })();
 </script>
 
+
+<style id="v4-5-heading-font-cleanup">
+/* ============================================================
+   Diamond Report v4.5 — Heading Font Cleanup
+   - Replaces the overly-spaced display font in section headers.
+   - Keeps Bebas Neue only for big stat numbers/brand-style elements.
+   - Makes HR Potential, K's Today, Diamond Report Picks, and K Props
+     easier to read across desktop, tablet, and mobile.
+   ============================================================ */
+
+/* Clean section headings */
+.section-title,
+.lineup-title,
+.zone-title,
+.vuln-title,
+.kprop-reason-title,
+.tracker-card h3,
+.h2h-lbl,
+thead th {
+  font-family: var(--dr-font-body, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif) !important;
+  font-weight: 800 !important;
+  letter-spacing: .09em !important;
+  text-transform: uppercase !important;
+}
+
+/* Section title sizing and spacing */
+.section-title {
+  font-size: 18px !important;
+  line-height: 1.25 !important;
+  margin-bottom: 14px !important;
+}
+
+.section-title span {
+  letter-spacing: .09em !important;
+}
+
+/* Keep big numbers and brand pieces in display font only */
+.tracker-big,
+.stat-row-num,
+.ks-count,
+.team-abbr,
+.gp-team-abbr,
+.gp-pick-val,
+.kprop-line-val,
+.kprop-pred-val,
+.score-block,
+.h2h-val,
+.hrp-prob-num,
+.breaking-label,
+.breaking-item {
+  font-family: var(--dr-font-display, 'Bebas Neue', Impact, 'Arial Black', sans-serif) !important;
+}
+
+/* Filter buttons and small chips should be readable, not stretched */
+button,
+.tab,
+.hrp-matchup-btn,
+.btn-matchup,
+.btn-lineup,
+.btn-game,
+.gp-factor,
+.kprop-chip,
+.tracker-pill,
+.hrp-hot-badge,
+.hrp-hot-chip {
+  font-family: var(--dr-font-body, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif) !important;
+  letter-spacing: .04em !important;
+}
+
+/* HR Potential + K's Today top row cleanup */
+#props .section-title,
+#props h3,
+#matchups .section-title,
+#tracker .section-title {
+  font-family: var(--dr-font-body, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif) !important;
+  letter-spacing: .08em !important;
+}
+
+/* Mobile: reduce spacing further so headers do not look broken up */
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 16px !important;
+    letter-spacing: .07em !important;
+  }
+  .section-title span {
+    letter-spacing: .07em !important;
+  }
+  .tracker-card h3,
+  thead th {
+    letter-spacing: .06em !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .section-title {
+    font-size: 15px !important;
+    letter-spacing: .05em !important;
+  }
+}
+</style>
+
 </head>
 <body>
 

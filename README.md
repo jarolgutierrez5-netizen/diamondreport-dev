@@ -1,16 +1,18 @@
-# Diamond Report v4.4 — UI Cleanup + Responsive Typography
+# Diamond Report v4.5 — Heading Font Cleanup
 
-## Changes
-- Removed visible "Last updated" labels from section header areas.
-- Preserved internal refresh logic while hiding timestamp clutter.
-- Added a full typography pass so the website uses the same font system across Live Scores, Pitcher Report, Props, Upcoming Games, and Tracker.
-- Improved mobile, tablet, and desktop responsiveness.
-- Improved Tracker card visibility on iPhone and tablet layouts.
-- Improved HR Potential and Pitcher Report horizontal scrolling on small screens.
+## What changed
+- Cleaned up the font style for section headers like HR Potential, K's Today, Diamond Report Picks, and K Props.
+- Removed the overly spaced display-font look from those section titles.
+- Kept the bold display font only where it works best: large stat numbers, team abbreviations, scores, and ticker-style elements.
+- Preserved prior mobile/tablet/desktop responsive optimizations.
+- Preserved prior hidden "Last updated" labels.
 
-## Update in GitHub
-Replace these files:
-- `index.html`
-- `README.md`
+## Upload to GitHub
+Replace only:
 
-No data, scripts, or workflow changes are required for this UI-only update.
+```text
+index.html
+README.md
+```
+
+No `data`, `scripts`, or workflow updates are needed.
