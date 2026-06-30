@@ -748,6 +748,20 @@
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
   <script>
+
+// Safe fallback after Live Scores banner removal
+window.scoresBanner = window.scoresBanner || {
+  update(){},
+  render(){},
+  clear(){},
+  set(){},
+  add(){},
+  hide(){}
+};
+window.updateScoresBanner = window.updateScoresBanner || function(){};
+window.renderScoresBanner = window.renderScoresBanner || function(){};
+
+
        (adsbygoogle = window.adsbygoogle || []).push({});
        // Expand container once ad loads
        window.addEventListener('load', function() {
@@ -951,7 +965,7 @@
     </div>
 
     <div class="tracker-card" style="margin-bottom:16px">
-      <h3>Diamond Report Picks — Daily + All-Time Accuracy</h3>
+      <h3>Diamond Report Picks — Daily + All-Time Accuracy</h3><div class="tracker-sub" style="margin-bottom:8px">One row per game/pick. Duplicate live refresh rows are merged automatically.</div>
       <div class="tracker-scroll">
         <table>
           <thead>
@@ -1384,7 +1398,6 @@ const prevBannerHRCounts = {};  // batterId -> previous HR count
 let breakingHRActive = false;
 let breakingHRTimeout = null;
 let breakingHRNames = [];
-let bannerInitialized = false; // prevents false BREAKING alert on first page load
 let hrpRows = [], hrpSortCol = 'hrProb', hrpSortDir = -1, hrpFilter = 'all';
 const prevHrpHRs = {};          // batterId -> todayHR count for diff detection
 let kPropsData = [];
@@ -3022,21 +3035,13 @@ function renderBanner() {
   if (!scoresBanner || !scoresTrack) return;
 
   if (breakingHRActive && breakingHRNames.length) {
-    const breakingHTML = (() => {
-      if (breakingHRNames.length === 1) {
-        return `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 20px">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#ffffff;animation:pulse 0.6s infinite">🚨 BREAKING</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#f97316;text-shadow:0 0 12px #f97316">${breakingHRNames[0]} HIT A HOME RUN! 💥</span>
-        </span>`;
-      }
-      const names = breakingHRNames.length === 2
-        ? breakingHRNames.join(' & ')
-        : breakingHRNames.slice(0,-1).join(', ') + ' & ' + breakingHRNames.slice(-1);
-      return `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 20px">
+    const breakingHTML = breakingHRNames.map(n =>
+      `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 20px">
         <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#ffffff;animation:pulse 0.6s infinite">🚨 BREAKING</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#f97316;text-shadow:0 0 12px #f97316">${names} ALL HIT HOME RUNS! 💥</span>
-      </span>`;
-    })();
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#f97316;text-shadow:0 0 12px #f97316">${n} HIT A HOME RUN!</span>
+        <span style="font-size:20px">💥</span>
+      </span>`
+    ).join('<span style="color:#334155;padding:0 10px;font-size:20px">·</span>');
     scoresTrack.innerHTML = breakingHTML;
     scoresTrack.style.cssText = 'display:inline-flex;align-items:center;padding:8px 20px;animation:none;justify-content:center;flex-wrap:wrap;width:100%';
     scoresBanner.style.background = 'linear-gradient(90deg,#1a0000,#2a0500,#1a0000)';
@@ -3083,16 +3088,13 @@ function renderBanner() {
 }
 
 function updateLiveBanner() {
+  // Detect new HRs since last check
   const newHitters = [];
   Object.values(bannerHRs).forEach(h => {
-    const prev = prevBannerHRCounts[h.id];
-    if (bannerInitialized && prev !== undefined && h.count > prev) {
-      newHitters.push(h.name);
-    }
+    const prev = prevBannerHRCounts[h.id] || 0;
+    if (h.count > prev) newHitters.push(h.name);
     prevBannerHRCounts[h.id] = h.count;
   });
-  bannerInitialized = true;
-
   if (newHitters.length && !breakingHRActive) {
     triggerBreakingHR(newHitters);
   } else {
@@ -4370,17 +4372,68 @@ function showTab(id, el) {
 
   function upsertMarketPick(store, rec){
     store.market ||= { drp: [], kprop: [] };
+    rec.key = rec.type === 'kprop' ? normalizeKPropKey(rec) : normalizeDRPKey(rec);
     rec.result = rec.type === 'kprop' ? resolveKPropResult(rec) : resolveDRPickResult(rec);
     rec.finalChecked = rec.result !== 'pending';
+
     const bucket = rec.type === 'kprop' ? store.market.kprop : store.market.drp;
     const existing = bucket.find(x => x.key === rec.key);
     if(!existing) bucket.push(rec);
     else Object.assign(existing, rec);
+
+    dedupeMarketPicks(store);
   }
+
+
+  function normalizeDRPKey(rec){
+    const date = rec.date || dayKey();
+    const pick = String(rec.pick || '').toUpperCase().trim();
+    const teams = Array.isArray(rec.teams) ? rec.teams.filter(Boolean).map(x=>String(x).toUpperCase()).sort().join('-') : '';
+    const labelTeams = String(rec.label || '').toUpperCase().match(/\b[A-Z]{2,3}\b/g);
+    const labelKey = labelTeams && labelTeams.length >= 2 ? labelTeams.slice(0,2).sort().join('-') : String(rec.label || '').toUpperCase().replace(/\s+/g,' ').trim();
+    return `${date}|DRP|${pick}|${teams || labelKey}`;
+  }
+
+  function normalizeKPropKey(rec){
+    const date = rec.date || dayKey();
+    return `${date}|KPROP|${String(rec.label || '').toLowerCase().trim()}|${String(rec.line || '').trim()}|${String(rec.pick || '').toUpperCase().trim()}`;
+  }
+
+  function dedupeMarketPicks(store){
+    store.market ||= { drp: [], kprop: [] };
+
+    const dedupe = (list, keyFn) => {
+      const map = new Map();
+      (list || []).forEach(item => {
+        const key = keyFn(item);
+        const existing = map.get(key);
+        if(!existing){
+          item.key = key;
+          map.set(key, item);
+          return;
+        }
+
+        // Prefer the most informative/graded row.
+        const existingScore = (existing.result === 'win' || existing.result === 'loss' ? 3 : existing.result === 'push' ? 2 : 1) + (existing.teams?.length || 0);
+        const itemScore = (item.result === 'win' || item.result === 'loss' ? 3 : item.result === 'push' ? 2 : 1) + (item.teams?.length || 0);
+        if(itemScore >= existingScore){
+          item.key = key;
+          map.set(key, { ...existing, ...item, key });
+        }
+      });
+      return [...map.values()];
+    };
+
+    store.market.drp = dedupe(store.market.drp, normalizeDRPKey);
+    store.market.kprop = dedupe(store.market.kprop, normalizeKPropKey);
+  }
+
 
   function marketStats(store, type, date){
     store.market ||= { drp: [], kprop: [] };
-    const list = (store.market[type] || []).filter(x => !date || x.date === date);
+    dedupeMarketPicks(store);
+    const keyFn = type === 'kprop' ? normalizeKPropKey : normalizeDRPKey;
+    const list = [...new Map((store.market[type] || []).filter(x => !date || x.date === date).map(x => [keyFn(x), x])).values()];
     const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
     const wins = graded.filter(x => x.result === 'win').length;
     return { wins, losses: Math.max(graded.length - wins, 0), total: graded.length, pending: list.length - graded.length, list };
@@ -4422,7 +4475,8 @@ function showTab(id, el) {
 
     const statusBadge = r => resultBadgeFromFinal(r.result);
 
-    set('tracker-drp-results', drpToday.list.length ? drpToday.list.map(r=>{
+    const drpRows=[...new Map(drpToday.list.map(r=>[normalizeDRPKey(r), r])).values()];
+    set('tracker-drp-results', drpRows.length ? drpRows.map(r=>{
       const at=marketAllTimeByKey(store,'drp',r.label);
       return `<tr>
         <td>${r.label}</td>
@@ -4527,6 +4581,7 @@ function showTab(id, el) {
       drpAccuracy.forEach(r=>upsertMarketPick(store,r));
       kpropsAccuracy.forEach(r=>upsertMarketPick(store,r));
       threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
+      dedupeMarketPicks(store);
       store.debug.lastError = '';
       store.debug.lastSync = new Date().toISOString();
       saveStore(store);
@@ -4814,6 +4869,86 @@ function showTab(id, el) {
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
+})();
+
+
+// Retry sections that may have failed before scoresBanner fallback initialized
+(function(){
+  function clearScoresBannerErrors(){
+    ['ks-today-props','hrs-today-content'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el && /scoresBanner is not defined/i.test(el.innerText||'')){
+        el.innerHTML = '<div class="mu-empty"><span class="spin"></span>Reloading…</div>';
+      }
+    });
+  }
+  function retryFailedSections(){
+    clearScoresBannerErrors();
+    ['loadKsToday','loadHRsToday','loadProps','loadKProps'].forEach(fn=>{
+      if(typeof window[fn] === 'function'){
+        try { window[fn](); } catch(e) { console.warn(fn, e); }
+      }
+    });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(retryFailedSections, 300));
+  else setTimeout(retryFailedSections, 300);
+})();
+
+
+// Robust K Count badge updater
+(function(){
+  function getNum(s){ const m=String(s||'').match(/(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : null; }
+  function cleanName(s){ return String(s||'').replace(/\s+/g,' ').trim().toLowerCase(); }
+
+  function findKForPitcher(name){
+    const roots = [
+      document.getElementById('ks-today-props'),
+      document.getElementById('pr-content'),
+      document.getElementById('kprops-content')
+    ].filter(Boolean);
+    for(const root of roots){
+      const rows=[...root.querySelectorAll('.ks-today-row,.pr-main-row,.kprop-row,.stat-row,tr,div')];
+      for(const row of rows){
+        const t=(row.innerText||'');
+        if(!cleanName(t).includes(name)) continue;
+        let m=t.match(/(\d+)\s*K\b/i) || t.match(/\bK\s*[:\-]?\s*(\d+)\b/i) || t.match(/strikeouts?\s*[:\-]?\s*(\d+)/i);
+        if(m) return Number(m[1]);
+      }
+    }
+    return null;
+  }
+
+  function gameStatusForRow(row){
+    const t=(row.innerText||'').toLowerCase();
+    if(/final|game over|completed/.test(t)) return 'final';
+    if(/live|in progress|top|bot|bottom/.test(t)) return 'live';
+    // If a K count exists and game time has passed, mark as live/current rather than pending
+    return 'pending';
+  }
+
+  function apply(){
+    const root=document.getElementById('kprops-content');
+    if(!root) return;
+    root.querySelectorAll('.kprop-row').forEach(row=>{
+      const pitcherCell=row.querySelector('.kprop-pitcher') || row;
+      const name=cleanName(row.querySelector('.kprop-name')?.textContent || (row.innerText||'').split('\n')[0]);
+      let badge=row.querySelector('.kprop-kcount');
+      if(!badge){
+        badge=document.createElement('div');
+        pitcherCell.appendChild(badge);
+      }
+      let k=findKForPitcher(name);
+      let status=gameStatusForRow(row);
+      // If K count exists but status is not final, call it live/current.
+      if(k !== null && status === 'pending') status='live';
+      badge.className='kprop-kcount ' + (status==='final'?'final':status==='live'?'live':'pending');
+      badge.textContent = k === null ? '⏳ K Count Pending' : (status==='final' ? `✅ Final K's: ${k}` : `● Live K Count: ${k}`);
+    });
+    if(typeof window.applyKCountResultColors === 'function') window.applyKCountResultColors();
+  }
+  window.applyKCountLabels=apply;
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+  setInterval(apply, 1000);
 })();
 
 </script>
