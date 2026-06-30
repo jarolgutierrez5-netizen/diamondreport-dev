@@ -3969,6 +3969,88 @@ function showTab(id, el) {
   }
 
 
+
+  function finalGameMap(){
+    const map = {};
+    const finalRoot = document.getElementById('final-games');
+    const allFinalCards = finalRoot ? [...finalRoot.querySelectorAll('.game-card')] : [];
+    allFinalCards.forEach(card => {
+      const txt = card.innerText || '';
+      if(!/FINAL|F\/|FINAL SCORE/i.test(txt)) return;
+      const teams = [...card.querySelectorAll('.team-abbr')].map(x => norm(x.textContent)).filter(Boolean);
+      const scores = [...card.querySelectorAll('.score-block span, .score-block div')]
+        .map(x => norm(x.textContent))
+        .filter(x => /^\d+$/.test(x))
+        .map(Number);
+      if(teams.length >= 2 && scores.length >= 2){
+        const away = teams[0], home = teams[1], awayScore = scores[0], homeScore = scores[1];
+        const winner = awayScore > homeScore ? away : homeScore > awayScore ? home : 'TIE';
+        const key1 = `${away}@${home}`;
+        const key2 = `${away}VS${home}`;
+        map[key1] = { away, home, awayScore, homeScore, winner, final:true };
+        map[key2] = map[key1];
+        map[away] ||= [];
+        map[home] ||= [];
+        map[away].push(map[key1]);
+        map[home].push(map[key1]);
+      }
+    });
+    return map;
+  }
+
+  function isAnyGameFinal(){
+    return Object.keys(finalGameMap()).length > 0;
+  }
+
+  function resultBadgeFromFinal(result){
+    return result === 'win'
+      ? '<span class="tracker-pill hit">✅ Right</span>'
+      : result === 'loss'
+        ? '<span class="tracker-pill miss">❌ Wrong</span>'
+        : result === 'push'
+          ? '<span class="tracker-pill pending">↔ Push</span>'
+          : '<span class="tracker-pill pending">⏳ Wait Final</span>';
+  }
+
+  function resolveDRPickResult(rec){
+    const finals = finalGameMap();
+    if(!Object.keys(finals).length) return 'pending';
+    const pick = String(rec.pick || '').toUpperCase();
+    if(!pick || pick === '—') return 'pending';
+    const games = finals[pick] || [];
+    const game = Array.isArray(games) ? games[0] : null;
+    if(!game) return 'pending';
+    return game.winner === pick ? 'win' : game.winner === 'TIE' ? 'push' : 'loss';
+  }
+
+  function resolveKPropResult(rec){
+    // K Props can only be graded when the pitcher has a final strikeout count visible.
+    // If the page does not expose a final K count, keep it pending instead of guessing.
+    const finalsExist = isAnyGameFinal();
+    if(!finalsExist) return 'pending';
+
+    const name = String(rec.label || '').toLowerCase();
+    const root = document.getElementById('ks-today-props');
+    if(!root || !name) return 'pending';
+
+    let kCount = null;
+    [...root.querySelectorAll('.ks-today-row, .stat-row, tr, div')].forEach(row => {
+      const t = (row.innerText || '').toLowerCase();
+      if(kCount !== null || !t.includes(name)) return;
+      const m = t.match(/(\d+)\s*(?:k|ks|strikeout|strikeouts)\b/i) || t.match(/\b(\d+)\b/);
+      if(m) kCount = Number(m[1]);
+    });
+
+    if(kCount === null || !Number.isFinite(kCount)) return 'pending';
+    const line = Number(String(rec.line || '').match(/(\d+(?:\.\d+)?)/)?.[1] || NaN);
+    if(!Number.isFinite(line)) return 'pending';
+
+    if(/OVER/i.test(rec.pick)) return kCount > line ? 'win' : 'loss';
+    if(/UNDER/i.test(rec.pick)) return kCount < line ? 'win' : 'loss';
+    return 'pending';
+  }
+
+
   function pickResultFromText(t){
     const upper = String(t || '').toUpperCase();
     if (/✅|WON|WIN\b|RIGHT|CASHED|HIT\b/.test(upper)) return 'win';
@@ -3996,7 +4078,7 @@ function showTab(id, el) {
         type: 'drp',
         label: matchup || `Game Pick ${i+1}`,
         pick: pick || '—',
-        result: pickResultFromText(t),
+        result: 'pending',
         date: dayKey()
       };
     }).filter(Boolean);
@@ -4019,7 +4101,7 @@ function showTab(id, el) {
         label: name,
         pick,
         line: line || '—',
-        result: pickResultFromText(t),
+        result: 'pending',
         date: dayKey()
       };
     }).filter(Boolean);
@@ -4027,6 +4109,8 @@ function showTab(id, el) {
 
   function upsertMarketPick(store, rec){
     store.market ||= { drp: [], kprop: [] };
+    rec.result = rec.type === 'kprop' ? resolveKPropResult(rec) : resolveDRPickResult(rec);
+    rec.finalChecked = rec.result !== 'pending';
     const bucket = rec.type === 'kprop' ? store.market.kprop : store.market.drp;
     const existing = bucket.find(x => x.key === rec.key);
     if(!existing) bucket.push(rec);
@@ -4067,21 +4151,15 @@ function showTab(id, el) {
     const kpAll=marketStats(store,'kprop');
 
     set('tracker-drp-today', `${drpToday.wins}-${drpToday.losses}`);
-    set('tracker-drp-today-sub', `${pct(drpToday.wins,drpToday.total)}% today • ${drpToday.pending} pending`);
+    set('tracker-drp-today-sub', `${pct(drpToday.wins,drpToday.total)}% today • ${drpToday.pending} waiting final`);
     set('tracker-drp-all', `${drpAll.wins}-${drpAll.losses}`);
-    set('tracker-drp-all-sub', `${pct(drpAll.wins,drpAll.total)}% all-time • ${drpAll.pending} pending`);
+    set('tracker-drp-all-sub', `${pct(drpAll.wins,drpAll.total)}% all-time • ${drpAll.pending} waiting final`);
     set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
-    set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.pending} pending`);
+    set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.pending} waiting final`);
     set('tracker-kprops-all', `${kpAll.wins}-${kpAll.losses}`);
-    set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.pending} pending`);
+    set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.pending} waiting final`);
 
-    const statusBadge = r => r.result === 'win'
-      ? '<span class="tracker-pill hit">✅ Right</span>'
-      : r.result === 'loss'
-        ? '<span class="tracker-pill miss">❌ Wrong</span>'
-        : r.result === 'push'
-          ? '<span class="tracker-pill pending">↔ Push</span>'
-          : '<span class="tracker-pill pending">⏳ Pending</span>';
+    const statusBadge = r => resultBadgeFromFinal(r.result);
 
     set('tracker-drp-results', drpToday.list.length ? drpToday.list.map(r=>{
       const at=marketAllTimeByKey(store,'drp',r.label);
@@ -4139,6 +4217,9 @@ function showTab(id, el) {
     }).join('') || '<tr><td colspan="6" style="text-align:left;color:var(--muted)">Waiting for HR Potential data to load.</td></tr>';
     set('tracker-results', rows);
 
+    if(!isAnyGameFinal()){
+      set('tracker-team-results', '<div style="color:var(--muted);font-size:12px">Waiting for final games before updating team analyzer.</div>');
+    } else {
     const teams=Object.values(store.teams).sort((a,b)=>pct(b.hits,b.total)-pct(a.hits,a.total)||b.total-a.total).slice(0,8);
     set('tracker-team-results', teams.length ? teams.map((t,i)=>{
       const top=Object.entries(t.correctPlayers||{}).sort((a,b)=>b[1]-a[1])[0];
@@ -4150,7 +4231,8 @@ function showTab(id, el) {
         </div>
         <span class="tracker-pill ${pct(t.hits,t.total)>=25?'hit':'pending'}">${pct(t.hits,t.total)}%</span>
       </div>`;
-    }).join('') : '<div style="color:var(--muted);font-size:12px">Correct teams will appear after a Top HR Threat hits.</div>');
+    }).join('') : '<div style="color:var(--muted);font-size:12px">Correct teams will appear after a Top HR Threat hits and games are final.</div>');
+    }
 
     const preds=currentThreats.map(p=>({ ...p, score:predictionScore(p,store) })).sort((a,b)=>b.score-a.score).slice(0,10);
     set('tracker-predictions', preds.length ? preds.map((p,i)=>{
@@ -4167,7 +4249,7 @@ function showTab(id, el) {
     }).join('') : '<div style="color:var(--muted);font-size:12px">Upcoming player HR predictions populate from HR Potential once loaded.</div>');
 
     set('tracker-refresh',
-      `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} • HRP ${currentThreats.length} • HRs ${homers.size} • Picks ${gamePicks.length}`
+      `Last synced ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} • HRP ${currentThreats.length} • HRs ${homers.size} • Picks ${gamePicks.length} • Finals ${Object.keys(finalGameMap()).length ? 'yes' : 'no'}`
     );
   }
 
