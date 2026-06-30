@@ -1,3 +1,22 @@
+# Diamond Report DIE v5.2 — Full Developer Responsive Build
+
+## Responsive Optimization Included
+This build has been optimized for:
+- Mobile phones
+- Tablets
+- Desktop/laptop screens
+
+## Improvements
+- Reduced horizontal page overflow.
+- Improved scroll behavior inside tables/cards.
+- Better mobile Tracker/DIE layout.
+- Better tablet grid behavior.
+- Better desktop spacing.
+- Improved K Props, HR Potential, Pitcher Report, game cards, and modal responsiveness.
+- Preserves API Request Optimizer.
+
+---
+
 # Diamond Report DIE v5.1 — Full Developer Repo Snapshot
 
 This package is a **full developer repository snapshot**, not a small patch.
@@ -85,3 +104,4 @@ README.md
 ```
 
 No data-folder changes are required for this request optimizer.
+

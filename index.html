@@ -2010,6 +2010,411 @@ button,
 })();
 </script>
 
+
+<style id="v5-2-responsive-optimization">
+/* ============================================================
+   Diamond Report v5.2 — Responsive Optimization
+   Applies to Developer/DIE and Live Production builds.
+   Goals:
+   - Reduce horizontal overflow.
+   - Improve mobile/tablet/desktop grids.
+   - Make tables scroll within cards instead of widening page.
+   - Keep touch targets comfortable.
+   - Preserve current design language.
+   ============================================================ */
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+img, svg, video, canvas {
+  max-width: 100%;
+}
+
+.header {
+  min-width: 0;
+}
+
+.header .logo {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header .logo svg {
+  max-width: min(320px, 58vw);
+  height: auto;
+}
+
+.nav {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+
+main {
+  width: 100%;
+  max-width: 1380px;
+  overflow: hidden;
+}
+
+.section {
+  min-width: 0;
+}
+
+.games-grid,
+.props-grid,
+.hrs-today-grid,
+.tracker-grid,
+.die-grid {
+  min-width: 0;
+}
+
+.game-card,
+.tracker-card,
+.die-card,
+.gp-card {
+  min-width: 0;
+}
+
+table {
+  max-width: 100%;
+}
+
+.tracker-scroll,
+#hr-potential-content,
+#pr-content,
+#ks-today-props,
+#game-props-content,
+#k-props-content {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.hrp-table,
+.pr-table {
+  width: 100%;
+}
+
+.kprop-row,
+.stat-row,
+.ks-today-row,
+.gp-card > div,
+.lineup-batter-card {
+  min-width: 0;
+}
+
+.kprop-pitcher,
+.kprop-reasoning,
+.hrp-batter-info,
+.pr-pitcher-info,
+.lineup-batter-details {
+  min-width: 0;
+}
+
+.hrp-batter-name,
+.pr-pitcher-name,
+.kprop-name,
+.gp-team-abbr,
+.team-abbr {
+  overflow-wrap: anywhere;
+}
+
+/* Desktop polish */
+@media (min-width: 1200px) {
+  main {
+    padding: 24px 28px;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .tracker-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  }
+
+  .die-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Tablet */
+@media (max-width: 1199px) and (min-width: 769px) {
+  main {
+    padding: 18px 18px;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .props-grid,
+  .hrs-today-grid,
+  .tracker-grid-stack {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tracker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .die-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .pr-table {
+    min-width: 760px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .header {
+    height: auto !important;
+    min-height: 52px;
+    padding: 6px 10px !important;
+    gap: 8px;
+  }
+
+  .header .logo svg {
+    max-width: min(250px, 70vw);
+  }
+
+  .date-badge,
+  #header-date {
+    display: none !important;
+  }
+
+  .nav {
+    padding: 8px 10px 0 !important;
+  }
+
+  .tab {
+    padding: 8px 12px !important;
+    font-size: 10px !important;
+    min-height: 36px;
+  }
+
+  main {
+    padding: 10px 10px !important;
+  }
+
+  .section-title {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+    letter-spacing: .06em !important;
+  }
+
+  .games-grid {
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+  }
+
+  .game-card {
+    padding: 10px 10px !important;
+  }
+
+  .team-logo {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .team-abbr {
+    font-size: 20px !important;
+  }
+
+  .score-block {
+    font-size: 20px !important;
+  }
+
+  .props-grid,
+  .hrs-today-grid,
+  .tracker-grid-stack {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tracker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .tracker-card {
+    padding: 10px !important;
+  }
+
+  .tracker-big {
+    font-size: 24px !important;
+  }
+
+  .tracker-sub {
+    font-size: 10px !important;
+  }
+
+  .tracker-card h3 {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
+
+  .tracker-scroll table {
+    min-width: 520px;
+  }
+
+  .die-panel {
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .die-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .die-title {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+  }
+
+  .die-big {
+    font-size: 28px !important;
+  }
+
+  .die-status-list {
+    grid-template-columns: 1fr !important;
+  }
+
+  .hrp-table {
+    min-width: 650px;
+  }
+
+  .pr-table {
+    min-width: 720px;
+  }
+
+  .kprop-row {
+    display: grid !important;
+    grid-template-columns: 1fr 72px 80px;
+    align-items: center;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .kprop-pitcher {
+    min-width: 0 !important;
+  }
+
+  .kprop-name {
+    font-size: 13px !important;
+  }
+
+  .kprop-line,
+  .kprop-pred {
+    min-width: 0 !important;
+    padding: 7px 8px !important;
+  }
+
+  .kprop-line-val,
+  .kprop-pred-val {
+    font-size: 20px !important;
+  }
+
+  .kprop-reasoning {
+    grid-column: 1 / -1;
+    min-width: 0 !important;
+    font-size: 10px !important;
+  }
+
+  .gp-card > div[style*="display:flex"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .gp-matchup {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .mu-modal-overlay {
+    padding: 8px !important;
+    align-items: flex-end !important;
+  }
+
+  .mu-modal {
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 12px 12px 0 0 !important;
+  }
+}
+
+/* Small phones */
+@media (max-width: 430px) {
+  .header .logo svg {
+    max-width: min(220px, 74vw);
+  }
+
+  .tracker-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tracker-big {
+    font-size: 28px !important;
+  }
+
+  .team-logo {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .team-abbr {
+    font-size: 18px !important;
+  }
+
+  .game-time,
+  .team-name,
+  .standings-badge {
+    font-size: 9px !important;
+  }
+
+  .kprop-row {
+    grid-template-columns: 1fr 66px 74px;
+  }
+
+  .kprop-line-val,
+  .kprop-pred-val {
+    font-size: 18px !important;
+  }
+
+  .hrp-table {
+    min-width: 620px;
+  }
+
+  .pr-table {
+    min-width: 680px;
+  }
+}
+</style>
+
 </head>
 <body>
 

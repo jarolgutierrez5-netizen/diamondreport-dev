@@ -1,5 +1,20 @@
 # Changelog
 
+## Diamond Report DIE v5.2 — Full Developer Responsive Build
+
+### Added
+- v5.2 responsive optimization patch for mobile, tablet, and desktop.
+
+### Improved
+- Layout stability.
+- Table/card overflow handling.
+- Tracker and DIE responsiveness.
+- HR Potential, K Props, Pitcher Report, and game-card scaling.
+
+---
+
+# Changelog
+
 ## Diamond Report DIE v5.1 — Developer Foundation + API Optimizer
 
 ### Added
@@ -26,3 +41,4 @@
 
 ## Upload
 This ZIP is a full developer repo snapshot. Replace the developer repo contents with the files in this package.
+
