@@ -3772,6 +3772,253 @@ video {
 })();
 </script>
 
+
+<style id="v6-1-mobile-labels-section-scroll">
+/* ============================================================
+   Diamond Report DIE v6.1 — Mobile Labels + Section Scroll Fix
+   - Restores TOP HR THREAT / FAVORABLE MATCHUP / DROUGHT / ON FIRE labels
+     in mobile HR Potential cards.
+   - Allows HR Potential and K's Today to scroll inside their own sections.
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* Keep each major mobile area scrollable without making the whole page awkward */
+  #mobile-hrp-cards,
+  #mobile-ks-cards {
+    max-height: 68vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding-right: 3px !important;
+  }
+
+  #mobile-hrp-cards::-webkit-scrollbar,
+  #mobile-ks-cards::-webkit-scrollbar {
+    width: 4px !important;
+  }
+
+  #mobile-hrp-cards::-webkit-scrollbar-thumb,
+  #mobile-ks-cards::-webkit-scrollbar-thumb {
+    background: #1e2d45 !important;
+    border-radius: 999px !important;
+  }
+
+  .mhr-label-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+
+  .mhr-primary-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    border-radius: 999px !important;
+    padding: 4px 9px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    letter-spacing: .035em !important;
+    line-height: 1.1 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+  }
+
+  .mhr-primary-label.top {
+    border: 1px solid #f59e0b99 !important;
+    color: #fbbf24 !important;
+    background: rgba(66, 40, 0, .75) !important;
+  }
+
+  .mhr-primary-label.good {
+    border: 1px solid #22c55e99 !important;
+    color: #86efac !important;
+    background: rgba(13, 42, 26, .75) !important;
+  }
+
+  .mhr-primary-label.hot {
+    border: 1px solid #f97316aa !important;
+    color: #fdba74 !important;
+    background: rgba(66, 24, 0, .75) !important;
+  }
+
+  .mhr-primary-label.drought {
+    border: 1px solid #ef444499 !important;
+    color: #fca5a5 !important;
+    background: rgba(42, 13, 13, .75) !important;
+  }
+
+  .mhr-primary-label.heater {
+    border: 1px solid #fbbf2499 !important;
+    color: #fde68a !important;
+    background: rgba(66, 40, 0, .72) !important;
+  }
+
+  .mhr-chips {
+    margin-top: 8px !important;
+  }
+
+  /* Keep the URL bubble from covering the last visible K card too much */
+  #mobile-ks-cards {
+    padding-bottom: 76px !important;
+  }
+
+  #mobile-hrp-cards {
+    padding-bottom: 16px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  #mobile-hrp-cards,
+  #mobile-ks-cards {
+    max-height: 66vh !important;
+  }
+
+  .mhr-primary-label {
+    font-size: 9px !important;
+    padding: 4px 8px !important;
+  }
+}
+</style>
+
+<script id="v6-1-mobile-labels-section-scroll-script">
+(function () {
+  function txt(el) {
+    return el ? (el.textContent || '').trim() : '';
+  }
+
+  function getVisibleRowText(row) {
+    return (row ? row.textContent || '' : '').replace(/\s+/g, ' ').trim();
+  }
+
+  function hasText(rowText, pattern) {
+    return String(rowText || '').toLowerCase().includes(String(pattern || '').toLowerCase());
+  }
+
+  function primaryLabels(rowText) {
+    var labels = [];
+
+    if (hasText(rowText, 'TOP HR THREAT')) {
+      labels.push({ cls: 'top', text: '⚡ TOP HR THREAT' });
+    }
+
+    if (hasText(rowText, 'FAVORABLE MATCHUP')) {
+      labels.push({ cls: 'good', text: '🟢 FAVORABLE MATCHUP' });
+    }
+
+    var fireMatch = rowText.match(/ON\s+FIRE\s*\d{1,3}/i);
+    if (fireMatch) {
+      labels.push({ cls: 'hot', text: '🔥 ' + fireMatch[0].toUpperCase() });
+    } else if (hasText(rowText, 'ON FIRE')) {
+      labels.push({ cls: 'hot', text: '🔥 ON FIRE' });
+    }
+
+    if (hasText(rowText, 'DROUGHT')) {
+      labels.push({ cls: 'drought', text: '🔴 DROUGHT' });
+    }
+
+    if (hasText(rowText, 'ON A HEATER')) {
+      labels.push({ cls: 'heater', text: '👑 ON A HEATER' });
+    }
+
+    return labels;
+  }
+
+  function rebuildLabelsOnly() {
+    var mobile = document.getElementById('mobile-hrp-cards');
+    var src = document.getElementById('hr-potential-content');
+    if (!mobile || !src) return;
+
+    var rows = Array.from(src.querySelectorAll('tbody tr'));
+    var cards = Array.from(mobile.querySelectorAll('.mhr-card'));
+
+    cards.forEach(function(card, idx) {
+      var row = rows[idx];
+      if (!row) return;
+
+      var rowText = getVisibleRowText(row);
+      var labels = primaryLabels(rowText);
+      if (!labels.length) return;
+
+      var existing = card.querySelector('.mhr-label-row');
+      if (existing) existing.remove();
+
+      var labelRow = document.createElement('div');
+      labelRow.className = 'mhr-label-row';
+      labelRow.innerHTML = labels.map(function(label) {
+        return '<span class="mhr-primary-label ' + label.cls + '">' + label.text + '</span>';
+      }).join('');
+
+      var top = card.querySelector('.mhr-top');
+      if (top && top.nextSibling) {
+        top.parentNode.insertBefore(labelRow, top.nextSibling);
+      } else if (top) {
+        top.insertAdjacentElement('afterend', labelRow);
+      } else {
+        card.insertBefore(labelRow, card.firstChild);
+      }
+    });
+  }
+
+  function forceSectionScroll() {
+    var hr = document.getElementById('mobile-hrp-cards');
+    var ks = document.getElementById('mobile-ks-cards');
+
+    if (hr) {
+      hr.style.maxHeight = '68vh';
+      hr.style.overflowY = 'auto';
+      hr.style.overflowX = 'hidden';
+      hr.style.webkitOverflowScrolling = 'touch';
+      hr.style.overscrollBehavior = 'contain';
+    }
+
+    if (ks) {
+      ks.style.maxHeight = '68vh';
+      ks.style.overflowY = 'auto';
+      ks.style.overflowX = 'hidden';
+      ks.style.webkitOverflowScrolling = 'touch';
+      ks.style.overscrollBehavior = 'contain';
+      ks.style.paddingBottom = '76px';
+    }
+  }
+
+  function runFix() {
+    if (window.innerWidth > 768) return;
+    forceSectionScroll();
+    rebuildLabelsOnly();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(runFix, 300);
+    setTimeout(runFix, 1000);
+    setTimeout(runFix, 2500);
+  });
+
+  window.addEventListener('load', function() {
+    setTimeout(runFix, 300);
+    setTimeout(runFix, 1200);
+  });
+
+  window.addEventListener('resize', function() {
+    clearTimeout(window.__drV61Resize);
+    window.__drV61Resize = setTimeout(runFix, 250);
+  });
+
+  var obs = new MutationObserver(function() {
+    clearTimeout(window.__drV61Obs);
+    window.__drV61Obs = setTimeout(runFix, 200);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    ['mobile-hrp-cards', 'hr-potential-content', 'mobile-ks-cards', 'ks-today-props'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) obs.observe(el, { childList: true, subtree: true, characterData: true });
+    });
+  });
+})();
+</script>
+
 </head>
 <body>
 
