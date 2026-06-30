@@ -999,19 +999,9 @@
         <div class="tracker-sub" id="tracker-today-sub">0% hit rate</div>
       </div>
       <div class="tracker-card">
-        <h3>All-Time HR Accuracy</h3>
-        <div class="tracker-big" id="tracker-all">0-0</div>
-        <div class="tracker-sub" id="tracker-all-sub">0% hit rate</div>
-      </div>
-      <div class="tracker-card">
         <h3>Diamond Report Picks Today</h3>
         <div class="tracker-big" id="tracker-drp-today">0-0</div>
         <div class="tracker-sub" id="tracker-drp-today-sub">0% accuracy</div>
-      </div>
-      <div class="tracker-card">
-        <h3>Diamond Report Picks All-Time</h3>
-        <div class="tracker-big" id="tracker-drp-all">0-0</div>
-        <div class="tracker-sub" id="tracker-drp-all-sub">0% all-time accuracy</div>
       </div>
       <div class="tracker-card">
         <h3>K Props Today</h3>
@@ -1019,9 +1009,29 @@
         <div class="tracker-sub" id="tracker-kprops-today-sub">0% accuracy</div>
       </div>
       <div class="tracker-card">
+        <h3>All-Time HR Accuracy</h3>
+        <div class="tracker-big" id="tracker-all">0-0</div>
+        <div class="tracker-sub" id="tracker-all-sub">0% hit rate</div>
+      </div>
+      <div class="tracker-card">
+        <h3>Diamond Report Picks All-Time</h3>
+        <div class="tracker-big" id="tracker-drp-all">0-0</div>
+        <div class="tracker-sub" id="tracker-drp-all-sub">0% all-time accuracy</div>
+      </div>
+      <div class="tracker-card">
         <h3>K Props All-Time</h3>
         <div class="tracker-big" id="tracker-kprops-all">0-0</div>
         <div class="tracker-sub" id="tracker-kprops-all-sub">0% all-time accuracy</div>
+      </div>
+      <div class="tracker-card">
+        <h3>Favorite Diamond Report Team</h3>
+        <div class="tracker-big tracker-good" id="tracker-drt-favorite">—</div>
+        <div class="tracker-sub" id="tracker-drt-favorite-sub">Waiting for final Diamond Report picks</div>
+      </div>
+      <div class="tracker-card">
+        <h3>Worst Diamond Report Team</h3>
+        <div class="tracker-big tracker-bad" id="tracker-drt-worst">—</div>
+        <div class="tracker-sub" id="tracker-drt-worst-sub">Waiting for final Diamond Report picks</div>
       </div>
       <div class="tracker-card">
         <h3>Best-Favored Today</h3>
@@ -5161,6 +5171,42 @@ function showTab(id, el) {
     el.textContent = `${winPct}% all-time`;
     el.className = `tracker-header-pct ${cls}`;
   }
+  function diamondReportTeamExtremes(list){
+    const normTeam = t => {
+      t = String(t || '').toUpperCase().trim();
+      if(t === 'CHW') return 'CWS';
+      if(t === 'KCR') return 'KC';
+      if(t === 'SDP') return 'SD';
+      if(t === 'SFG') return 'SF';
+      if(t === 'TBR') return 'TB';
+      if(t === 'WAS') return 'WSH';
+      if(t === 'AZ') return 'ARI';
+      return t;
+    };
+    const map = new Map();
+    (list || [])
+      .filter(r => r && (r.result === 'win' || r.result === 'loss') && drpMatchupLabel(r).includes('@'))
+      .forEach(r => {
+        const team = normTeam(r.pick);
+        if(!team || team === '—') return;
+        const row = map.get(team) || { team, wins: 0, losses: 0, total: 0, pct: 0 };
+        if(r.result === 'win') row.wins += 1;
+        if(r.result === 'loss') row.losses += 1;
+        row.total = row.wins + row.losses;
+        row.pct = pct(row.wins, row.total);
+        map.set(team, row);
+      });
+    const teams = [...map.values()].filter(x => x.total > 0);
+    if(!teams.length) return { favorite: null, worst: null };
+    const favorite = [...teams].sort((a,b) =>
+      (b.pct - a.pct) || (b.wins - a.wins) || (b.total - a.total) || a.team.localeCompare(b.team)
+    )[0];
+    const worst = [...teams].sort((a,b) =>
+      (a.pct - b.pct) || (a.wins - b.wins) || (b.total - a.total) || a.team.localeCompare(b.team)
+    )[0];
+    return { favorite, worst };
+  }
+
 
   function render(store, currentThreats, homers, gamePicks){
     const day=dayKey();
@@ -5215,6 +5261,16 @@ function showTab(id, el) {
     set('tracker-kprops-all', `${kpAll.wins}-${kpAll.losses}`);
     set('tracker-kprops-all-sub', `${pct(kpAll.wins,kpAll.total)}% all-time • ${kpAll.total} final K props${kpAll.pending ? ` • ${kpAll.pending} not final excluded` : ''}`);
     setHeaderPct('kprops-header-pct', pct(kpAll.wins,kpAll.total), kpAll.total);
+
+    const teamExtremes = diamondReportTeamExtremes(drpMatchupAll.list);
+    set('tracker-drt-favorite', teamExtremes.favorite ? teamExtremes.favorite.team : '—');
+    set('tracker-drt-favorite-sub', teamExtremes.favorite
+      ? `${teamExtremes.favorite.pct}% all-time • ${teamExtremes.favorite.wins}-${teamExtremes.favorite.losses} on final DR picks`
+      : 'Waiting for final Diamond Report picks');
+    set('tracker-drt-worst', teamExtremes.worst ? teamExtremes.worst.team : '—');
+    set('tracker-drt-worst-sub', teamExtremes.worst
+      ? `${teamExtremes.worst.pct}% all-time • ${teamExtremes.worst.wins}-${teamExtremes.worst.losses} on final DR picks`
+      : 'Waiting for final Diamond Report picks');
 
     const statusBadge = r => resultBadgeFromFinal(r.result);
 
@@ -5628,3 +5684,90 @@ function showTab(id, el) {
 </script>
 </body>
 </html>
+
+<!-- Diamond Report V3.9 Mobile/Tablet Tracker Layout Patch -->
+<style id="tracker-mobile-tablet-layout-v39">
+  /* Keeps every Diamond Report Tracker summary card visible on phones/tablets. */
+  #tracker .tracker-grid {
+    align-items: stretch;
+  }
+  #tracker .tracker-card {
+    min-width: 0;
+    width: 100%;
+  }
+  #tracker .tracker-card h3,
+  #tracker .tracker-big,
+  #tracker .tracker-sub {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  #tracker .tracker-big {
+    white-space: normal;
+  }
+
+  /* Tablet: clean 2-column layout so all-time cards do not get squeezed out. */
+  @media (min-width: 561px) and (max-width: 1024px) {
+    #tracker .tracker-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+    }
+    #tracker .tracker-big {
+      font-size: clamp(24px, 5vw, 34px) !important;
+    }
+    #tracker .tracker-card h3 {
+      font-size: 10px !important;
+      line-height: 1.25 !important;
+    }
+    #tracker .tracker-sub {
+      font-size: 10px !important;
+      line-height: 1.35 !important;
+    }
+  }
+
+  /* iPhone/small phones: single-column cards so All-Time HR and K Props All-Time are always visible. */
+  @media (max-width: 560px) {
+    main {
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    #tracker > div:first-child {
+      align-items: flex-start !important;
+    }
+    #tracker .tracker-grid {
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+      margin-bottom: 14px !important;
+    }
+    #tracker .tracker-card {
+      padding: 11px 12px !important;
+      border-radius: 9px !important;
+    }
+    #tracker .tracker-card h3 {
+      font-size: 10px !important;
+      line-height: 1.25 !important;
+      letter-spacing: .9px !important;
+      margin-bottom: 7px !important;
+    }
+    #tracker .tracker-big {
+      font-size: 30px !important;
+      line-height: 1 !important;
+    }
+    #tracker .tracker-sub {
+      font-size: 10px !important;
+      line-height: 1.35 !important;
+    }
+    #tracker .tracker-scroll {
+      max-height: 360px !important;
+    }
+    #tracker .tracker-scroll table {
+      min-width: 520px !important;
+      table-layout: auto !important;
+    }
+    #tracker .tracker-scroll th,
+    #tracker .tracker-scroll td {
+      white-space: nowrap !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+    }
+  }
+</style>
