@@ -1487,6 +1487,7 @@ let kPropsData = [];
 let kPropsLoadedAt = null;
 let hrpRetryTimer = null;
 let hrpFilterActive = 'all';
+let latestPitcherKData = {}; // pitcherId -> { ks, isFinal, isLive } — kept fresh by loadKsToday, read by renderKProps for the W-L tally
 let prSortCol = null, prSortDir = 1, prRows = [];
 const lineupCache = {};
 const lineupMeta  = {}; // pitcherId -> {pitcherName, gamePk, side, oppTeamId, pitcherHr9, pitcherIp}
@@ -2921,6 +2922,14 @@ async function loadKsToday() {
       return a.gameTimestamp - b.gameTimestamp;
     });
 
+    // Keep a global snapshot of each pitcher's current K count/status so K Props
+    // can compute a live "today's record" W-L tally without re-scraping the DOM
+    latestPitcherKData = {};
+    allPitchers.forEach(p => {
+      if (p.id) latestPitcherKData[p.id] = { ks: p.ks, isFinal: p.isFinal, isLive: p.isLive };
+    });
+    if (kPropsData.length) renderKProps();
+
     // Feed live pitchers to banner
     allPitchers.forEach(p => {
       if (p.isLive && p.id) {
@@ -3800,7 +3809,28 @@ function renderKProps() {
   const hs = id => `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_38,q_auto:best/v1/people/${id}/headshot/67/current`;
   const tl = abbr => { const id=teamIds[abbr]; return id?`<img src="https://www.mlbstatic.com/team-logos/${id}.svg" style="width:20px;height:20px;object-fit:contain;vertical-align:middle" onerror="this.style.display='none'" alt="">`:'' };
 
-  el.innerHTML = `<div style="overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-y;min-width:0">
+  // Compute today's record: compare each pick's projected OVER/UNDER against the
+  // pitcher's actual final K count, using the live snapshot kept by loadKsToday
+  let kpCorrect = 0, kpFinal = 0;
+  const kpResults = {}; // pitcherId -> true/false/null (null = not final yet)
+  kPropsData.forEach(p => {
+    const live = latestPitcherKData[p.pitcherId];
+    if (!live || !live.isFinal || p.pred === 'PUSH') { kpResults[p.pitcherId] = null; return; }
+    const correct = p.pred === 'OVER' ? live.ks > p.ouLine : live.ks < p.ouLine;
+    kpResults[p.pitcherId] = correct;
+    kpFinal++;
+    if (correct) kpCorrect++;
+  });
+
+  const kpTallyHTML = kpFinal > 0 ? `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+      <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">TODAY'S RECORD</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:${kpCorrect===kpFinal?'#2ecc71':kpCorrect>kpFinal/2?'var(--accent2)':'var(--accent)'}">${kpCorrect}-${kpFinal-kpCorrect}</span>
+      <span style="font-size:11px;color:var(--muted)">${kpFinal} of ${kPropsData.length} final</span>
+      <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">${Math.round(kpCorrect/kpFinal*100)}% accuracy</span>
+    </div>` : '';
+
+  el.innerHTML = `${kpTallyHTML}<div style="overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-y;min-width:0">
     ${kPropsData.map(p => {
       const predCls = p.pred==='OVER' ? 'kprop-over' : p.pred==='UNDER' ? 'kprop-under' : p.pushLean==='OVER' ? 'kprop-push kprop-push-over' : p.pushLean==='UNDER' ? 'kprop-push kprop-push-under' : 'kprop-push';
       const predLabel = p.pred==='PUSH' && p.pushLean ? `PUSH (${p.pushLean} LEAN)` : p.pred;
@@ -3821,6 +3851,12 @@ function renderKProps() {
         </div>
         <div class="kprop-summary">${reason.summary || ''}</div>`;
 
+      const resultBadge = kpResults[p.pitcherId] === true
+        ? `<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#0d2a1a;border:1px solid #2ecc71;color:#2ecc71;border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px">✓ CORRECT — ${p.pitcherName.split(' ').pop()} finished ${latestPitcherKData[p.pitcherId].ks} K</div>`
+        : kpResults[p.pitcherId] === false
+        ? `<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#2a0d0d;border:1px solid #e63946;color:#e63946;border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px">✗ WRONG — ${p.pitcherName.split(' ').pop()} finished ${latestPitcherKData[p.pitcherId].ks} K</div>`
+        : '';
+
       return `<div class="kprop-row">
         <img src="${hs(p.pitcherId)}" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);flex-shrink:0" onerror="this.style.visibility='hidden'" alt="">
         <div class="kprop-pitcher">
@@ -3835,7 +3871,7 @@ function renderKProps() {
           <div class="kprop-pred-val" style="font-size:${p.pred==='PUSH'?'16px':'24px'}">${predLabel}</div>
           <div class="kprop-pred-lbl">${p.projK} PROJ</div>
         </div>
-        <div class="kprop-reasoning">${reasonHTML}</div>
+        <div class="kprop-reasoning">${reasonHTML}${resultBadge}</div>
       </div>`;
     }).join('')}</div>`;
 }
@@ -4420,7 +4456,22 @@ function showTab(id, el) {
     const finals = finalGameMap();
     if(!Object.keys(finals).length) return 'pending';
 
-    const pick = String(rec.pick || '').toUpperCase();
+    // Same normalization used in drpMatchupLabel/extractDRPicksAccuracy — keeps legacy
+    // records saved before this mapping existed (e.g. 'AZ' instead of 'ARI') resolvable
+    // against finalGameMap(), which is keyed by the live-rendered team abbreviations.
+    const normTeam = t => {
+      t = String(t || '').toUpperCase().trim();
+      if(t === 'CHW') return 'CWS';
+      if(t === 'KCR') return 'KC';
+      if(t === 'SDP') return 'SD';
+      if(t === 'SFG') return 'SF';
+      if(t === 'TBR') return 'TB';
+      if(t === 'WAS') return 'WSH';
+      if(t === 'AZ') return 'ARI';
+      return t;
+    };
+
+    const pick = normTeam(rec.pick);
     if(!pick || pick === '—') return 'pending';
 
     // Direct lookup by picked team.
@@ -4428,10 +4479,11 @@ function showTab(id, el) {
 
     // Match by teams found inside the pick card.
     if((!games || !games.length) && Array.isArray(rec.teams) && rec.teams.length >= 2){
+      const normedTeams = rec.teams.map(normTeam);
       const candidates = [];
-      for(let i=0;i<rec.teams.length;i++){
-        for(let j=i+1;j<rec.teams.length;j++){
-          const a=rec.teams[i], b=rec.teams[j];
+      for(let i=0;i<normedTeams.length;i++){
+        for(let j=i+1;j<normedTeams.length;j++){
+          const a=normedTeams[i], b=normedTeams[j];
           candidates.push(finals[`${a}@${b}`], finals[`${a}VS${b}`], finals[`${a}V${b}`], finals[`${b}VS${a}`], finals[`${b}V${a}`]);
         }
       }
@@ -4874,6 +4926,16 @@ function showTab(id, el) {
       store.debug.lastSync = new Date().toISOString();
       saveStore(store);
       render(store, threats, homers, gamePicks);
+
+      // Backfill any stuck pending picks from past dates via the MLB API (async,
+      // doesn't block this sync — re-renders automatically if anything resolves)
+      backfillStalePendingPicks(store).then(changed => {
+        if (changed) {
+          saveStore(store);
+          render(store, threats, homers, gamePicks);
+        }
+      }).catch(()=>{});
+
       return { threats, homers, gamePicks };
     } catch(e){
       console.error('Tracker sync failed:', e);
@@ -4886,12 +4948,61 @@ function showTab(id, el) {
     }
   }
 
+  // Resolves any DRP picks that are still 'pending' from a PAST date (not today) by
+  // querying the MLB Stats API for that specific date's final scores. This covers
+  // cases like a normalization bug (e.g. legacy 'AZ' records) that prevented a pick
+  // from resolving while its date's games were still in the live DOM — once the day
+  // passes, #final-games no longer has that data, so the only remaining source is the API.
+  const TEAM_NORM_MAP = { CHW:'CWS', KCR:'KC', SDP:'SD', SFG:'SF', TBR:'TB', WAS:'WSH', AZ:'ARI' };
+  const normTeamGlobal = t => { t = String(t||'').toUpperCase().trim(); return TEAM_NORM_MAP[t] || t; };
+
+  async function backfillStalePendingPicks(store){
+    const todayKey = (typeof dayKey === 'function') ? dayKey() : new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+    store.market ||= { drp: [], kprop: [] };
+    const stale = (store.market.drp || []).filter(r => r.result === 'pending' && r.date && r.date !== todayKey);
+    if (!stale.length) return false;
+
+    const dates = [...new Set(stale.map(r => r.date))];
+    let changed = false;
+
+    for (const date of dates) {
+      try {
+        const data = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore&language=en`);
+        const entry = data.dates?.find(d => d.date === date) || data.dates?.[0];
+        const games = entry?.games || [];
+        const finalsForDate = {};
+        games.forEach(g => {
+          if (g.status?.abstractGameState !== 'Final') return;
+          const away = normTeamGlobal(g.teams.away.team.abbreviation);
+          const home = normTeamGlobal(g.teams.home.team.abbreviation);
+          const awayScore = g.teams.away.score, homeScore = g.teams.home.score;
+          if (awayScore == null || homeScore == null) return;
+          const winner = awayScore > homeScore ? away : homeScore > awayScore ? home : 'TIE';
+          [away, home].forEach(t => { finalsForDate[t] = { away, home, winner }; });
+        });
+
+        stale.filter(r => r.date === date).forEach(rec => {
+          const pick = normTeamGlobal(rec.pick);
+          const game = finalsForDate[pick];
+          if (!game) return; // couldn't find this game in the API response — leave as pending
+          rec.result = game.winner === 'TIE' ? 'push' : (game.winner === pick ? 'win' : 'loss');
+          rec.finalChecked = true;
+          changed = true;
+        });
+      } catch(e) {
+        console.warn('Backfill failed for date', date, e);
+      }
+    }
+    return changed;
+  }
+
   window.resetTrackerData=function(){
     if(confirm('Reset all Tracker history?')){
       localStorage.removeItem(STORE_KEY);
       sync();
     }
   };
+
   window.syncDiamondTracker=sync;
 
   window.sortDRPTable=function(col){
