@@ -93,12 +93,26 @@
     .nav::-webkit-scrollbar { display: none; }
     .tab { padding: 6px 12px; font-size: 10px; letter-spacing: .5px; white-space: nowrap; flex-shrink: 0; }
 
-    /* Tracker tab — tables scroll horizontally instead of being clipped */
-    .tracker-card { padding: 12px; }
-    .tracker-scroll table { min-width: 0; font-size: 11px; }
-    .tracker-scroll th, .tracker-scroll td { padding: 6px 8px; white-space: nowrap; }
-    .tracker-pill { font-size: 9px; padding: 2px 6px; }
-    .tracker-header-pct { font-size: 10px; padding: 2px 7px; }
+    /* Tracker tab — compact layout for mobile */
+    .tracker-card { padding: 10px 12px; }
+    .tracker-card h3 { font-size: 9px; margin-bottom: 6px; }
+    /* Top summary stat cards (big numbers) — keep 2-column, just compact */
+    .tracker-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+    .tracker-big { font-size: 22px; }
+    .tracker-sub { font-size: 9px; margin-top: 2px; line-height: 1.3; }
+    .tracker-header-pct { font-size: 9px; padding: 1px 6px; margin-left: 5px; }
+    /* Content-heavy cards (next-day prediction lists, team analyzer) need full width — stack to 1 column */
+    .tracker-grid-stack { grid-template-columns: 1fr !important; }
+    .tracker-scroll table { min-width: 0; font-size: 10px; }
+    .tracker-scroll th, .tracker-scroll td { padding: 5px 6px; white-space: nowrap; }
+    .tracker-pill { font-size: 8px; padding: 2px 5px; gap: 3px; }
+    /* Source stack & model input pill rows — let them wrap tightly instead of forcing width */
+    #tracker-source-stack, #tracker-model-inputs { gap: 4px !important; }
+    #tracker-source-stack .tracker-pill, #tracker-model-inputs .tracker-pill { font-size: 8px; padding: 2px 6px; }
+    /* Next-day prediction stat rows */
+    .tracker-scroll .stat-row { padding: 6px 0; gap: 6px; }
+    .tracker-scroll .stat-row-num { font-size: 14px; min-width: 18px; }
+    .tracker-scroll .stat-row > div[style*="font-weight:800"] { font-size: 12px; }
 
     /* Main padding */
     main { padding: 10px 12px; }
@@ -192,6 +206,13 @@
     .zone-legend { display: none; }
     .btn-matchup { font-size: 8px; padding: 3px 5px; }
     .hrp-matchup-btn { font-size: 7px; }
+
+    /* Tracker tab — single column on the smallest screens */
+    .tracker-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .tracker-big { font-size: 19px; }
+    .tracker-card { padding: 8px 10px; }
+    .tracker-card h3 { font-size: 8px; }
+    .tracker-sub { font-size: 8px; }
   }
 
 
@@ -1032,7 +1053,7 @@
       <div class="tracker-sub" style="margin-bottom:12px">
         Ranks tomorrow's picks using everything tracked on this page: HR Potential probability, streak/drought/favorable-matchup flags, HR history vs the day's pitcher, Diamond Report Pick win models with live weather/park-factor signals, K Props lean direction, and each player/team's real hit-rate history stored from prior days — weighted by how many live data sources (vs. planned/future ones) are backing today's numbers.
       </div>
-      <div class="tracker-grid">
+      <div class="tracker-grid tracker-grid-stack">
         <div class="tracker-card">
           <h3>Next Day HR Potential</h3>
           <div id="tracker-nextday-hrp" class="tracker-scroll">
@@ -1054,7 +1075,7 @@
       </div>
     </div>
 
-    <div class="tracker-grid">
+    <div class="tracker-grid tracker-grid-stack">
       <div class="tracker-card">
         <h3>Correct Pick Team Analyzer</h3>
         <div id="tracker-team-results" class="tracker-scroll"><div style="color:var(--muted);font-size:12px">Waiting for correct picks…</div></div>
@@ -4250,24 +4271,14 @@ function showTab(id, el) {
 
   function finalGameMap(){
     const map = {};
-    const roots = ['final-games','live-games','scheduled-games']
-      .map(id => document.getElementById(id))
-      .filter(Boolean);
+    const finalRoot = document.getElementById('final-games');
+    if (!finalRoot) return map;
 
-    const cards = roots.flatMap(root => [...root.querySelectorAll('.game-card')]);
+    // Cards inside #final-games are, by construction, always final — no need to
+    // re-detect status via fragile text matching. This is the authoritative source.
+    const cards = [...finalRoot.querySelectorAll('.game-card')];
 
     cards.forEach(card => {
-      const txt = card.innerText || '';
-      const statusEl = card.querySelector('.game-status');
-      const status = (statusEl ? statusEl.innerText : txt).toUpperCase();
-
-      // Accept all common MLB final labels.
-      const isFinal =
-        /FINAL|GAME OVER|F\/|FINAL\/|COMPLETED/.test(status) ||
-        card.classList.contains('closed');
-
-      if(!isFinal) return;
-
       const teams = [...card.querySelectorAll('.team-abbr')]
         .map(x => norm(x.textContent))
         .filter(Boolean);
@@ -4302,6 +4313,12 @@ function showTab(id, el) {
   }
 
   function isAnyGameFinal(){
+    // Primary check: does the final-games container actually have any rendered cards?
+    // This is more reliable than re-parsing scores, since it doesn't depend on the
+    // score text being extractable — a game can be "final" in the map even with weird formatting.
+    const finalRoot = document.getElementById('final-games');
+    const hasFinalCards = finalRoot && finalRoot.querySelectorAll('.game-card').length > 0;
+    if (hasFinalCards) return true;
     return Object.keys(finalGameMap()).length > 0;
   }
 
