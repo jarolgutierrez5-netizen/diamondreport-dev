@@ -1,11 +1,11 @@
-# Diamond Report v4.5 — Heading Font Cleanup
+# Diamond Report v4.6 — Date + Status Cleanup
 
 ## What changed
-- Cleaned up the font style for section headers like HR Potential, K's Today, Diamond Report Picks, and K Props.
-- Removed the overly spaced display-font look from those section titles.
-- Kept the bold display font only where it works best: large stat numbers, team abbreviations, scores, and ticker-style elements.
-- Preserved prior mobile/tablet/desktop responsive optimizations.
-- Preserved prior hidden "Last updated" labels.
+- Removed visible `Last synced` and `Last updated` labels from the UI.
+- Updated the header date badge font so it matches the cleaner site typography.
+- Date now displays in a cleaner format like `Tuesday, June 30, 2026`.
+- Preserved the existing responsive/mobile/tablet/desktop layout optimizations.
+- No data, scripts, or workflow changes are required.
 
 ## Upload to GitHub
 Replace only:
@@ -14,5 +14,3 @@ Replace only:
 index.html
 README.md
 ```
-
-No `data`, `scripts`, or workflow updates are needed.

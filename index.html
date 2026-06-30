@@ -1367,6 +1367,105 @@ button,
 }
 </style>
 
+
+<style id="v4-6-date-status-cleanup">
+/* ============================================================
+   Diamond Report v4.6 — Date + Sync Status Cleanup
+   - Removes visible Last synced / Last updated status text.
+   - Updates the header date badge font to match the site UI.
+   ============================================================ */
+
+#tracker-refresh,
+#scores-refresh,
+[id$="-refresh"],
+[id*="refresh"],
+[id*="last-updated"],
+.last-updated,
+.last-synced,
+.sync-status,
+.refresh-status {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+.date-badge,
+#header-date {
+  font-family: var(--dr-font-body, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: .06em !important;
+  text-transform: none !important;
+  color: var(--text) !important;
+  background: rgba(10,14,26,.72) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+}
+
+/* Keep header layout clean after removing right-side statuses */
+.section-title + div[id*="refresh"],
+.section-title ~ div[id*="refresh"] {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .date-badge,
+  #header-date {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+    letter-spacing: .04em !important;
+  }
+}
+</style>
+<script id="v4-6-date-status-cleanup-script">
+(function () {
+  function formatHeaderDate() {
+    var el = document.getElementById('header-date');
+    if (!el) return;
+    try {
+      var d = new Date();
+      el.textContent = d.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (e) {}
+  }
+
+  function hideStatusText() {
+    var patterns = [/last\s+synced/i, /last\s+updated/i];
+    var nodes = document.querySelectorAll('div, span, p, small');
+    nodes.forEach(function (node) {
+      var text = (node.textContent || '').trim();
+      if (!text) return;
+      if (patterns.some(function (rx) { return rx.test(text); })) {
+        node.style.display = 'none';
+        node.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  formatHeaderDate();
+  hideStatusText();
+
+  document.addEventListener('DOMContentLoaded', function () {
+    formatHeaderDate();
+    hideStatusText();
+  });
+
+  setInterval(function () {
+    formatHeaderDate();
+    hideStatusText();
+  }, 3000);
+})();
+</script>
+
 </head>
 <body>
 
