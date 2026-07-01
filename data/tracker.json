@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "generatedAt": "2026-07-01T11:41:41.184Z",
+  "generatedAt": "2026-07-01T12:00:00.000Z",
   "picks": [
     {
       "key": "2026-06-30|esmerlyn valdez|PIT",
@@ -455,9 +455,11 @@
           "BAL",
           "CWS"
         ],
-        "result": "pending",
+        "result": "win",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "CWS",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|CLE-TEX",
@@ -468,9 +470,11 @@
           "CLE",
           "TEX"
         ],
-        "result": "pending",
+        "result": "win",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "TEX",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|PHI-PIT",
@@ -481,9 +485,11 @@
           "PHI",
           "PIT"
         ],
-        "result": "pending",
+        "result": "win",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "PHI",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|DET-NYY",
@@ -494,9 +500,11 @@
           "DET",
           "NYY"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "DET",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|NYM-TOR",
@@ -507,9 +515,11 @@
           "NYM",
           "TOR"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "NYM",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|BOS-WSH",
@@ -520,9 +530,11 @@
           "BOS",
           "WSH"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "WSH",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|ATL-STL",
@@ -533,9 +545,11 @@
           "ATL",
           "STL"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "STL",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|KC-TB",
@@ -546,9 +560,11 @@
           "KC",
           "TB"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "TB",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|CIN-MIL",
@@ -559,9 +575,11 @@
           "CIN",
           "MIL"
         ],
-        "result": "pending",
+        "result": "win",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "MIL",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|CHC-SD",
@@ -572,9 +590,11 @@
           "CHC",
           "SD"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "CHC",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|HOU-MIN",
@@ -585,9 +605,11 @@
           "HOU",
           "MIN"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "HOU",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|COL-MIA",
@@ -598,9 +620,11 @@
           "COL",
           "MIA"
         ],
-        "result": "pending",
+        "result": "win",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "MIA",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|ATH-LAD",
@@ -611,9 +635,11 @@
           "ATH",
           "LAD"
         ],
-        "result": "pending",
+        "result": "win",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "LAD",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|LAA-SEA",
@@ -624,9 +650,11 @@
           "LAA",
           "SEA"
         ],
-        "result": "pending",
+        "result": "win",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "SEA",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-30|DRP|ARI-SF",
@@ -637,9 +665,11 @@
           "ARI",
           "SF"
         ],
-        "result": "pending",
+        "result": "loss",
         "date": "2026-06-30",
-        "source": "seeded-from-exported-tracker-html"
+        "source": "graded-from-mlb-final-score",
+        "finalWinner": "ARI",
+        "gradedAt": "2026-07-01T12:00:00.000Z"
       },
       {
         "key": "2026-06-29|DRP|NYM-TOR",
@@ -1113,7 +1143,8 @@
     "repoSync": true,
     "repoSyncNote": "Repo-side scheduled sync. Browser auto-downloads are disabled; all committed JSON files are the source of truth across devices.",
     "currentDateCT": "2026-07-01",
-    "allTimeSummaryUpdatedAt": "2026-07-01T11:41:41.184Z"
+    "allTimeSummaryUpdatedAt": "2026-07-01T12:00:00.000Z",
+    "manualDrpGradePatch": "6/30/2026 DR Picks graded from MLB finals; pending DRP records now excluded from all-time unless graded."
   },
   "allTime": {
     "hr": {
@@ -1127,9 +1158,9 @@
       "total": 26
     },
     "drp": {
-      "wins": 10,
-      "losses": 3,
-      "total": 13
+      "wins": 17,
+      "losses": 11,
+      "total": 28
     }
   }
 }
