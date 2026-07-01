@@ -1,10 +1,7 @@
 # Changelog
 
-## v8.3 — Tracker Reset / Final-Only Baseline
+## DEV DR DIE v8.5 - Tracker Workflow Script Filename Fix
 
-- Reset historical Tracker data from scratch.
-- Cleared prior HR, K Props, DR Picks, team, player, and daily records.
-- Set all-time records to 0-0.
-- Preserved final-only historical Tracker rules.
-- Updated tracker script metadata to v8.3.
-- Added deployment instructions for reset upload.
+- Added `scripts/update-tracker.mjs` wrapper.
+- Fixes GitHub Actions error: `Cannot find module ... scripts/update-tracker.mjs`.
+- Preserves existing tracker logic in `scripts/updateTracker.js`.

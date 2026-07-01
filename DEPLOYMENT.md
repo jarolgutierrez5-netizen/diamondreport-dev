@@ -1,25 +1,16 @@
-# DIE v8.3 Deployment
+# Deployment
 
-## Deployment Type
+## DEV DR DIE v8.5 - Tracker Workflow Script Filename Fix
 
-🟡 Tracker Reset Update
+Deployment Type: Script-only patch
 
-## Replace / Upload
-
-```text
-data/tracker.json
-scripts/updateTracker.js
-```
-
-## Optional
+Upload/add:
 
 ```text
-README.md
-CHANGELOG.md
-DEPLOYMENT.md
+scripts/update-tracker.mjs
 ```
 
-## Do Not Change
+Do not change:
 
 ```text
 index.html
@@ -27,19 +18,14 @@ css/
 js/
 engine/
 config/
+data/
 .github/
-data/daily-results.json
-data/model-data.json
-data/lineups.json
-data/lineup-intelligence.json
-data/statcast-hot-hitters.json
+scripts/updateTracker.js
 ```
 
-## After Upload
+After upload:
 
-1. Commit the files.
-2. Open the dev site.
-3. Go to Tracker.
-4. Press **Reload Repo Data**.
-5. Confirm Tracker all-time records are reset to `0-0`.
-6. Going forward, only finalized graded records should appear in Tracker.
+1. Commit the new file.
+2. Go to GitHub Actions.
+3. Re-run `update-tracker`.
+4. Confirm the workflow reaches the commit/update step.
