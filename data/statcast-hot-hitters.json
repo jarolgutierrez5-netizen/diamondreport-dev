@@ -1,6 +1,7 @@
 {
   "schemaVersion": "4.1",
-  "updatedAt": null,
-  "source": "seed",
+  "updatedAt": "2026-07-01T10:55:37.298Z",
+  "season": "2026",
+  "source": "fallback-empty",
   "players": []
 }
