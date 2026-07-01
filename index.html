@@ -4163,6 +4163,268 @@ video {
 })();
 </script>
 
+
+<style id="v6-2-1-mobile-stability-patch">
+/* ============================================================
+   Diamond Report DIE v6.2.1 — Mobile Stability Patch
+   Based on v6.2 baseline.
+   Goal: reduce mobile glitching without changing the v6.2 layout.
+   ============================================================ */
+
+@media (max-width: 768px) {
+  html,
+  body {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+
+  body {
+    min-height: 100svh !important;
+    overscroll-behavior-y: auto !important;
+  }
+
+  /* Stop sticky stacking/jumping on iPhone */
+  .header {
+    position: sticky !important;
+    top: 0 !important;
+    height: 52px !important;
+    z-index: 100 !important;
+    transform: translateZ(0);
+  }
+
+  .nav {
+    position: relative !important;
+    top: auto !important;
+    z-index: 50 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 10px 28px !important;
+    overflow-x: hidden !important;
+  }
+
+  .section,
+  .section.active {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .section-title {
+    margin-top: 16px !important;
+    margin-bottom: 12px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Prevent old desktop tables from bleeding behind mobile cards */
+  #hr-potential-content,
+  #ks-today-props {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Keep v6.2 card layout, but make scrolling stable */
+  #mobile-hrp-cards,
+  #mobile-ks-cards {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
+    contain: layout paint !important;
+    will-change: auto !important;
+  }
+
+  #mobile-hrp-cards {
+    max-height: 64svh !important;
+    padding-bottom: 12px !important;
+  }
+
+  #mobile-ks-cards {
+    max-height: 64svh !important;
+    padding-bottom: 64px !important;
+  }
+
+  .mhr-card,
+  .mks-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    contain: layout paint !important;
+    transform: translateZ(0);
+  }
+
+  /* Reduce heavy repaints from animations/glows on mobile */
+  .mhr-card::before,
+  .mks-card::before,
+  .die-panel::before,
+  .breaking-track {
+    animation: none !important;
+  }
+
+  .mhr-card,
+  .mks-card,
+  .tracker-card,
+  .die-card,
+  .game-card {
+    box-shadow: none !important;
+  }
+
+  /* Stabilize image rendering */
+  .mhr-headshot,
+  .mks-headshot,
+  .hrp-headshot,
+  .pr-headshot,
+  .kpc-headshot,
+  .team-logo {
+    flex-shrink: 0 !important;
+    object-fit: cover !important;
+    backface-visibility: hidden !important;
+  }
+
+  /* Stop long chips/buttons from expanding cards */
+  .mhr-primary-label,
+  .mhr-chip,
+  .mks-chip,
+  .tracker-pill,
+  .kprop-chip,
+  .hrp-hot-badge,
+  .hrp-hot-chip {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .mhr-matchup button,
+  .mhr-matchup .hrp-matchup-btn {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Smaller, stable card internals */
+  .mhr-stats,
+  .mks-progress {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .mhr-stat,
+  .mks-badge,
+  .mks-stat {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Tracker/DIE grids: single column to avoid clipping */
+  .tracker-grid,
+  .tracker-grid.tracker-grid-stack,
+  .die-grid,
+  .games-grid,
+  .props-grid,
+  .hrs-today-grid {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Disable costly animations for users/devices that prefer it */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .live-dot,
+  .logo-dot,
+  .game-status.countdown-pulse {
+    animation: none !important;
+  }
+}
+</style>
+
+<script id="v6-2-1-mobile-stability-script">
+(function () {
+  if (window.__DR_V621_MOBILE_STABILITY__) return;
+  window.__DR_V621_MOBILE_STABILITY__ = true;
+
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+
+  function applyMobileStability() {
+    if (!isMobile()) return;
+
+    document.documentElement.style.overflowX = 'hidden';
+    document.body.style.overflowX = 'hidden';
+
+    ['mobile-hrp-cards', 'mobile-ks-cards'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.style.webkitOverflowScrolling = 'touch';
+      el.style.overscrollBehavior = 'contain';
+      el.style.touchAction = 'pan-y';
+      el.style.overflowX = 'hidden';
+    });
+
+    // Prevent duplicate regenerated mobile cards from stacking if old scripts rerun.
+    ['mobile-hrp-cards', 'mobile-ks-cards'].forEach(function(id) {
+      var nodes = Array.from(document.querySelectorAll('#' + id));
+      if (nodes.length > 1) {
+        nodes.slice(1).forEach(function(n) { n.remove(); });
+      }
+    });
+  }
+
+  var scheduled = false;
+  function schedule() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function() {
+      scheduled = false;
+      applyMobileStability();
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(schedule, 150);
+    setTimeout(schedule, 700);
+    setTimeout(schedule, 1600);
+  });
+
+  window.addEventListener('load', function() {
+    setTimeout(schedule, 200);
+    setTimeout(schedule, 1000);
+  }, { passive: true });
+
+  window.addEventListener('resize', function() {
+    clearTimeout(window.__drV621Resize);
+    window.__drV621Resize = setTimeout(schedule, 250);
+  }, { passive: true });
+
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) setTimeout(schedule, 200);
+  }, { passive: true });
+})();
+</script>
+
 </head>
 <body>
 

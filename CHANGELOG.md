@@ -1,5 +1,14 @@
 # Changelog
 
+## DIE v6.2.1 — Mobile Stability Patch
+- Based on v6.2 baseline after reverting v6.3/v6.4.
+- Stabilized mobile scrolling.
+- Reduced layout jitter and heavy mobile animations.
+- Added overflow guards.
+- Prevented duplicate mobile card containers.
+
+# Changelog
+
 ## DIE v6.2 — Mobile K Count Fix
 - Added visible strikeout count to mobile K's Today cards.
 - Changed mobile K stat row to K / IP / Pitches / Runs.
