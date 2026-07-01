@@ -7103,7 +7103,9 @@ function showTab(id, el) {
     const hrTotal = (store.picks || []).filter(p => p.final === true).length;
     const kRows = (store.market?.kprop || []).filter(r => r.result === 'win' || r.result === 'loss');
     const kWins = kRows.filter(r => r.result === 'win').length;
-    const drpRows = (store.market?.drp || []).filter(r => (r.result === 'win' || r.result === 'loss') && drpMatchupLabel(r).includes('@'));
+    const drpRows = (store.market?.drp || []).filter(r => (r.result === 'win' || r.result === 'loss'));
+    // Preserve every stored DR Pick from tracker.json. Do not filter by parsed matchup label here;
+    // legacy/mobile records can have valid stored results even when the label parser cannot rebuild '@'.
     const drpWins = drpRows.filter(r => r.result === 'win').length;
     const hrExisting = normalizedSummary(store.allTime?.hr);
     const kExisting = normalizedSummary(store.allTime?.kprop);
@@ -8215,12 +8217,14 @@ function showTab(id, el) {
 
     const drpToday=marketStats(store,'drp',day);
     const drpAll=marketStats(store,'drp');
-    const drpMatchupToday = { ...drpToday, list: drpToday.list.filter(r => drpMatchupLabel(r).includes('@')) };
+    const drpMatchupToday = { ...drpToday, list: drpToday.list.slice() };
+    // Use every stored DR Pick. Some legacy/mobile records may not parse to an '@' matchup label,
+    // but their stored win/loss status is still valid and must count toward all-time accuracy.
     drpMatchupToday.total = drpMatchupToday.list.filter(x => x.result === 'win' || x.result === 'loss').length;
     drpMatchupToday.wins = drpMatchupToday.list.filter(x => x.result === 'win').length;
     drpMatchupToday.losses = Math.max(drpMatchupToday.total - drpMatchupToday.wins, 0);
     drpMatchupToday.pending = drpMatchupToday.list.length - drpMatchupToday.total;
-    const drpMatchupAll = { ...drpAll, list: drpAll.list.filter(r => drpMatchupLabel(r).includes('@')) };
+    const drpMatchupAll = { ...drpAll, list: drpAll.list.slice() };
     drpMatchupAll.total = drpMatchupAll.list.filter(x => x.result === 'win' || x.result === 'loss').length;
     drpMatchupAll.wins = drpMatchupAll.list.filter(x => x.result === 'win').length;
     drpMatchupAll.losses = Math.max(drpMatchupAll.total - drpMatchupAll.wins, 0);
@@ -8286,10 +8290,10 @@ function showTab(id, el) {
     // Show ALL stored DRP picks (not just today) so the Date column has something to sort
     const drpRowMap = new Map();
     drpAll.list
-      .map(r => ({ ...r, matchupLabel: drpMatchupLabel(r) }))
-      .filter(r => r.matchupLabel && r.matchupLabel.includes('@'))
+      .map(r => ({ ...r, matchupLabel: drpDisplayLabel(r) }))
+      .filter(r => r.matchupLabel)
       .forEach(r => {
-        const key = `${r.date}|${r.matchupLabel}|${r.pick}`;
+        const key = r.key || `${r.date}|${r.matchupLabel}|${r.pick}`;
         const prior = drpRowMap.get(key);
         const resolved = r.result === 'win' || r.result === 'loss';
         const priorResolved = prior && (prior.result === 'win' || prior.result === 'loss');
@@ -8316,7 +8320,7 @@ function showTab(id, el) {
         <td>${r.pick}</td>
         <td>${statusBadge(r)}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
+    }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for completed Diamond Report Picks from tracker.json.</td></tr>');
 
     // Show ALL stored K Props so this section truly reflects Daily + All-Time Accuracy.
     // Date is included to match the Diamond Report Picks table and to make iPhone
@@ -8735,7 +8739,7 @@ if (document.readyState === 'loading') {
       if(!/@/.test(first.textContent || '')) row.remove();
     });
     if(!tbody.querySelector('tr')){
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:left;color:var(--muted)">Waiting for completed Diamond Report Picks from tracker.json.</td></tr>';
     }
   }
 

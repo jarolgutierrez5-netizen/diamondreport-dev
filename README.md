@@ -1,20 +1,12 @@
-# Diamond Intelligence Engine (DIE)
+# Diamond Report DIE — v7.1 Tracker DR Picks Repository History Fix
 
-## Version 7.0 — Tracker K Props Date + DRP Status Audit
+This developer build fixes the Diamond Report Picks tracker display so it preserves and counts every stored repository record after Reload Repo Data.
 
-This developer build updates the Tracker accuracy tables and continues the DIE versioned release workflow.
+## Changes
+- DIAMOND REPORT PICKS — DAILY + ALL-TIME ACCURACY no longer hides valid stored records just because the mobile matchup-label parser cannot rebuild an `@` matchup label.
+- All-time DR Picks totals are calculated from every stored repository DR Pick with a final win/loss result.
+- The table displays a fallback label from the stored record when matchup parsing is unavailable.
+- Fixed a defensive duplicate `finalK` declaration in the DR Line accuracy calculation.
 
-### Changes
-- Added a **Date** column to **K Props — Daily + All-Time Accuracy**.
-- K Props table now displays all stored K Props records, not only today's rows.
-- K Props rows sort newest date first.
-- Confirmed **Diamond Report Picks — Daily + All-Time Accuracy** status logic:
-  - Stored repository `win/loss` results are preserved.
-  - Pending DR Pick rows are rechecked against final-score data when available.
-  - The all-time card/header continues to use the repository summary when it has the larger completed sample.
-- Updated README and CHANGELOG.
-
-### Notes
-- `Projected Line` remains the K Projection value.
-- `DR Line` remains separate and is used only for DR Line accuracy.
-- `Status` for Diamond Report Picks is based on final pick result: Right for wins, Wrong for losses, pending only when no final result is available.
+## Expected Result
+If tracker.json contains a 20-8 Diamond Report Picks record, the Tracker should continue showing 20-8 after Reload Repo Data on iPhone.
