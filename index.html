@@ -3972,8 +3972,10 @@ video {
   }
 
   function runFix() {
+    obs.disconnect();
     forceSectionScroll();
     rebuildLabelsOnly();
+    observeFixTargets();
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -3997,12 +3999,14 @@ video {
     window.__drV61Obs = setTimeout(runFix, 200);
   });
 
-  document.addEventListener('DOMContentLoaded', function() {
+  function observeFixTargets() {
     ['mobile-hrp-cards', 'hr-potential-content', 'mobile-ks-cards', 'ks-today-props'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) obs.observe(el, { childList: true, subtree: true, characterData: true });
     });
-  });
+  }
+
+  document.addEventListener('DOMContentLoaded', observeFixTargets);
 })();
 </script>
 
@@ -4092,6 +4096,8 @@ video {
     var mobile = document.getElementById('mobile-ks-cards');
     if (!src || !mobile) return;
 
+    obs.disconnect();
+
     var rows = Array.from(src.querySelectorAll('.ks-today-row,.kprop-row,.stat-row'));
     var cards = Array.from(mobile.querySelectorAll('.mks-card'));
 
@@ -4119,6 +4125,8 @@ video {
       var oldNote = card.querySelector('.mks-note');
       if (oldNote && /K/i.test(text(oldNote))) oldNote.style.display = 'none';
     });
+
+    observeKCards();
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -4142,10 +4150,12 @@ video {
     window.__drV62Obs = setTimeout(patchKCards, 250);
   });
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function observeKCards() {
     var el = document.getElementById('mobile-ks-cards');
     if (el) obs.observe(el, { childList: true, subtree: true, characterData: true });
-  });
+  }
+
+  document.addEventListener('DOMContentLoaded', observeKCards);
 })();
 </script>
 
