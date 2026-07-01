@@ -8020,9 +8020,15 @@ function showTab(id, el) {
     };
 
     const seen = new Map(); // stableKey -> best record so far
+    const passthrough = []; // preserve repository records that cannot be parsed into a team pair
     (store.market.drp || []).forEach(rec => {
       const pair = extractTeamPair(rec);
-      if (!pair) return; // discard unresolvable garbage records entirely
+      if (!pair) {
+        // Do NOT drop repo history just because the mobile parser cannot rebuild a clean matchup.
+        // These rows can still contain valid stored win/loss status and must remain visible/countable.
+        passthrough.push(rec);
+        return;
+      }
       const stableKey = `${rec.date}|DRP|${pair}`;
       const prior = seen.get(stableKey);
       if (!prior) {
@@ -8038,7 +8044,7 @@ function showTab(id, el) {
         }
       }
     });
-    store.market.drp = [...seen.values()];
+    store.market.drp = [...passthrough, ...seen.values()];
 
     // Same cleanup for K Props: collapse legacy line-based duplicate keys down to one per pitcher per day
     const kpropSeen = new Map();
@@ -8120,6 +8126,13 @@ function showTab(id, el) {
     return `${sorted[0]} @ ${sorted[1]}`;
   }
 
+  function drpDisplayLabel(rec){
+    // Display helper only. The repository record/result remains the source of truth.
+    // This prevents valid historical DR Picks from disappearing when the matchup parser
+    // cannot rebuild an '@' label on iPhone/mobile reloads.
+    return drpMatchupLabel(rec) || rec?.label || rec?.matchup || rec?.game || 'Stored DR Pick';
+  }
+
 
   function setHeaderPct(id, winPct, sampleSize){
     const el = document.getElementById(id);
@@ -8143,7 +8156,7 @@ function showTab(id, el) {
     };
     const map = new Map();
     (list || [])
-      .filter(r => r && (r.result === 'win' || r.result === 'loss') && drpMatchupLabel(r).includes('@'))
+      .filter(r => r && (r.result === 'win' || r.result === 'loss'))
       .forEach(r => {
         const team = normTeam(r.pick);
         if(!team || team === '—') return;
@@ -8290,8 +8303,12 @@ function showTab(id, el) {
     // Show ALL stored DRP picks (not just today) so the Date column has something to sort
     const drpRowMap = new Map();
     drpAll.list
-      .map(r => ({ ...r, matchupLabel: drpDisplayLabel(r) }))
-      .filter(r => r.matchupLabel)
+      .map(r => ({
+        ...r,
+        // Fallback chain prevents valid repo records from disappearing on iPhone
+        // when the matchup-label parser cannot reconstruct a clean TEAM @ TEAM string.
+        matchupLabel: drpDisplayLabel(r) || r.label || r.key || 'Stored DR Pick'
+      }))
       .forEach(r => {
         const key = r.key || `${r.date}|${r.matchupLabel}|${r.pick}`;
         const prior = drpRowMap.get(key);

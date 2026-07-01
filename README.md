@@ -1,12 +1,15 @@
-# Diamond Report DIE — v7.1 Tracker DR Picks Repository History Fix
+# Diamond Report DIE
 
-This developer build fixes the Diamond Report Picks tracker display so it preserves and counts every stored repository record after Reload Repo Data.
+## Version 7.2 — Tracker Source-of-Truth Reload Fix
 
-## Changes
-- DIAMOND REPORT PICKS — DAILY + ALL-TIME ACCURACY no longer hides valid stored records just because the mobile matchup-label parser cannot rebuild an `@` matchup label.
-- All-time DR Picks totals are calculated from every stored repository DR Pick with a final win/loss result.
-- The table displays a fallback label from the stored record when matchup parsing is unavailable.
-- Fixed a defensive duplicate `finalK` declaration in the DR Line accuracy calculation.
+This developer build fixes Tracker history display issues after pressing **Reload Repo Data** on iPhone/mobile.
 
-## Expected Result
-If tracker.json contains a 20-8 Diamond Report Picks record, the Tracker should continue showing 20-8 after Reload Repo Data on iPhone.
+### Changes
+- Preserves all stored Diamond Report Picks from `data/tracker.json`.
+- Stops mobile parsing from dropping historical DR Picks when a matchup label cannot be rebuilt.
+- Keeps Diamond Report Picks all-time records tied to repository history.
+- Ensures the DR Picks detail table displays stored records instead of hiding records with imperfect labels.
+- Keeps README and CHANGELOG updated per DIE release standards.
+
+### Notes
+The Tracker should treat repository data as the source of truth. UI rendering should not remove historical records just because the mobile DOM parser cannot reconstruct a clean `TEAM @ TEAM` label.

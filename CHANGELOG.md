@@ -1,8 +1,8 @@
 # Changelog
 
-## v7.1 — Tracker DR Picks Repository History Fix
-- Preserved all stored Diamond Report Picks from tracker.json after Reload Repo Data.
-- Removed the display-side filter that could hide records when the matchup label parser failed on mobile.
-- Kept stored win/loss status as the source of truth for DR Picks counts.
-- Added fallback display label for legacy/mobile DR Pick records.
-- Fixed duplicate finalK declaration in DR Line accuracy logic.
+## v7.2 — Tracker Source-of-Truth Reload Fix
+
+- Fixed Diamond Report Picks history disappearing after Reload Repo Data on iPhone.
+- Preserved unparsed-but-valid repository DR Pick records instead of discarding them.
+- Updated DR Picks table rendering so fallback labels keep records visible.
+- Protected all-time DR Picks totals from mobile parser data loss.
