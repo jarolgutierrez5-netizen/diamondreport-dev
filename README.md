@@ -1,33 +1,20 @@
 # Diamond Intelligence Engine (DIE)
-## Version 6.6 — Tracker Repository Timestamp + K Props Header Fix
 
-This developer build continues tracker cleanup and accuracy verification work.
+## Version 7.0 — Tracker K Props Date + DRP Status Audit
 
-## Changes
-- Shortened the K Props tracker column label from `K Projection for Game` to `K Proj. For Game`.
-- Added a top tracker row showing when tracker data was last stored/generated for the repository.
-- Stabilized the Tracker page title so `Diamond Report Tracker` does not briefly appear and then disappear during load.
-- Preserved the v6.5 K Props status fix where status checks K Projection vs Final K Count.
-- Preserved separate DR Line and Over DR Line tracking.
+This developer build updates the Tracker accuracy tables and continues the DIE versioned release workflow.
 
-## Notes
-- Tracker repository timestamp reads from tracker data metadata when available.
-- If repository metadata is not available, the tracker shows a clear fallback message instead of leaving the row blank.
+### Changes
+- Added a **Date** column to **K Props — Daily + All-Time Accuracy**.
+- K Props table now displays all stored K Props records, not only today's rows.
+- K Props rows sort newest date first.
+- Confirmed **Diamond Report Picks — Daily + All-Time Accuracy** status logic:
+  - Stored repository `win/loss` results are preserved.
+  - Pending DR Pick rows are rechecked against final-score data when available.
+  - The all-time card/header continues to use the repository summary when it has the larger completed sample.
+- Updated README and CHANGELOG.
 
-## Version
-v6.6 Developer Build
-
-## Version 6.9 – Tracker iPhone Repo Reload Accuracy Fix
-
-- Fixed an iPhone/mobile issue where pressing “Reload Repo Data” could keep stale browser tracker totals.
-- Reload Repo Data now clears current and legacy browser tracker caches before fetching fresh `data/tracker.json`.
-- All-time Tracker cards now prefer detailed stored rows when available so displayed records match the actual records.
-- Preserved repo-side tracker history and GitHub Actions workflow behavior.
-
-
-## Version 6.9 – Tracker Final Accuracy Fix
-
-- Fixed K Props Daily + All-Time Accuracy showing completed final games as Pending on iPhone/repo reload.
-- Re-grades K Props from stored repository Final K Count before relying on mobile DOM data.
-- Keeps Diamond Report Picks all-time summary aligned with authoritative repository totals, preventing mobile-parsed rows from dropping the record.
-- Preserved README and CHANGELOG versioning workflow.
+### Notes
+- `Projected Line` remains the K Projection value.
+- `DR Line` remains separate and is used only for DR Line accuracy.
+- `Status` for Diamond Report Picks is based on final pick result: Right for wins, Wrong for losses, pending only when no final result is available.

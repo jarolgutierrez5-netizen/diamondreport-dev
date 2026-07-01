@@ -1,21 +1,12 @@
 # Changelog
 
-## v6.6 — Tracker Repository Timestamp + K Props Header Fix
-- Renamed `K Projection for Game` column to `K Proj. For Game`.
-- Added tracker top row for last repository stored/generated timestamp.
-- Added Tracker title stability guard to prevent title flash/disappear behavior.
-- Kept K Props accuracy logic from v6.5 intact.
+## v7.0 — Tracker K Props Date + DRP Status Audit
 
-## Version 6.9 – Tracker iPhone Repo Reload Accuracy Fix
-
-- Fixed an iPhone/mobile issue where pressing “Reload Repo Data” could keep stale browser tracker totals.
-- Reload Repo Data now clears current and legacy browser tracker caches before fetching fresh `data/tracker.json`.
-- All-time Tracker cards now prefer detailed stored rows when available so displayed records match the actual records.
-- Preserved repo-side tracker history and GitHub Actions workflow behavior.
-
-
-## v6.9 - Tracker Final Accuracy Fix
-
-- Fixed K Props final games incorrectly showing Pending after Reload Repo Data on iPhone.
-- Updated K Props grading to use stored Final K Count from repository data first.
-- Corrected Diamond Report Picks all-time display to prefer authoritative repository all-time record when it has the larger completed sample.
+- Added Date column to K Props — Daily + All-Time Accuracy.
+- Changed K Props tracker table to render all-time stored records instead of only current-day rows.
+- Added newest-first ordering for K Props tracker records.
+- Confirmed Diamond Report Picks status and count logic:
+  - Preserves stored repo win/loss results.
+  - Rechecks pending DR Picks against final score data when available.
+  - Uses repository all-time summary when it contains the larger verified completed sample.
+- Updated documentation.

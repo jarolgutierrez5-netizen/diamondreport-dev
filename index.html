@@ -3735,10 +3735,10 @@ video {
       <div class="tracker-scroll">
         <table>
           <thead>
-            <tr><th>Pitcher</th><th>Pick</th><th>Projected Line</th><th>K Proj. For Game</th><th>Final K Count</th><th>DR Line</th><th>Over DR Line?</th><th>Status</th></tr>
+            <tr><th>Date</th><th>Pitcher</th><th>Pick</th><th>Projected Line</th><th>K Proj. For Game</th><th>Final K Count</th><th>DR Line</th><th>Over DR Line?</th><th>Status</th></tr>
           </thead>
           <tbody id="tracker-kprops-results">
-            <tr><td colspan="8" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
+            <tr><td colspan="9" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -8065,6 +8065,13 @@ function showTab(id, el) {
         const result = (x.result === 'win' || x.result === 'loss') ? x.result : resolveKPropResult(x);
         return { ...x, result };
       }
+      if (type === 'drp') {
+        // Confirm/refresh DR Pick status from final-score data when available, while
+        // preserving stored win/loss results from the repository. This keeps the
+        // Status column and the right/wrong count aligned after Reload Repo Data.
+        const result = (x.result === 'win' || x.result === 'loss') ? x.result : resolveDRPickResult(x);
+        return { ...x, result };
+      }
       return x;
     });
     const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
@@ -8311,7 +8318,26 @@ function showTab(id, el) {
       </tr>`;
     }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
 
-    set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
+    // Show ALL stored K Props so this section truly reflects Daily + All-Time Accuracy.
+    // Date is included to match the Diamond Report Picks table and to make iPhone
+    // repo reload checks easier to audit.
+    const kpropRowMap = new Map();
+    (kpAll.list || []).forEach(r => {
+      const key = `${r.date || ''}|${String(r.label || '').toLowerCase().trim()}`;
+      const prior = kpropRowMap.get(key);
+      const resolved = r.result === 'win' || r.result === 'loss';
+      const priorResolved = prior && (prior.result === 'win' || prior.result === 'loss');
+      if (!prior || (resolved && !priorResolved)) kpropRowMap.set(key, r);
+    });
+    const kpropRows = [...kpropRowMap.values()].sort((a,b) => {
+      const ad = String(a.date || '');
+      const bd = String(b.date || '');
+      if (ad === bd) return String(a.label || '').localeCompare(String(b.label || ''));
+      return ad < bd ? 1 : -1; // newest first
+    });
+
+    set('tracker-kprops-results', kpropRows.length ? kpropRows.map(r=>{
+      const isToday = r.date === day;
       const storedFinal = extractNumericValue(r.finalKCount ?? r.finalKs ?? r.kCount ?? r.finalK);
       const domFinal = findFinalKCountForPitcher(r.label);
       const finalK = Number.isFinite(storedFinal) ? storedFinal : domFinal;
@@ -8322,6 +8348,7 @@ function showTab(id, el) {
       const drLine = r.drLine || '—';
       const overDR = Number.isFinite(finalK) && Number.isFinite(extractNumericValue(drLine)) ? (finalK > extractNumericValue(drLine) ? 'Y' : 'N') : (r.overDRLine || '—');
       return `<tr>
+        <td style="white-space:nowrap;color:${isToday?'var(--accent2)':'var(--muted)'}">${r.date || '—'}${isToday?' <span style="font-size:9px;color:var(--accent2)">(Today)</span>':''}</td>
         <td>${r.label}</td>
         <td>${r.pick}</td>
         <td>${projectedLine}</td>
@@ -8331,7 +8358,7 @@ function showTab(id, el) {
         <td>${overDR}</td>
         <td>${kpropStatusText(r)}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="8" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
+    }).join('') : '<tr><td colspan="9" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
 
 
     const sourceStatus = [
