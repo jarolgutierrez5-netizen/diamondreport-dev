@@ -719,6 +719,48 @@
   }
 
 
+  /* v6.6 Tracker stability + repo stored timestamp */
+  #tracker-title-row {
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    margin-bottom:14px !important;
+    gap:10px !important;
+    flex-wrap:wrap !important;
+    min-height:34px;
+  }
+  #tracker-page-title {
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    margin-bottom:0 !important;
+    color:var(--text) !important;
+  }
+  .tracker-repo-stamp {
+    margin-bottom:16px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    background:linear-gradient(90deg,#0d1322,#101a2c);
+  }
+  .tracker-repo-stamp-label {
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.1px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .tracker-repo-stamp-value {
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--accent2);
+    text-align:right;
+  }
+
+
   /* Hot Hitter HR Potential Engine */
   .hrp-hot-badge {
     display:inline-flex;align-items:center;gap:4px;
@@ -3595,9 +3637,14 @@ video {
   </section>
 
   <section class="section" id="tracker">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
-      <p class="section-title" style="margin-bottom:0">DIAMOND REPORT <span>TRACKER</span></p>
+    <div id="tracker-title-row">
+      <p id="tracker-page-title" class="section-title">DIAMOND REPORT <span>TRACKER</span></p>
       <div id="tracker-refresh" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Syncing…</div>
+    </div>
+
+    <div class="tracker-card tracker-repo-stamp">
+      <div class="tracker-repo-stamp-label">Last data stored to repository</div>
+      <div id="tracker-repo-stored-at" class="tracker-repo-stamp-value">Checking repository timestamp…</div>
     </div>
 
     <div class="tracker-grid">
@@ -3688,7 +3735,7 @@ video {
       <div class="tracker-scroll">
         <table>
           <thead>
-            <tr><th>Pitcher</th><th>Pick</th><th>Projected Line</th><th>K Projection for Game</th><th>Final K Count</th><th>DR Line</th><th>Over DR Line?</th><th>Status</th></tr>
+            <tr><th>Pitcher</th><th>Pick</th><th>Projected Line</th><th>K Proj. For Game</th><th>Final K Count</th><th>DR Line</th><th>Over DR Line?</th><th>Status</th></tr>
           </thead>
           <tbody id="tracker-kprops-results">
             <tr><td colspan="8" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
@@ -7031,6 +7078,25 @@ function showTab(id, el) {
     return repo;
   }
 
+  function clearTrackerBrowserCaches(){
+    try { localStorage.removeItem(STORE_KEY); } catch(e){}
+    try { LEGACY_STORE_KEYS.forEach(key => localStorage.removeItem(key)); } catch(e){}
+    try { localStorage.removeItem(AUTO_BACKUP_SNAPSHOT_KEY); } catch(e){}
+    try { localStorage.removeItem(AUTO_BACKUP_LAST_KEY); } catch(e){}
+    try { localStorage.removeItem(AUTO_BACKUP_PREF_KEY); } catch(e){}
+  }
+
+  async function fetchFreshRepoTrackerData(){
+    const res = await fetch(`${TRACKER_DATA_URL}?v=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    repoTrackerSeed = normalizeStore(await res.json());
+    repoTrackerLoaded = true;
+    return repoTrackerSeed;
+  }
+
   function updateAllTimeSummaryFromRows(store){
     store = normalizeStore(store);
     const hrWins = (store.picks || []).filter(p => p.final === true && p.hit === true).length;
@@ -7099,10 +7165,7 @@ function showTab(id, el) {
 
   async function initPersistentTrackerData(){
     try {
-      const res = await fetch(`${TRACKER_DATA_URL}?v=${Date.now()}`, { cache:'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      repoTrackerSeed = normalizeStore(await res.json());
-      repoTrackerLoaded = true;
+      await fetchFreshRepoTrackerData();
       const merged = loadStore();
       saveStore(merged);
       if (window.syncDiamondTracker) window.syncDiamondTracker();
@@ -7191,12 +7254,23 @@ function showTab(id, el) {
     input.click();
   };
 
-  window.resetDiamondTrackerLocalCache = function(){
-    if (!confirm('Clear only this browser tracker cache? Repo data in data/tracker.json will remain.')) return;
-    try { localStorage.removeItem(STORE_KEY); } catch(e){}
-    const merged = mergeStores(safeStore(), repoTrackerSeed || safeStore());
-    saveStore(merged);
-    if (window.syncDiamondTracker) window.syncDiamondTracker();
+  window.resetDiamondTrackerLocalCache = async function(){
+    if (!confirm('Clear this browser tracker cache and reload the latest repository tracker.json? Repo data will remain unchanged.')) return;
+    const refreshEl = document.getElementById('tracker-refresh');
+    if (refreshEl) refreshEl.textContent = 'Reloading latest repo data…';
+    try {
+      clearTrackerBrowserCaches();
+      await fetchFreshRepoTrackerData();
+      const repoOnly = mergeStores(safeStore(), repoTrackerSeed || safeStore());
+      saveStore(repoOnly);
+      if (window.syncDiamondTracker) window.syncDiamondTracker();
+      if (refreshEl) refreshEl.textContent = `Repo data reloaded • ${new Date().toLocaleString('en-US',{timeZone:'America/New_York'})} ET`;
+    } catch(e){
+      repoTrackerLoaded = false;
+      if (refreshEl) refreshEl.textContent = 'Repo reload failed — using browser cache';
+      console.warn('Repo tracker reload failed:', e.message || e);
+      alert('Repo reload failed. The tracker is still using this browser cache.');
+    }
   };
 
   function isPlaceholderText(s){
@@ -8073,9 +8147,25 @@ function showTab(id, el) {
   }
 
 
+
+  function formatRepoStoredAt(iso){
+    if(!iso) return 'Not available yet — waiting for tracker.json generatedAt';
+    const d = new Date(iso);
+    if(Number.isNaN(d.getTime())) return String(iso);
+    return d.toLocaleString([], {
+      month:'short', day:'numeric', year:'numeric',
+      hour:'numeric', minute:'2-digit', timeZoneName:'short'
+    });
+  }
+
   function render(store, currentThreats, homers, gamePicks){
     const day=dayKey();
     const teamStates = teamGameStatusMap();
+
+    // Keep the Tracker page title persistent after async data hydration.
+    set('tracker-page-title', 'DIAMOND REPORT <span>TRACKER</span>');
+    const repoStoredAt = store?.debug?.lastRepoGeneratedAt || repoTrackerSeed?.generatedAt || store?.generatedAt || null;
+    set('tracker-repo-stored-at', formatRepoStoredAt(repoStoredAt));
 
     // Accuracy cards must count FINAL games only. Pending/upcoming/live picks stay visible
     // in the tables, but they are excluded from the numerator and denominator so the
@@ -8094,9 +8184,11 @@ function showTab(id, el) {
     const todayPendingThreats=Math.max(todaysAll.length-tt,0);
     const allPendingThreats=Math.max(store.picks.length-atRows,0);
     const hrSummary = normalizedSummary(store.allTime?.hr);
-    const ah = hrSummary.total > atRows ? hrSummary.wins : ahRows;
-    const at = hrSummary.total > atRows ? hrSummary.total : atRows;
-    const ahLosses = hrSummary.total > atRows ? hrSummary.losses : Math.max(atRows-ahRows,0);
+    // Detailed rows are the source of truth when available. This keeps iPhone/mobile reloads
+    // from showing stale summary totals that do not match the actual stored records.
+    const ah = atRows ? ahRows : hrSummary.wins;
+    const at = atRows ? atRows : hrSummary.total;
+    const ahLosses = atRows ? Math.max(atRows-ahRows,0) : hrSummary.losses;
 
     set('tracker-today', `${th}-${Math.max(tt-th,0)}`);
     set('tracker-today-sub', `${pct(th,tt)}% right today • ${tt} final Top HR Threats${todayPendingThreats ? ` • ${todayPendingThreats} not final excluded` : ''}`);
@@ -8128,7 +8220,9 @@ function showTab(id, el) {
     set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
     set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.total} final K props${kpToday.pending ? ` • ${kpToday.pending} not final excluded` : ''}`);
     const kpSummary = normalizedSummary(store.allTime?.kprop);
-    const kpAllDisplay = kpSummary.total > kpAll.total ? kpSummary : kpAll;
+    // Detailed K Prop rows are the source of truth when available. The all-time card
+    // should match the actual records shown/calculated after Reload Repo Data on iPhone.
+    const kpAllDisplay = kpAll.total ? kpAll : kpSummary;
     set('tracker-kprops-all', `${kpAllDisplay.wins}-${kpAllDisplay.losses}`);
     set('tracker-kprops-all-sub', `${pct(kpAllDisplay.wins,kpAllDisplay.total)}% all-time • ${kpAllDisplay.total} final K props${kpAll.pending ? ` • ${kpAll.pending} not final excluded` : ''}`);
     setHeaderPct('kprops-header-pct', pct(kpAllDisplay.wins,kpAllDisplay.total), kpAllDisplay.total);
