@@ -3233,32 +3233,24 @@ video {
   display: none;
 }
 
-/* Desktop/tablet still use existing sections */
-@media (min-width: 769px) {
-  #hr-potential-content,
-  #ks-today-props {
-    display: block !important;
-  }
+/* v6.2.2: Cards are the layout at every screen size — desktop and
+   tablet no longer fall back to the old table/list view. */
+#hr-potential-content,
+#ks-today-props {
+  display: none !important;
 }
 
-/* Mobile native cards */
-@media (max-width: 768px) {
-  /* Hide desktop HR table and desktop K list */
-  #hr-potential-content,
-  #ks-today-props {
-    display: none !important;
-  }
+#mobile-hrp-cards,
+#mobile-ks-cards {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 18px !important;
+}
 
-  #mobile-hrp-cards,
-  #mobile-ks-cards {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-bottom: 18px !important;
-  }
-
+/* Card styling — applies at every screen size (not mobile-only) */
   .mhr-card,
   .mks-card {
     width: 100% !important;
@@ -3526,7 +3518,6 @@ video {
     font-size: 10px !important;
     line-height: 1.35 !important;
   }
-}
 
 @media (max-width: 390px) {
   .mhr-card,
@@ -3670,7 +3661,6 @@ video {
           '<div class="mhr-stats">',
             '<div class="mhr-stat"><div class="mhr-stat-label">HR</div><div class="mhr-stat-value">' + hr.replace(/HR/i,'') + '</div></div>',
             '<div class="mhr-stat"><div class="mhr-stat-label">L10</div><div class="mhr-stat-value">' + l10.replace(/L10/i,'') + '</div></div>',
-            '<div class="mhr-stat"><div class="mhr-stat-label">Pitcher</div><div class="mhr-stat-value">' + pitcher + '</div></div>',
           '</div>',
           matchupHtml,
         '</div>'
@@ -3755,7 +3745,7 @@ video {
   document.addEventListener('DOMContentLoaded', rebuildMobileCards);
   window.addEventListener('load', rebuildMobileCards);
   window.addEventListener('resize', function () {
-    if (window.innerWidth <= 768) rebuildMobileCards();
+    rebuildMobileCards();
   });
 
   var observer = new MutationObserver(function () {
@@ -3781,8 +3771,7 @@ video {
    - Allows HR Potential and K's Today to scroll inside their own sections.
    ============================================================ */
 
-@media (max-width: 768px) {
-  /* Keep each major mobile area scrollable without making the whole page awkward */
+/* Card scroll containers + label chips — applies at every screen size */
   #mobile-hrp-cards,
   #mobile-ks-cards {
     max-height: 68vh !important;
@@ -3867,7 +3856,6 @@ video {
   #mobile-hrp-cards {
     padding-bottom: 16px !important;
   }
-}
 
 @media (max-width: 390px) {
   #mobile-hrp-cards,
@@ -3984,7 +3972,6 @@ video {
   }
 
   function runFix() {
-    if (window.innerWidth > 768) return;
     forceSectionScroll();
     rebuildLabelsOnly();
   }
@@ -4027,7 +4014,7 @@ video {
    - Replaces the 3-box row with K / IP / Pitches / Runs layout.
    ============================================================ */
 
-@media (max-width: 768px) {
+/* K's Today badge grid (K / IP / Pitches / Runs) — every screen size */
   .mks-progress {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 7px !important;
@@ -4055,7 +4042,6 @@ video {
     font-weight: 900 !important;
     line-height: 1.1 !important;
   }
-}
 
 @media (max-width: 390px) {
   .mks-progress {
@@ -4102,8 +4088,6 @@ video {
   }
 
   function patchKCards() {
-    if (window.innerWidth > 768) return;
-
     var src = document.getElementById('ks-today-props');
     var mobile = document.getElementById('mobile-ks-cards');
     if (!src || !mobile) return;
@@ -4122,13 +4106,15 @@ video {
       var k = extractK(rowText, row);
       var ip = (rowText.match(/\d+(?:\.\d+)?\s*IP/i) || ['-- IP'])[0];
       var pitches = (rowText.match(/\d+\s*pitches/i) || ['-- pitches'])[0];
-      var runs = (rowText.match(/\d+\s*Run[s]?\s*Allowed/i) || ['Runs --'])[0];
+      var runsMatch = rowText.match(/(\d+)\s*Run[s]?\s*Allowed/i);
+      var runsVal = runsMatch ? runsMatch[1] : '--';
+      var runsGood = runsMatch ? runsMatch[1] === '0' : true;
 
       progress.innerHTML =
-        metricBox('k-count', 'K', k) +
-        metricBox('live', 'IP', ip.replace(/\s*IP/i, ' IP')) +
+        metricBox('k-count', 'K', k.replace(/\s*K$/i, '')) +
+        metricBox('live', 'IP', ip.replace(/\s*IP/i, '')) +
         metricBox('warn', 'Pitches', pitches.replace(/\s*pitches/i, '')) +
-        metricBox((runs.includes('0') || runs === 'Runs --') ? 'good' : 'live', 'Runs', runs.replace(/\s*Allowed/i, ''));
+        metricBox(runsGood ? 'good' : 'live', 'Runs', runsVal);
 
       var oldNote = card.querySelector('.mks-note');
       if (oldNote && /K/i.test(text(oldNote))) oldNote.style.display = 'none';
@@ -4266,8 +4252,6 @@ video {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    contain: layout paint !important;
-    transform: translateZ(0);
   }
 
   /* Reduce heavy repaints from animations/glows on mobile */
@@ -4365,13 +4349,7 @@ video {
   if (window.__DR_V621_MOBILE_STABILITY__) return;
   window.__DR_V621_MOBILE_STABILITY__ = true;
 
-  function isMobile() {
-    return window.innerWidth <= 768;
-  }
-
   function applyMobileStability() {
-    if (!isMobile()) return;
-
     document.documentElement.style.overflowX = 'hidden';
     document.body.style.overflowX = 'hidden';
 
@@ -9517,6 +9495,183 @@ function showTab(id, el) {
 })();
 </script>
 
+<style id="v6-2-2-cross-device-optimization">
+/* ============================================================
+   Diamond Report DIE v6.2.2 — Cross-Device Optimization
+   Loads last, so it wins over earlier patches without editing them.
+
+   1) Tablets (iPad-class, 769–1024px) use mouse-precision button
+      sizes everywhere — hard to tap accurately on a touch screen.
+      Widens the actual tap area on any coarse (touch) pointer
+      device, without changing visual size or page density.
+   2) No breakpoint existed past 1200px, so large monitors just
+      centered a narrow column with unused space on either side.
+   3) HR Potential and K's Today now use the same card layout at
+      every screen size (see v6-0/v6-1/v6-2 unwrapped rules above)
+      instead of switching to a table/list view above 768px. This
+      adds multi-column card grids so wide screens aren't wasted
+      on one stretched column, plus removes the redundant Pitcher
+      box and fixes the K/IP/Runs label duplication.
+   ============================================================ */
+
+@media (pointer: coarse) {
+  .btn-lineup,
+  .btn-game,
+  .btn-matchup,
+  .hrp-matchup-btn,
+  #filter-onfire-btn,
+  #filter-top-btn,
+  #filter-drought-btn,
+  #filter-favorable-btn,
+  #filter-all-btn {
+    min-height: 30px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    position: relative;
+  }
+
+  .tab {
+    min-height: 40px;
+  }
+
+  .tracker-pill,
+  .stat-pill {
+    min-height: 24px;
+  }
+}
+
+@media (pointer: coarse) and (min-width: 769px) and (max-width: 1024px) {
+  .btn-lineup,
+  .btn-game,
+  .btn-matchup,
+  .hrp-matchup-btn {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 11px;
+  }
+
+  #filter-onfire-btn,
+  #filter-top-btn,
+  #filter-drought-btn,
+  #filter-favorable-btn,
+  #filter-all-btn {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 10px;
+  }
+
+  .kprop-row {
+    padding: 14px 16px;
+  }
+
+  .gp-card {
+    padding: 16px 18px;
+  }
+}
+
+@media (min-width: 1600px) {
+  main {
+    max-width: 1560px;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .tracker-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .die-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1920px) {
+  main {
+    max-width: 1720px;
+  }
+}
+
+/* HR/L10 split the row evenly now that Pitcher box is removed */
+.mhr-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* K's Today badges — legible label/value sizing at every width */
+.mks-badge .mks-badge-label {
+  font-size: 9px !important;
+  opacity: .9 !important;
+  margin-bottom: 3px !important;
+}
+
+.mks-badge .mks-badge-value {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+.mks-badge {
+  min-height: 40px !important;
+  padding: 6px 5px !important;
+}
+
+@media (max-width: 390px) {
+  .mks-badge .mks-badge-label {
+    font-size: 8px !important;
+  }
+  .mks-badge .mks-badge-value {
+    font-size: 12px !important;
+  }
+}
+
+/* Card layout is now universal — scale columns up on tablet/desktop
+   instead of stretching a single column across the whole width. */
+#mobile-hrp-cards,
+#mobile-ks-cards {
+  max-height: 70svh !important;
+}
+
+@media (min-width: 769px) and (max-width: 1099px) {
+  #mobile-hrp-cards,
+  #mobile-ks-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1100px) {
+  #mobile-hrp-cards,
+  #mobile-ks-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  #mobile-hrp-cards,
+  #mobile-ks-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mhr-card,
+  .mks-card {
+    padding: 14px !important;
+  }
+
+  .mhr-name,
+  .mks-name {
+    font-size: 16px !important;
+  }
+
+  .mhr-matchup button,
+  .mhr-matchup .hrp-matchup-btn {
+    font-size: 11px !important;
+  }
+}
+</style>
 </body>
 </html>
 
