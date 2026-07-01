@@ -17,9 +17,17 @@ This developer build continues tracker cleanup and accuracy verification work.
 ## Version
 v6.6 Developer Build
 
-## Version 6.8 – Tracker iPhone Repo Reload Accuracy Fix
+## Version 6.9 – Tracker iPhone Repo Reload Accuracy Fix
 
 - Fixed an iPhone/mobile issue where pressing “Reload Repo Data” could keep stale browser tracker totals.
 - Reload Repo Data now clears current and legacy browser tracker caches before fetching fresh `data/tracker.json`.
 - All-time Tracker cards now prefer detailed stored rows when available so displayed records match the actual records.
 - Preserved repo-side tracker history and GitHub Actions workflow behavior.
+
+
+## Version 6.9 – Tracker Final Accuracy Fix
+
+- Fixed K Props Daily + All-Time Accuracy showing completed final games as Pending on iPhone/repo reload.
+- Re-grades K Props from stored repository Final K Count before relying on mobile DOM data.
+- Keeps Diamond Report Picks all-time summary aligned with authoritative repository totals, preventing mobile-parsed rows from dropping the record.
+- Preserved README and CHANGELOG versioning workflow.

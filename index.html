@@ -7843,8 +7843,9 @@ function showTab(id, el) {
   }
 
   function kpropStatusText(rec){
-    if (rec.result === 'win') return '<span class="tracker-pill hit">Right</span>';
-    if (rec.result === 'loss') return '<span class="tracker-pill miss">Wrong</span>';
+    const resolved = (rec.result === 'win' || rec.result === 'loss') ? rec.result : resolveKPropResult(rec);
+    if (resolved === 'win') return '<span class="tracker-pill hit">Right</span>';
+    if (resolved === 'loss') return '<span class="tracker-pill miss">Wrong</span>';
     return '<span class="tracker-pill pending">Pending</span>';
   }
 
@@ -7859,14 +7860,15 @@ function showTab(id, el) {
 
   function resolveKPropResult(rec){
     // K Props status must compare the K Projection for Game against the Final K Count.
-    // DR Line is tracked separately in the All Time DR Line Accuracy section.
-    const finalsExist = isAnyGameFinal();
-    if(!finalsExist) return 'pending';
-
+    // Important: after Reload Repo Data on iPhone, the visible K's Today DOM may not be
+    // populated yet, so use the stored repository finalKCount first. Do not mark a
+    // completed stored prop as Pending just because the mobile DOM is not ready.
     const name = String(rec.label || '').toLowerCase().trim();
     if(!name) return 'pending';
 
-    const kCount = findFinalKCountForPitcher(name);
+    const storedFinal = extractNumericValue(rec.finalKCount ?? rec.finalKs ?? rec.kCount ?? rec.finalK);
+    const domFinal = findFinalKCountForPitcher(name);
+    const kCount = Number.isFinite(storedFinal) ? storedFinal : domFinal;
     if(kCount === null || !Number.isFinite(kCount)) return 'pending';
     rec.finalKCount = kCount;
 
@@ -8056,7 +8058,15 @@ function showTab(id, el) {
 
   function marketStats(store, type, date){
     store.market ||= { drp: [], kprop: [] };
-    const list = (store.market[type] || []).filter(x => !date || x.date === date);
+    const list = (store.market[type] || []).filter(x => !date || x.date === date).map(x => {
+      // Re-grade completed K props from repository data when the stored result is pending.
+      // This prevents iPhone reloads from showing final K prop games as Pending.
+      if (type === 'kprop') {
+        const result = (x.result === 'win' || x.result === 'loss') ? x.result : resolveKPropResult(x);
+        return { ...x, result };
+      }
+      return x;
+    });
     const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
     const wins = graded.filter(x => x.result === 'win').length;
     return { wins, losses: Math.max(graded.length - wins, 0), total: graded.length, pending: list.length - graded.length, list };
@@ -8213,9 +8223,16 @@ function showTab(id, el) {
 
     set('tracker-drp-today', `${drpMatchupToday.wins}-${drpMatchupToday.losses}`);
     set('tracker-drp-today-sub', `${pct(drpMatchupToday.wins,drpMatchupToday.total)}% today • ${drpMatchupToday.total} final matchups${drpMatchupToday.pending ? ` • ${drpMatchupToday.pending} not final excluded` : ''}`);
-    set('tracker-drp-all', `${drpMatchupAll.wins}-${drpMatchupAll.losses}`);
-    set('tracker-drp-all-sub', `${pct(drpMatchupAll.wins,drpMatchupAll.total)}% all-time • ${drpMatchupAll.total} final matchups${drpMatchupAll.pending ? ` • ${drpMatchupAll.pending} not final excluded` : ''}`);
-    setHeaderPct('drp-header-pct', pct(drpMatchupAll.wins,drpMatchupAll.total), drpMatchupAll.total);
+
+    // Repo allTime.drp is the authoritative all-time total when it contains a larger
+    // completed sample than the visible detailed rows. This keeps the card/header from
+    // dropping from the true repository record (ex: 20-8) to a smaller mobile-parsed
+    // subset (ex: 17-11) after Reload Repo Data on iPhone.
+    const drpSummary = normalizedSummary(store.allTime?.drp);
+    const drpAllDisplay = drpSummary.total >= drpMatchupAll.total ? drpSummary : drpMatchupAll;
+    set('tracker-drp-all', `${drpAllDisplay.wins}-${drpAllDisplay.losses}`);
+    set('tracker-drp-all-sub', `${pct(drpAllDisplay.wins,drpAllDisplay.total)}% all-time • ${drpAllDisplay.total} final matchups${drpMatchupAll.pending ? ` • ${drpMatchupAll.pending} not final excluded` : ''}`);
+    setHeaderPct('drp-header-pct', pct(drpAllDisplay.wins,drpAllDisplay.total), drpAllDisplay.total);
 
     set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
     set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.total} final K props${kpToday.pending ? ` • ${kpToday.pending} not final excluded` : ''}`);
@@ -8295,18 +8312,21 @@ function showTab(id, el) {
     }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
 
     set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
-      const finalK = r.finalKCount ?? findFinalKCountForPitcher(r.label);
+      const storedFinal = extractNumericValue(r.finalKCount ?? r.finalKs ?? r.kCount ?? r.finalK);
+      const domFinal = findFinalKCountForPitcher(r.label);
+      const finalK = Number.isFinite(storedFinal) ? storedFinal : domFinal;
+      if (Number.isFinite(finalK)) r.finalKCount = finalK;
       // Projected Line must be the K Projection, not the DR Line.
       const projectedLine = r.projectedLine || r.kProjection || '—';
       const kProjection = r.kProjection || r.projectedLine || '—';
       const drLine = r.drLine || '—';
-      const overDR = finalK !== null && Number.isFinite(extractNumericValue(drLine)) ? (finalK > extractNumericValue(drLine) ? 'Y' : 'N') : (r.overDRLine || '—');
+      const overDR = Number.isFinite(finalK) && Number.isFinite(extractNumericValue(drLine)) ? (finalK > extractNumericValue(drLine) ? 'Y' : 'N') : (r.overDRLine || '—');
       return `<tr>
         <td>${r.label}</td>
         <td>${r.pick}</td>
         <td>${projectedLine}</td>
         <td>${kProjection}</td>
-        <td>${finalK ?? '—'}</td>
+        <td>${Number.isFinite(finalK) ? finalK : '—'}</td>
         <td>${drLine}</td>
         <td>${overDR}</td>
         <td>${kpropStatusText(r)}</td>
