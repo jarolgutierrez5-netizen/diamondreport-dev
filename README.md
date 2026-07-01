@@ -1,19 +1,42 @@
 # Diamond Intelligence Engine (DIE)
-## v8.2 – Tracker Final Grading Update
 
-This release updates the historical Tracker pipeline so Diamond Report Picks can be graded from final MLB scores and all-time records are calculated from final graded rows only.
+## Version 8.3 — Tracker Reset / Final-Only Baseline
 
-## Key Updates
-- 6/30 Diamond Report Picks are finalized in `data/tracker.json`.
-- `scripts/updateTracker.js` now grades pending DR Picks from MLB final scores when available.
-- Pending rows do not count toward all-time summaries.
-- Repository remains the source of truth for Tracker history.
+This release resets the Tracker historical database so DIE starts clean from the reset date forward.
+
+## What Changed
+
+- Reset `data/tracker.json` to a clean baseline.
+- Cleared prior HR, K Props, Diamond Report Picks, player, team, and daily historical records.
+- Preserved the final-only Tracker architecture.
+- Tracker should store/display only finalized graded records going forward.
+- Pending and Wait Final rows should not be stored as historical Tracker records.
+
+## Reset Details
+
+- Reset date: `2026-07-01`
+- Reset time: `2026-07-01T16:06:52Z`
+- All-time HR record: `0-0`
+- All-time K Props record: `0-0`
+- All-time Diamond Report Picks record: `0-0`
 
 ## Deployment Type
-🟡 Tracker Data + Script Update
 
-Upload:
-- `data/tracker.json`
-- `scripts/updateTracker.js`
+Tracker data/script update.
 
-No `index.html` change is required for this release.
+Replace only:
+
+```text
+data/tracker.json
+scripts/updateTracker.js
+```
+
+Optional documentation files included:
+
+```text
+README.md
+CHANGELOG.md
+DEPLOYMENT.md
+```
+
+Do not replace `index.html`, `css/`, `js/`, `engine/`, `config/`, or `.github/` for this reset.

@@ -1,15 +1,26 @@
-# DEPLOYMENT – DIE v8.2
+# DIE v8.3 Deployment
 
 ## Deployment Type
-🟡 Tracker Data + Script Update
 
-## Upload / Replace
+🟡 Tracker Reset Update
+
+## Replace / Upload
+
 ```text
 data/tracker.json
 scripts/updateTracker.js
 ```
 
+## Optional
+
+```text
+README.md
+CHANGELOG.md
+DEPLOYMENT.md
+```
+
 ## Do Not Change
+
 ```text
 index.html
 css/
@@ -17,14 +28,18 @@ js/
 engine/
 config/
 .github/
+data/daily-results.json
+data/model-data.json
+data/lineups.json
+data/lineup-intelligence.json
+data/statcast-hot-hitters.json
 ```
 
 ## After Upload
-1. Commit the two files.
-2. Wait for GitHub Pages / Actions if applicable.
-3. Open dev site.
-4. Go to Tracker.
-5. Press Reload Repo Data.
-6. Confirm 6/30 Diamond Report Picks now appear as final graded rows.
 
-Note: With the uploaded tracker data and official 6/30 finals, DR Picks grade to 17-11 overall.
+1. Commit the files.
+2. Open the dev site.
+3. Go to Tracker.
+4. Press **Reload Repo Data**.
+5. Confirm Tracker all-time records are reset to `0-0`.
+6. Going forward, only finalized graded records should appear in Tracker.
