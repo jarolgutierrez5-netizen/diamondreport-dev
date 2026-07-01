@@ -1,5 +1,5 @@
 # Diamond Intelligence Engine (DIE)
-## Version 5.9 — K Props Scrollable Panel
+## Version 6.0 — K Props Scrollable Panel
 
 Diamond Intelligence Engine (DIE) is a professional MLB analytics platform designed to combine live MLB data, advanced baseball metrics, historical tracking, and prediction intelligence into one clean, responsive web experience.
 
@@ -7,7 +7,7 @@ The long-term goal is to make DIE a centralized prediction engine for Home Run, 
 
 ---
 
-## Version 5.9 Changes
+## Version 6.0 Changes
 
 ### K Props Scrollable Panel
 - Made **K Props** scroll inside its own section on mobile and tablet.
@@ -116,3 +116,17 @@ Every future release should include:
 **Latest Update:** Mobile Props layout update: HR Potential and K's Today now sit side by side, with HR's Today and HR's Completed from Projection side by side below.
 
 © 2026 Diamond Intelligence Engine (DIE)
+
+
+## Version 6.0 — Mobile Layout Optimization
+
+### Changes
+- Restored **HR Potential** to full width on mobile so player cards remain readable.
+- Moved **K's Today** below HR Potential as its own full-width internally scrollable panel.
+- Kept **HR's Today** and **HR's Completed from Projection** side by side on the row below.
+- Reduced mobile spacing for a cleaner developer layout.
+- Preserved previous first-load fixes for HR Potential, Pitcher Report, and K's Today.
+- Preserved v5.9 K Props internal scrolling improvements.
+
+### Deployment Note
+This is a developer/test build. Test on mobile before promoting to the live DIE Foundation site.

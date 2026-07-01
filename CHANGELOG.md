@@ -44,3 +44,11 @@
 - Optimized K's Today for phones.
 - Prevented HR Potential from causing full-page horizontal overflow.
 - Converted K's Today rows to a compact mobile grid.
+
+
+## v6.0 — Mobile Layout Optimization
+- Restored HR Potential to full width on mobile for readability.
+- Moved K's Today below HR Potential as a full-width scrollable panel.
+- Kept HR's Today and HR's Completed from Projection side by side below.
+- Tightened mobile spacing and preserved v5.9 K Props scrollable behavior.
+- Updated README for the v6.0 developer build.

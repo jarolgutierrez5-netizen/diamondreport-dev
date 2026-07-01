@@ -3466,6 +3466,121 @@ video {
 
 </style>
 
+
+
+<style id="v6-0-mobile-layout-optimization">
+/* ============================================================
+   Diamond Report DIE v6.0 — Mobile Layout Optimization
+   - Restores HR Potential to full width on mobile for readability.
+   - Keeps K's Today directly below as a full-width internal scroll panel.
+   - Keeps HR's Today + HRs Completed from Projection side by side below.
+   - Overrides the v5.8 two-column Props layout only on mobile.
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Top Props row: HR Potential full width, K's Today full width underneath */
+  #props .props-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    align-items: start !important;
+    width: 100% !important;
+  }
+
+  #props .props-grid > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Restore readable HR Potential card behavior */
+  #props #hr-potential-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 580px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    border-radius: 12px !important;
+  }
+
+  /* K's Today stays compact with its own scroll area below HR Potential */
+  #props .props-grid > div:nth-child(2) > div {
+    max-height: 360px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    border-radius: 12px !important;
+  }
+
+  #props #ks-today-props {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Bottom row remains two columns as requested */
+  #props .hrs-today-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 10px !important;
+    align-items: start !important;
+    width: 100% !important;
+    margin-top: 16px !important;
+  }
+
+  #props .hrs-today-grid > div {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  #props .props-grid .section-title {
+    font-size: 18px !important;
+    line-height: 1.1 !important;
+    margin-bottom: 10px !important;
+    letter-spacing: .06em !important;
+  }
+
+  #props .hrs-today-grid .section-title {
+    font-size: 13.5px !important;
+    line-height: 1.08 !important;
+    letter-spacing: .035em !important;
+  }
+
+  #hrs-today-count,
+  #proj-hits-count {
+    font-size: 13px !important;
+    padding: 1px 7px !important;
+  }
+
+  /* Keep the lower cards scrollable without making the entire page feel endless */
+  #props .hrs-today-grid > div > div:last-child {
+    max-height: 320px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+  }
+}
+
+@media (max-width: 430px) {
+  #props .props-grid {
+    gap: 12px !important;
+  }
+
+  #props .props-grid > div:nth-child(2) > div {
+    max-height: 330px !important;
+  }
+
+  #props .hrs-today-grid {
+    gap: 8px !important;
+    margin-top: 14px !important;
+  }
+
+  #props .hrs-today-grid .section-title {
+    font-size: 12px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 
