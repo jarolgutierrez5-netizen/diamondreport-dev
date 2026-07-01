@@ -1,14 +1,8 @@
 # Changelog
 
-## v7.3 — DR Picks Repository Source-of-Truth Fix
-
-### Fixed
-- Diamond Report Picks — Daily + All-Time Accuracy now reads DR Picks history directly from `data/tracker.json`.
-- Prevented iPhone/mobile DOM parsing from dropping stored Diamond Report Picks after Reload Repo Data.
-- Stopped local browser cache from overriding repository DR Picks history.
-- Removed DR Picks table dedupe-by-matchup behavior so every stored repository row displays.
-- Preserved repository all-time records such as 20-8 when the repo contains the full record.
-
-### Deployment
-- Deployment Type: Index Only
-- Replace `index.html` only.
+## v7.4 — DR Picks Wait Final Backfill Fix
+- Fixed prior-date Diamond Report Picks showing `Wait Final` after repo reload.
+- Added repo status normalization for `Right/Wrong`, `win/loss`, and legacy status fields.
+- Added MLB schedule backfill for stale pending DR Picks from previous dates.
+- Preserved 6/29 accurate DR Pick count logic.
+- Deployment type: Index Only.

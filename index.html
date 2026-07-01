@@ -7070,8 +7070,29 @@ function showTab(id, el) {
     return { wins, losses, total };
   }
 
+
+  function normalizeMarketResultValue(value){
+    const raw = String(value ?? '').toLowerCase().trim();
+    if (!raw) return 'pending';
+    if (['win','won','right','correct','hit','cash','cashed','success','w'].includes(raw) || /✅|right|correct|won|win|hit/.test(raw)) return 'win';
+    if (['loss','lost','wrong','incorrect','miss','missed','l'].includes(raw) || /❌|wrong|incorrect|lost|loss|miss/.test(raw)) return 'loss';
+    if (['push','void','cancelled','canceled'].includes(raw) || /push|void|cancel/.test(raw)) return 'push';
+    return 'pending';
+  }
+
+  function normalizeMarketRowResults(store){
+    store = normalizeStore(store);
+    ['drp','kprop'].forEach(type => {
+      store.market[type] = (store.market[type] || []).map(rec => {
+        const normalized = normalizeMarketResultValue(rec.result ?? rec.status ?? rec.outcome ?? rec.grade ?? rec.finalStatus);
+        return { ...rec, result: normalized };
+      });
+    });
+    return store;
+  }
+
   function cloneTrackerStore(store){
-    return normalizeStore(JSON.parse(JSON.stringify(store || safeStore())));
+    return normalizeMarketRowResults(normalizeStore(JSON.parse(JSON.stringify(store || safeStore()))));
   }
 
   function repoSourceStore(){
@@ -7122,7 +7143,7 @@ function showTab(id, el) {
       headers: { 'Cache-Control': 'no-cache' }
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    repoTrackerSeed = normalizeStore(await res.json());
+    repoTrackerSeed = normalizeMarketRowResults(normalizeStore(await res.json()));
     repoTrackerLoaded = true;
     return repoTrackerSeed;
   }
@@ -7200,6 +7221,8 @@ function showTab(id, el) {
   async function initPersistentTrackerData(){
     try {
       await fetchFreshRepoTrackerData();
+      await backfillStalePendingPicks(repoTrackerSeed);
+      repoTrackerSeed = updateAllTimeSummaryFromRows(normalizeMarketRowResults(repoTrackerSeed));
       window.__diamondTrackerStore = loadStore();
       if (window.syncDiamondTracker) window.syncDiamondTracker();
     } catch(e){
@@ -7294,6 +7317,8 @@ function showTab(id, el) {
     try {
       clearTrackerBrowserCaches();
       await fetchFreshRepoTrackerData();
+      await backfillStalePendingPicks(repoTrackerSeed);
+      repoTrackerSeed = updateAllTimeSummaryFromRows(normalizeMarketRowResults(repoTrackerSeed));
       const repoOnly = repoSourceStore() || cloneTrackerStore(repoTrackerSeed || safeStore());
       window.__diamondTrackerStore = repoOnly;
       if (window.syncDiamondTracker) window.syncDiamondTracker();
@@ -7801,6 +7826,8 @@ function showTab(id, el) {
   }
 
   function resolveDRPickResult(rec){
+    const stored = normalizeMarketResultValue(rec?.result ?? rec?.status ?? rec?.outcome ?? rec?.grade ?? rec?.finalStatus);
+    if (stored === 'win' || stored === 'loss' || stored === 'push') return stored;
     const finals = finalGameMap();
     if(!Object.keys(finals).length) return 'pending';
 
@@ -8101,14 +8128,16 @@ function showTab(id, el) {
       // Re-grade completed K props from repository data when the stored result is pending.
       // This prevents iPhone reloads from showing final K prop games as Pending.
       if (type === 'kprop') {
-        const result = (x.result === 'win' || x.result === 'loss') ? x.result : resolveKPropResult(x);
+        const normalized = normalizeMarketResultValue(x.result ?? x.status ?? x.outcome ?? x.grade ?? x.finalStatus);
+        const result = (normalized === 'win' || normalized === 'loss') ? normalized : resolveKPropResult({ ...x, result: normalized });
         return { ...x, result };
       }
       if (type === 'drp') {
         // Confirm/refresh DR Pick status from final-score data when available, while
         // preserving stored win/loss results from the repository. This keeps the
         // Status column and the right/wrong count aligned after Reload Repo Data.
-        const result = (x.result === 'win' || x.result === 'loss') ? x.result : resolveDRPickResult(x);
+        const normalized = normalizeMarketResultValue(x.result ?? x.status ?? x.outcome ?? x.grade ?? x.finalStatus);
+        const result = (normalized === 'win' || normalized === 'loss' || normalized === 'push') ? normalized : resolveDRPickResult({ ...x, result: normalized });
         return { ...x, result };
       }
       return x;
@@ -8516,6 +8545,7 @@ function showTab(id, el) {
       // doesn't block this sync — re-renders automatically if anything resolves)
       backfillStalePendingPicks(store).then(changed => {
         if (changed) {
+          if (repoTrackerLoaded && repoTrackerSeed) repoTrackerSeed = updateAllTimeSummaryFromRows(normalizeMarketRowResults(store));
           saveStore(store);
           render(store, threats, homers, gamePicks);
         }
@@ -8543,13 +8573,27 @@ function showTab(id, el) {
   // cases like a normalization bug (e.g. legacy 'AZ' records) that prevented a pick
   // from resolving while its date's games were still in the live DOM — once the day
   // passes, #final-games no longer has that data, so the only remaining source is the API.
-  const TEAM_NORM_MAP = { CHW:'CWS', KCR:'KC', SDP:'SD', SFG:'SF', TBR:'TB', WAS:'WSH' };
+  const TEAM_NORM_MAP = { CHW:'CWS', KCR:'KC', SDP:'SD', SFG:'SF', TBR:'TB', WAS:'WSH', AZ:'ARI' };
   const normTeamGlobal = t => { t = String(t||'').toUpperCase().trim(); return TEAM_NORM_MAP[t] || t; };
+
+  async function fetchMLBScheduleForDate(date){
+    const urls = [
+      `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore,team&language=en`,
+      `https://diamondreport.app/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore,team&language=en`
+    ];
+    let lastErr = null;
+    for (const url of urls){
+      try { return await fetchJSON(url); }
+      catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error('Unable to fetch MLB schedule');
+  }
 
   async function backfillStalePendingPicks(store){
     const todayKey = (typeof dayKey === 'function') ? dayKey() : new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
     store.market ||= { drp: [], kprop: [] };
-    const stale = (store.market.drp || []).filter(r => r.result === 'pending' && r.date && r.date !== todayKey);
+    store.market.drp = (store.market.drp || []).map(r => ({ ...r, result: normalizeMarketResultValue(r.result ?? r.status ?? r.outcome ?? r.grade ?? r.finalStatus) }));
+    const stale = (store.market.drp || []).filter(r => !(r.result === 'win' || r.result === 'loss' || r.result === 'push') && r.date && r.date !== todayKey);
     if (!stale.length) return false;
 
     const dates = [...new Set(stale.map(r => r.date))];
@@ -8557,7 +8601,7 @@ function showTab(id, el) {
 
     for (const date of dates) {
       try {
-        const data = await fetchJSON(`https://diamondreport.app/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore,team&language=en`);
+        const data = await fetchMLBScheduleForDate(date);
         const entry = data.dates?.find(d => d.date === date) || data.dates?.[0];
         const games = entry?.games || [];
         const finalsForDate = {};
