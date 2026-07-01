@@ -1,9 +1,9 @@
 {
-  "version": 1,
+  "version": 2,
   "generatedAt": null,
   "date": null,
-  "mode": "snapshot-template",
-  "note": "Final-only Tracker uses this file as a pregame snapshot source. Do not add finalized results here; updateTracker grades these rows into data/tracker.json after games are final.",
+  "mode": "auto-snapshot-ready",
+  "note": "This file is automatically populated by scripts/updateTracker.js when empty or when the date changes. Tracker history remains final-only.",
   "drp": [],
   "kprop": [],
   "hr": []
