@@ -1,179 +1,127 @@
 # Diamond Intelligence Engine (DIE)
+## Version 5.6 — First-Load Data Initialization Fix
 
-## Version 5.5 – Font Enhancement Update
+Diamond Intelligence Engine (DIE) is a professional MLB analytics platform designed to combine live MLB data, advanced baseball metrics, historical tracking, and prediction intelligence into one clean, responsive web experience.
 
-### Overview
-
-Diamond Intelligence Engine (DIE) is a professional MLB analytics platform designed to combine advanced baseball statistics, historical trends, live game data, and machine intelligence into one prediction engine.
-
-The goal of DIE is to provide the most accurate Home Run, Strikeout, Moneyline, and Over/Under projections while continuously improving through historical tracking and prediction analysis.
+The long-term goal is to make DIE a centralized prediction engine for Home Run, Strikeout, Moneyline, and Over/Under analysis, with a Tracker that learns from completed predictions and improves future projections.
 
 ---
 
-# Version 5.5 Changes
+## Version 5.6 Changes
 
-### User Interface
+### First-Load Fixes
+- Fixed **HRs Completed from Projection** so it no longer requires a page reload to populate correctly.
+- Fixed **Pitcher Report** so it warms and populates correctly on first page load.
+- Added a coordinated first-load bootstrap so key modules initialize in the correct order.
+- Delayed the first live-score refresh until after all page modules are fully registered.
+- Re-runs HR completion matching after HR Potential finishes loading so completed projected HRs can be detected immediately.
 
-* Increased font sizes throughout the application for improved readability.
-* Enhanced player name visibility.
-* Increased font sizes in:
-
-  * Home Run Potential
-  * Moneyline
-  * Strikeout
-  * Over/Under
-  * Matchup Analysis
-  * Reports
-  * Tables
-  * Cards
-  * Navigation
-  * Buttons
-  * General statistics
-* **Tracker tab intentionally left unchanged.**
-
----
-
-# Responsive Design
-
-Optimized for:
-
-* Mobile
-* Tablet
-* Desktop
-
-Maintains a clean, professional layout across all supported devices.
+### Stability Improvements
+- Reduced first-load race conditions between:
+  - Live Scores
+  - HRs Today
+  - HR Potential
+  - HRs Completed from Projection
+  - Pitcher Report
+  - K's Today
+  - Tracker-dependent data
+- Warm-loads Pitcher Report data in the background so opening the tab feels immediate.
+- Preserves the Tracker tab layout and functionality.
 
 ---
 
-# Diamond Intelligence Engine Vision
+## Previous Version 5.5 Changes
 
-DIE is evolving beyond a traditional sports picks website into a self-learning baseball intelligence platform.
+### Font Enhancement Update
+- Increased font sizes throughout the application for improved readability.
+- Enhanced player name visibility.
+- Increased font sizes in major sections, tables, cards, buttons, labels, and general statistics.
+- Tracker tab intentionally left unchanged.
 
-Every prediction will eventually be powered by a centralized analytics engine instead of independent calculations.
+---
 
-Future engine modules include:
+## Diamond Intelligence Engine Vision
+
+DIE is being built as more than a sports picks website. The platform is evolving into a self-learning baseball intelligence engine where every module contributes to one centralized prediction system.
+
+Future engine components include:
 
 ### Prediction Engine
-
-Generates:
-
-* Home Run probabilities
-* Strikeout projections
-* Moneyline projections
-* Over/Under projections
+Generates projections for:
+- Home Run potential
+- Strikeout props
+- Moneyline picks
+- Over/Under game totals
 
 ### Learning Engine
-
-Tracks:
-
-* Daily prediction accuracy
-* Historical performance
-* Team trends
-* Pitcher tendencies
-* Player success rates
-
-Uses historical data to improve future predictions.
+Uses the Tracker to measure:
+- Daily accuracy
+- All-time accuracy
+- Team trends
+- Pitcher tendencies
+- Player prediction results
+- Model strengths and weaknesses
 
 ### Confidence Engine
-
-Every prediction will include:
-
-* Confidence Score
-* Risk Level
-* Data Agreement Percentage
+Every prediction should eventually include:
+- Confidence score
+- Risk level
+- Data agreement percentage
+- Explanation of the strongest factors
 
 ### Situational Intelligence
-
-Incorporates:
-
-* Weather
-* Ballpark factors
-* Umpire tendencies
-* Bullpen fatigue
-* Lineup changes
-* Rest days
-* Travel schedules
-* Pitch mix
-* Exit velocity
-* Barrel rate
-* Hard-hit percentage
-* Expected statistics
-* Platoon advantages
+Planned factors include:
+- Weather
+- Ballpark factors
+- Umpire tendencies
+- Bullpen fatigue
+- Lineup changes
+- Rest days
+- Travel schedules
+- Pitch mix
+- Exit velocity
+- Barrel rate
+- Hard-hit percentage
+- Expected statistics
+- Platoon advantages
 
 ---
 
-# Planned Data Sources
+## Planned Data Sources
 
-* Baseball Savant
-* FanGraphs
-* Baseball Reference
-* StatMuse
-* Brooks Baseball
-* Baseball Prospectus
-* MLB Stats API
-* Weather APIs
-* Sportsbook Odds APIs
-* Injury Reports
-* Umpire Data
-* Market Movement Data
-
----
-
-# Tracker
-
-The Tracker is the learning component of DIE.
-
-It will:
-
-* Store every prediction
-* Track wins and losses
-* Calculate daily accuracy
-* Calculate all-time accuracy
-* Learn which prediction models perform best
-* Improve future projections using historical results
+- Baseball Savant
+- FanGraphs
+- Baseball Reference
+- StatMuse
+- Brooks Baseball
+- Baseball Prospectus
+- MLB Stats API
+- Weather APIs
+- Sportsbook odds APIs
+- Injury reports
+- Umpire data
+- Market movement data
 
 ---
 
-# Development Standards
+## Development Standards
 
-Every release will include:
-
-* Incremented version number
-* Updated README
-* Mobile-first testing
-* Tablet compatibility
-* Desktop compatibility
-* Responsive UI improvements
-* Performance optimizations
-* Bug fixes
-
----
-
-# Long-Term Goal
-
-Transform Diamond Intelligence Engine into one of the most advanced publicly available MLB analytics platforms by combining:
-
-* Advanced sabermetrics
-* Machine learning concepts
-* Historical prediction tracking
-* Market intelligence
-* Explainable AI
-* Continuous self-improvement
-
-Every feature added to the application should move the project closer to this vision.
+Every future release should include:
+- Incremented version number
+- Updated README.md
+- Updated changelog when applicable
+- ZIP package output
+- Mobile-first testing
+- Tablet and desktop review
+- Performance-conscious changes
+- Preservation of existing working features unless intentionally changed
 
 ---
 
 ## Current Version
 
-**Version:** 5.5
-
-Status:
-
-* Active Development
-* Responsive Layout Complete
-* Font Enhancement Complete
-* Diamond Intelligence Engine Architecture In Progress
-* Tracker Learning System In Development
+**Version:** 5.6  
+**Status:** Active Development  
+**Latest Update:** First-load data initialization fix for HRs Completed from Projection and Pitcher Report.
 
 © 2026 Diamond Intelligence Engine (DIE)

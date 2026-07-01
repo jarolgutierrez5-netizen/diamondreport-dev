@@ -4102,7 +4102,9 @@ async function loadScores() {
   }
 }
 
-loadScores();
+// Startup is coordinated by bootDiamondReportStartup() near the end of this script.
+// Delaying the first call prevents early async responses from touching state before
+// all modules (HRs Today, HR Potential, Pitcher Report, Tracker) are initialized.
 setInterval(loadScores, 30000);
 
 // Tick countdown labels every second so they count down smoothly between full data refreshes
@@ -5624,7 +5626,11 @@ function triggerHRPotentialRefresh() {
 
 
 function loadHRPotentialWithRetry() {
-  loadHRPotential().then(() => {
+  return loadHRPotential().then(() => {
+    // Re-run HRs Today after HR Potential is available so the
+    // "HRs Completed from Projection" panel cross-references real rows on first load.
+    if (typeof loadHRsToday === 'function') loadHRsToday();
+
     if (!hrpRows.length) {
       // Lineups not posted yet — retry in 15 minutes
       if (hrpRetryTimer) clearTimeout(hrpRetryTimer);
@@ -5655,9 +5661,7 @@ function schedule5amHRRefresh() {
   }, msUntil5am);
 }
 
-// On page load: refresh if stale, then schedule daily
-triggerHRPotentialRefresh();
-schedule5amHRRefresh();
+// HR Potential startup is coordinated by bootDiamondReportStartup() near the end of this script.
 
 
 
@@ -8443,6 +8447,36 @@ function showTab(id, el) {
   else startKPropRecommendationPatch();
 })();
 
+
+
+// ── ROBUST FIRST-LOAD BOOTSTRAP ──────────────────────────────────────
+// Keeps the first page visit from requiring a manual reload. The boot runs after
+// the full script is parsed, then warms the modules whose panels depend on each
+// other: HR Potential -> HRs Completed from Projection, Pitcher Report -> lineups,
+// and live scores -> HR/K banners.
+let diamondReportBooted = false;
+function bootDiamondReportStartup() {
+  if (diamondReportBooted) return;
+  diamondReportBooted = true;
+
+  loadScores();
+  initPropsTab();
+  triggerHRPotentialRefresh();
+  schedule5amHRRefresh();
+
+  // Warm Pitcher Report data in the background so opening the tab does not require
+  // a second page load. Mark it loaded to prevent duplicate simultaneous fetches.
+  if (!matchupLoaded) {
+    matchupLoaded = true;
+    loadPitcherReport();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootDiamondReportStartup, { once: true });
+} else {
+  setTimeout(bootDiamondReportStartup, 0);
+}
 
 
 // Lightweight Diamond Report safety cleanup — no intervals or observers
