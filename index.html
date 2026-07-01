@@ -7776,14 +7776,16 @@ function showTab(id, el) {
 
   function kpropOverDRLine(rec){
     const finalK = rec.finalKCount ?? findFinalKCountForPitcher(rec.label);
-    const drLine = extractNumericValue(rec.drLine || rec.line);
+    // DR Line accuracy must use the dedicated DR Line value only.
+    // Do not fall back to rec.line because rec.line is the Projected Line/K Projection.
+    const drLine = extractNumericValue(rec.drLine);
     if (!Number.isFinite(finalK) || !Number.isFinite(drLine)) return '—';
     return finalK > drLine ? 'Y' : 'N';
   }
 
   function resolveKPropResult(rec){
-    // K Props can only be graded when the pitcher has a final strikeout count visible.
-    // If the page does not expose a final K count, keep it pending instead of guessing.
+    // K Props status must compare the K Projection for Game against the Final K Count.
+    // DR Line is tracked separately in the All Time DR Line Accuracy section.
     const finalsExist = isAnyGameFinal();
     if(!finalsExist) return 'pending';
 
@@ -7794,11 +7796,11 @@ function showTab(id, el) {
     if(kCount === null || !Number.isFinite(kCount)) return 'pending';
     rec.finalKCount = kCount;
 
-    const drLine = extractNumericValue(rec.drLine || rec.line);
-    if(!Number.isFinite(drLine)) return 'pending';
+    const kProjection = extractNumericValue(rec.kProjection || rec.projectedLine || rec.line);
+    if(!Number.isFinite(kProjection)) return 'pending';
 
-    if(/OVER/i.test(rec.pick)) return kCount > drLine ? 'win' : 'loss';
-    if(/UNDER/i.test(rec.pick)) return kCount < drLine ? 'win' : 'loss';
+    if(/OVER/i.test(rec.pick)) return kCount > kProjection ? 'win' : 'loss';
+    if(/UNDER/i.test(rec.pick)) return kCount < kProjection ? 'win' : 'loss';
     return 'pending';
   }
 
@@ -7865,9 +7867,12 @@ function showTab(id, el) {
       if(!t || isPlaceholderText(t)) return null;
       const name=norm(row.querySelector('.kprop-name')?.textContent || t.split('\n')[0] || `Pitcher ${i+1}`);
       const drLine=norm(row.querySelector('.kprop-line-val')?.textContent || '');
-      const kProjection=norm(row.querySelector('.kprop-pred-lbl')?.textContent || row.querySelector('.kprop-pred-val')?.textContent || '');
-      const projectedLine = drLine;
-      let pick = /UNDER/i.test(t) ? 'UNDER' : /OVER/i.test(t) ? 'OVER' : (kProjection || '—');
+      const rawKProjection=norm(row.querySelector('.kprop-pred-lbl')?.textContent || row.querySelector('.kprop-pred-val')?.textContent || '');
+      const kProjectionNum = extractNumericValue(rawKProjection);
+      const kProjection = Number.isFinite(kProjectionNum) ? String(kProjectionNum) : rawKProjection;
+      // Projected Line is the DIE K Projection for Game, not the DR Line.
+      const projectedLine = kProjection;
+      let pick = /UNDER/i.test(t) ? 'UNDER' : /OVER/i.test(t) ? 'OVER' : (rawKProjection || '—');
       const finalKCount = findFinalKCountForPitcher(name);
       return {
         // Key is based on pitcher name only — NOT the line value, since sportsbook lines
@@ -8125,11 +8130,13 @@ function showTab(id, el) {
 
     const drLineRows = (kpAll.list || []).filter(r => {
       const finalK = r.finalKCount ?? findFinalKCountForPitcher(r.label);
-      const drLine = extractNumericValue(r.drLine || r.line);
+      // All Time DR Line Accuracy must use the actual DR Line only.
+      // rec.line is reserved for Projected Line/K Projection and cannot be used here.
+      const drLine = extractNumericValue(r.drLine);
       return Number.isFinite(finalK) && Number.isFinite(drLine);
     }).map(r => {
       const finalK = r.finalKCount ?? findFinalKCountForPitcher(r.label);
-      const drLine = extractNumericValue(r.drLine || r.line);
+      const drLine = extractNumericValue(r.drLine);
       return { ...r, finalKCount: finalK, drLine, overDRLine: finalK > drLine ? 'Y' : 'N' };
     });
     const drLineOver = drLineRows.filter(r => r.overDRLine === 'Y').length;
@@ -8190,13 +8197,16 @@ function showTab(id, el) {
 
     set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
       const finalK = r.finalKCount ?? findFinalKCountForPitcher(r.label);
-      const drLine = r.drLine || r.line || '—';
+      // Projected Line must be the K Projection, not the DR Line.
+      const projectedLine = r.projectedLine || r.kProjection || '—';
+      const kProjection = r.kProjection || r.projectedLine || '—';
+      const drLine = r.drLine || '—';
       const overDR = finalK !== null && Number.isFinite(extractNumericValue(drLine)) ? (finalK > extractNumericValue(drLine) ? 'Y' : 'N') : (r.overDRLine || '—');
       return `<tr>
         <td>${r.label}</td>
         <td>${r.pick}</td>
-        <td>${r.projectedLine || r.line || '—'}</td>
-        <td>${r.kProjection || '—'}</td>
+        <td>${projectedLine}</td>
+        <td>${kProjection}</td>
         <td>${finalK ?? '—'}</td>
         <td>${drLine}</td>
         <td>${overDR}</td>
