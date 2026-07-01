@@ -1,6 +1,6 @@
 {
   "version": 5,
-  "generatedAt": "2026-07-01T16:06:52Z",
+  "generatedAt": "2026-07-01T19:14:35.075Z",
   "resetAt": "2026-07-01T16:06:52Z",
   "resetDate": "2026-07-01",
   "resetReason": "User requested a clean historical Tracker reset. Tracker starts recording finalized records from reset date forward.",
@@ -16,13 +16,14 @@
   "debug": {
     "repoDataLoaded": true,
     "repoSync": true,
-    "repoSyncNote": "Tracker reset: historical Tracker contains final graded records only. Pending/Wait Final rows are not stored. Pre-reset history was intentionally cleared.",
+    "repoSyncNote": "Historical tracker sync: only final graded records count toward all-time accuracy. Pending rows are ignored by summaries and hidden by the UI.",
     "currentDateCT": "2026-07-01",
-    "lastGithubActionRun": "2026-07-01T16:06:52Z",
-    "allTimeSummaryUpdatedAt": "2026-07-01T16:06:52Z",
+    "lastGithubActionRun": "2026-07-01T19:14:35.075Z",
+    "allTimeSummaryUpdatedAt": "2026-07-01T19:14:35.075Z",
     "trackingMode": "final-only",
     "localStorageHistoryAllowed": false,
-    "pendingRowsAllowed": false
+    "pendingRowsAllowed": false,
+    "lastDrpRowsAutoGraded": 0
   },
   "allTime": {
     "hr": {
