@@ -1,15 +1,12 @@
-# Diamond Report DIE v6.2.1 — Mobile Stability Patch
-
-## Base version
-This build is based on the reverted **DIE v6.2 Mobile K Count Fix** version.
+# Diamond Report DIE v5.3 — Mobile HR Potential + K's Today Fix
 
 ## What changed
-- Reduced mobile glitching without changing the v6.2 layout.
-- Stabilized internal scrolling for HR Potential and K's Today.
-- Prevented horizontal overflow on iPhone.
-- Reduced costly mobile animations/repaints.
-- Prevented duplicate mobile card containers from stacking.
-- Kept the v6.2 HR Potential and K's Today designs.
+- Fixed mobile layout for **HR Potential**.
+- Fixed mobile layout for **K's Today**.
+- HR Potential now scrolls inside its card instead of breaking the page width.
+- K's Today rows are now compact mobile cards with controlled spacing.
+- Preserves tablet and desktop layouts.
+- Keeps DIE, API optimizer, data folders, scripts, workflows, and responsive base from v5.2.
 
 ## Upload
 This is a full Developer repo snapshot. Replace the Developer repo contents with this package.
