@@ -1,0 +1,21 @@
+{
+  "version": "8.1",
+  "engine": "Diamond Intelligence Engine",
+  "releaseType": "Architecture",
+  "trackerSource": "repository",
+  "allowLocalTrackerWrites": false,
+  "allowPendingTrackerRows": false,
+  "learningEnabled": false,
+  "uiEngineSeparation": true,
+  "safeToEdit": [
+    "index.html",
+    "css/styles.css"
+  ],
+  "protected": [
+    "engine/",
+    "config/",
+    "data/",
+    "scripts/",
+    ".github/"
+  ]
+}
