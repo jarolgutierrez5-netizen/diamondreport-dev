@@ -1,8 +1,17 @@
 # Changelog
 
-## v8.0 — Historical Tracker Rewrite
-- Converted Tracker display to historical-only logic.
-- Removed local browser cache as a source of historical truth.
-- Excluded Pending/Wait Final rows from DR Picks and K Props Tracker tables.
-- Preserved repository-only all-time accuracy behavior.
-- Added read-only Tracker status messaging.
+## v8.1 — UI / Engine Separation
+
+### Added
+- `css/styles.css` extracted from inline style blocks.
+- `js/app.js` app entry scaffold.
+- `engine/` scaffold modules.
+- `config/dieConfig.json`.
+- `DIE_ARCHITECTURE.md`.
+
+### Changed
+- `index.html` now links to external CSS and app scaffold.
+- v8.0 Tracker behavior preserved.
+
+### Deployment type
+Full architecture update.

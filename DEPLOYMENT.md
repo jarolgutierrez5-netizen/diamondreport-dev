@@ -1,19 +1,46 @@
-# DIE v8.0 Deployment
+# DIE v8.1 Deployment
 
 ## Deployment Type
-🟢 Index Only
+🔴 Full Architecture Update
 
-## Upload / Replace
-- index.html
+## Upload / replace these files and folders
 
-## Do Not Replace
-- data/tracker.json
-- scripts/
-- .github/workflows/
+```text
+index.html
+css/
+js/
+engine/
+config/
+README.md
+CHANGELOG.md
+DEPLOYMENT.md
+DIE_ARCHITECTURE.md
+```
 
-## After Upload
-1. Open the dev site on iPhone.
-2. Go to Tracker.
-3. Press Reload Repo Data.
-4. Confirm DR Picks shows only completed repo records.
-5. Confirm no Pending / Wait Final rows appear in historical Tracker tables.
+## Do not change unless intentionally updating data/workflows
+
+```text
+data/
+scripts/
+.github/
+```
+
+## After upload
+
+1. Open the dev site.
+2. Hard refresh.
+3. Confirm the layout looks the same as v8.0.
+4. Open Tracker.
+5. Press Reload Repo Data.
+6. Confirm historical-only Tracker behavior remains intact.
+
+## Future UI work
+
+After this release, most layout edits should happen in:
+
+```text
+index.html
+css/styles.css
+```
+
+The `engine/` folder should not be edited for layout-only changes.
