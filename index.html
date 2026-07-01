@@ -3402,6 +3402,68 @@ video {
   #kprops-content .kprop-row > img{ width:40px !important; height:40px !important; }
   #kprops-content .kprop-line{ width:72px !important; }
 }
+
+
+/* DIE v5.8 — Mobile Props Two-Column Layout
+   Keeps HR Potential + K's Today side by side on mobile, with
+   HR's Today + HR's Completed from Projection side by side below. */
+@media (max-width: 768px) {
+  #props .props-grid,
+  #props .hrs-today-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
+
+  #props .props-grid > div,
+  #props .hrs-today-grid > div {
+    min-width: 0 !important;
+  }
+
+  #props #hr-potential-content,
+  #props #ks-today-props,
+  #props #hrs-today-content,
+  #props #proj-hits-content {
+    min-width: 0 !important;
+  }
+
+  #props .props-grid .section-title,
+  #props .hrs-today-grid .section-title {
+    font-size: 14px !important;
+    line-height: 1.05 !important;
+    letter-spacing: .045em !important;
+  }
+
+  #props .hrs-today-grid .section-title span,
+  #props .props-grid .section-title span {
+    letter-spacing: .045em !important;
+  }
+
+  #hrs-today-count,
+  #proj-hits-count {
+    font-size: 14px !important;
+    padding: 1px 7px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  #props .props-grid,
+  #props .hrs-today-grid {
+    gap: 8px !important;
+  }
+
+  #props .props-grid .section-title,
+  #props .hrs-today-grid .section-title {
+    font-size: 12.5px !important;
+    letter-spacing: .035em !important;
+  }
+
+  #props .props-grid .section-title span,
+  #props .hrs-today-grid .section-title span {
+    letter-spacing: .035em !important;
+  }
+}
+
 </style>
 
 </head>
@@ -8644,4 +8706,57 @@ if (document.readyState === 'loading') {
       text-overflow: clip !important;
     }
   }
+
+
+/* DIE v5.9 — K Props Internal Scroll Panel
+   Makes K Props scroll inside its own section on mobile/tablet so users do not
+   have to scroll through the entire page. Desktop behavior remains stable. */
+@media (max-width: 1099px) {
+  #kprops-content {
+    max-height: clamp(360px, 58vh, 620px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    position: relative !important;
+    scrollbar-width: thin !important;
+  }
+
+  #kprops-content > div:first-child:not(.mu-empty) {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 4 !important;
+    backdrop-filter: blur(8px) !important;
+  }
+
+  #kprops-content::-webkit-scrollbar {
+    width: 6px !important;
+  }
+
+  #kprops-content::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.22) !important;
+    border-radius: 999px !important;
+  }
+
+  #kprops-content::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #kprops-content {
+    max-height: clamp(330px, 54vh, 540px) !important;
+  }
+
+  #kprops-content .kprop-row:last-child {
+    margin-bottom: 8px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  #kprops-content {
+    max-height: clamp(300px, 52vh, 500px) !important;
+  }
+}
 </style>

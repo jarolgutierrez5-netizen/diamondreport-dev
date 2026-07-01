@@ -1,5 +1,5 @@
 # Diamond Intelligence Engine (DIE)
-## Version 5.7 — K's Today First-Load Fix
+## Version 5.9 — K Props Scrollable Panel
 
 Diamond Intelligence Engine (DIE) is a professional MLB analytics platform designed to combine live MLB data, advanced baseball metrics, historical tracking, and prediction intelligence into one clean, responsive web experience.
 
@@ -7,47 +7,29 @@ The long-term goal is to make DIE a centralized prediction engine for Home Run, 
 
 ---
 
-## Version 5.7 Changes
+## Version 5.9 Changes
 
-### K's Today First-Load Fix
-- Fixed **K's Today** in the Props tab so it initializes and populates on the first page load without requiring a manual reload.
-- Added a lightweight retry helper for K's Today when MLB schedule/boxscore data is still warming up.
-- Added K's Today to the Props background refresh cycle so it stays current alongside HR Potential and HRs Today.
-- Preserved the Tracker tab layout and behavior.
+### K Props Scrollable Panel
+- Made **K Props** scroll inside its own section on mobile and tablet.
+- Reduced the need to scroll through the entire Props page when reviewing all K Props.
+- Added touch-friendly smooth/momentum scrolling.
+- Added clean scrollbar styling for supported browsers.
+- Added sticky behavior for the K Props summary area when today's record appears.
 
----
-
-## Previous Version 5.6 Changes
-### First-Load Fixes
-- Fixed **HRs Completed from Projection** so it no longer requires a page reload to populate correctly.
-- Fixed **Pitcher Report** so it warms and populates correctly on first page load.
-- Added a coordinated first-load bootstrap so key modules initialize in the correct order.
-- Delayed the first live-score refresh until after all page modules are fully registered.
-- Re-runs HR completion matching after HR Potential finishes loading so completed projected HRs can be detected immediately.
-
-### Stability Improvements
-- Reduced first-load race conditions between:
-  - Live Scores
-  - HRs Today
-  - HR Potential
-  - HRs Completed from Projection
-  - Pitcher Report
-  - K's Today
-  - Tracker-dependent data
-- Warm-loads Pitcher Report data in the background so opening the tab feels immediate.
-- Preserves the Tracker tab layout and functionality.
+### Preserved From v5.8
+- **HR Potential** and **K's Today** stay side by side on mobile.
+- **HR's Today** and **HR's Completed from Projection** stay side by side on the row below.
+- Mobile-safe spacing and title sizing remain intact.
 
 ---
 
-## Previous Version 5.5 Changes
+## Previous Version 5.8 Changes
 
-### Font Enhancement Update
-- Increased font sizes throughout the application for improved readability.
-- Enhanced player name visibility.
-- Increased font sizes in major sections, tables, cards, buttons, labels, and general statistics.
-- Tracker tab intentionally left unchanged.
-
----
+### Mobile Props Two-Column Layout
+- Updated the Props tab mobile layout so **HR Potential** and **K's Today** display next to each other.
+- Updated the row below so **HR's Today** and **HR's Completed from Projection** display next to each other on mobile.
+- Added mobile-safe spacing, title sizing, and min-width protection to prevent layout overflow.
+- Preserved the developer-side first-load fixes from v5.7.
 
 ## Diamond Intelligence Engine Vision
 
@@ -129,8 +111,8 @@ Every future release should include:
 
 ## Current Version
 
-**Version:** 5.7  
+**Version:** 5.8  
 **Status:** Active Development  
-**Latest Update:** First-load data initialization fix for HRs Completed from Projection and Pitcher Report.
+**Latest Update:** Mobile Props layout update: HR Potential and K's Today now sit side by side, with HR's Today and HR's Completed from Projection side by side below.
 
 © 2026 Diamond Intelligence Engine (DIE)
