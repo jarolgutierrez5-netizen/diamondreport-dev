@@ -1,6 +1,6 @@
 {
-  "version": 5,
-  "generatedAt": "2026-07-01T19:45:23.602Z",
+  "version": 6,
+  "generatedAt": "2026-07-01T20:03:30.706Z",
   "resetAt": "2026-07-01T16:06:52Z",
   "resetDate": "2026-07-01",
   "resetReason": "User requested a clean historical Tracker reset. Tracker starts recording finalized records from reset date forward.",
@@ -18,12 +18,23 @@
     "repoSync": true,
     "repoSyncNote": "Historical tracker sync: only final graded records count toward all-time accuracy. Pending rows are ignored by summaries and hidden by the UI.",
     "currentDateCT": "2026-07-01",
-    "lastGithubActionRun": "2026-07-01T19:45:23.602Z",
-    "allTimeSummaryUpdatedAt": "2026-07-01T19:45:23.602Z",
-    "trackingMode": "final-only",
+    "lastGithubActionRun": "2026-07-01T20:03:30.706Z",
+    "allTimeSummaryUpdatedAt": "2026-07-01T20:03:30.706Z",
+    "trackingMode": "final-only-with-prediction-snapshot",
     "localStorageHistoryAllowed": false,
     "pendingRowsAllowed": false,
-    "lastDrpRowsAutoGraded": 0
+    "lastDrpRowsAutoGraded": 0,
+    "lastSnapshotSource": "data/today-predictions.json",
+    "snapshotRowsSeen": {
+      "drp": 0,
+      "kprop": 0,
+      "hr": 0
+    },
+    "rowsAddedOrUpdated": {
+      "drp": 0,
+      "kprop": 0,
+      "hr": 0
+    }
   },
   "allTime": {
     "hr": {
