@@ -1,15 +1,25 @@
-# Diamond Report DIE
+# Diamond Intelligence Engine (DIE)
 
-## Version 7.2 — Tracker Source-of-Truth Reload Fix
+## Version 7.3 — DR Picks Repository Source-of-Truth Fix
 
-This developer build fixes Tracker history display issues after pressing **Reload Repo Data** on iPhone/mobile.
+This developer build fixes the Tracker issue where **Diamond Report Picks — Daily + All-Time Accuracy** could show fewer games or skewed all-time records on iPhone after pressing **Reload Repo Data**.
 
-### Changes
-- Preserves all stored Diamond Report Picks from `data/tracker.json`.
-- Stops mobile parsing from dropping historical DR Picks when a matchup label cannot be rebuilt.
-- Keeps Diamond Report Picks all-time records tied to repository history.
-- Ensures the DR Picks detail table displays stored records instead of hiding records with imperfect labels.
-- Keeps README and CHANGELOG updated per DIE release standards.
+## What Changed
 
-### Notes
-The Tracker should treat repository data as the source of truth. UI rendering should not remove historical records just because the mobile DOM parser cannot reconstruct a clean `TEAM @ TEAM` label.
+- `data/tracker.json` is now treated as the source of truth for Diamond Report Picks history.
+- Browser/local cache no longer overrides DR Picks records after repo reload.
+- Mobile DOM parsing no longer rebuilds or drops stored DR Picks records.
+- The DR Picks all-time card and detailed table are both based on the same repository-backed data.
+- Every stored DR Pick row is displayed; records are no longer removed by matchup dedupe.
+
+## Deployment Type
+
+🟢 **Index Only**
+
+Replace only:
+
+```text
+index.html
+```
+
+No `data/`, `scripts/`, or workflow files need to be updated for this fix.

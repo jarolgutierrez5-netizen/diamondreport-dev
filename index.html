@@ -7070,6 +7070,36 @@ function showTab(id, el) {
     return { wins, losses, total };
   }
 
+  function cloneTrackerStore(store){
+    return normalizeStore(JSON.parse(JSON.stringify(store || safeStore())));
+  }
+
+  function repoSourceStore(){
+    // tracker.json is the source of truth after repo data loads. This prevents
+    // iPhone/Safari browser cache or a partially parsed mobile DOM from dropping
+    // stored Diamond Report Picks and skewing the all-time record.
+    if (repoTrackerLoaded && repoTrackerSeed && typeof repoTrackerSeed === 'object') {
+      return rebuildStoreIndexes(updateAllTimeSummaryFromRows(cloneTrackerStore(repoTrackerSeed)));
+    }
+    return null;
+  }
+
+  function drpSourceRows(store){
+    const repoStore = repoSourceStore();
+    const rows = repoStore?.market?.drp?.length ? repoStore.market.drp : (store?.market?.drp || []);
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  function drpSourceSummary(store){
+    const repoStore = repoSourceStore();
+    const source = repoStore || store || safeStore();
+    const rows = drpSourceRows(source).filter(r => r && (r.result === 'win' || r.result === 'loss'));
+    const wins = rows.filter(r => r.result === 'win').length;
+    const rowSummary = { wins, losses: Math.max(rows.length - wins, 0), total: rows.length };
+    const storedSummary = normalizedSummary(source.allTime?.drp);
+    return storedSummary.total >= rowSummary.total ? storedSummary : rowSummary;
+  }
+
   function bestSummary(repoSummary, localSummary){
     const repo = normalizedSummary(repoSummary);
     const local = normalizedSummary(localSummary);
@@ -7151,7 +7181,9 @@ function showTab(id, el) {
   }
 
   function loadStore(){
-    return mergeStores(readLocalStore(), repoTrackerSeed || safeStore());
+    const repoStore = repoSourceStore();
+    if (repoStore) return repoStore;
+    return mergeStores(readLocalStore(), safeStore());
   }
 
   function saveStore(s){
@@ -7168,8 +7200,7 @@ function showTab(id, el) {
   async function initPersistentTrackerData(){
     try {
       await fetchFreshRepoTrackerData();
-      const merged = loadStore();
-      saveStore(merged);
+      window.__diamondTrackerStore = loadStore();
       if (window.syncDiamondTracker) window.syncDiamondTracker();
     } catch(e){
       repoTrackerLoaded = false;
@@ -7263,8 +7294,8 @@ function showTab(id, el) {
     try {
       clearTrackerBrowserCaches();
       await fetchFreshRepoTrackerData();
-      const repoOnly = mergeStores(safeStore(), repoTrackerSeed || safeStore());
-      saveStore(repoOnly);
+      const repoOnly = repoSourceStore() || cloneTrackerStore(repoTrackerSeed || safeStore());
+      window.__diamondTrackerStore = repoOnly;
       if (window.syncDiamondTracker) window.syncDiamondTracker();
       if (refreshEl) refreshEl.textContent = `Repo data reloaded • ${new Date().toLocaleString('en-US',{timeZone:'America/New_York'})} ET`;
     } catch(e){
@@ -8228,8 +8259,17 @@ function showTab(id, el) {
     set('tracker-all-sub', `${pct(ah,at)}% all-time • ${at} final stored picks${allPendingThreats ? ` • ${allPendingThreats} not final excluded` : ''}`);
     setHeaderPct('threat-header-pct', pct(ah,at), at);
 
-    const drpToday=marketStats(store,'drp',day);
-    const drpAll=marketStats(store,'drp');
+    const drpSource = drpSourceRows(store);
+    const drpToday={ list: drpSource.filter(r=>r.date===day) };
+    drpToday.wins = drpToday.list.filter(r=>r.result==='win').length;
+    drpToday.losses = drpToday.list.filter(r=>r.result==='loss').length;
+    drpToday.total = drpToday.wins + drpToday.losses;
+    drpToday.pending = drpToday.list.length - drpToday.total;
+    const drpAll={ list: drpSource.slice() };
+    drpAll.wins = drpAll.list.filter(r=>r.result==='win').length;
+    drpAll.losses = drpAll.list.filter(r=>r.result==='loss').length;
+    drpAll.total = drpAll.wins + drpAll.losses;
+    drpAll.pending = drpAll.list.length - drpAll.total;
     const drpMatchupToday = { ...drpToday, list: drpToday.list.slice() };
     // Use every stored DR Pick. Some legacy/mobile records may not parse to an '@' matchup label,
     // but their stored win/loss status is still valid and must count toward all-time accuracy.
@@ -8252,8 +8292,7 @@ function showTab(id, el) {
     // completed sample than the visible detailed rows. This keeps the card/header from
     // dropping from the true repository record (ex: 20-8) to a smaller mobile-parsed
     // subset (ex: 17-11) after Reload Repo Data on iPhone.
-    const drpSummary = normalizedSummary(store.allTime?.drp);
-    const drpAllDisplay = drpSummary.total >= drpMatchupAll.total ? drpSummary : drpMatchupAll;
+    const drpAllDisplay = drpSourceSummary(store);
     set('tracker-drp-all', `${drpAllDisplay.wins}-${drpAllDisplay.losses}`);
     set('tracker-drp-all-sub', `${pct(drpAllDisplay.wins,drpAllDisplay.total)}% all-time • ${drpAllDisplay.total} final matchups${drpMatchupAll.pending ? ` • ${drpMatchupAll.pending} not final excluded` : ''}`);
     setHeaderPct('drp-header-pct', pct(drpAllDisplay.wins,drpAllDisplay.total), drpAllDisplay.total);
@@ -8301,22 +8340,12 @@ function showTab(id, el) {
     const statusBadge = r => resultBadgeFromFinal(r.result);
 
     // Show ALL stored DRP picks (not just today) so the Date column has something to sort
-    const drpRowMap = new Map();
-    drpAll.list
-      .map(r => ({
-        ...r,
-        // Fallback chain prevents valid repo records from disappearing on iPhone
-        // when the matchup-label parser cannot reconstruct a clean TEAM @ TEAM string.
-        matchupLabel: drpDisplayLabel(r) || r.label || r.key || 'Stored DR Pick'
-      }))
-      .forEach(r => {
-        const key = r.key || `${r.date}|${r.matchupLabel}|${r.pick}`;
-        const prior = drpRowMap.get(key);
-        const resolved = r.result === 'win' || r.result === 'loss';
-        const priorResolved = prior && (prior.result === 'win' || prior.result === 'loss');
-        if (!prior || (resolved && !priorResolved)) drpRowMap.set(key, r);
-      });
-    const drpRowsAll = [...drpRowMap.values()];
+    const drpRowsAll = drpAll.list.map(r => ({
+      ...r,
+      // Display every stored repo row. Do not dedupe by matchup/team name;
+      // tracker.json is the authority for historical DR Picks.
+      matchupLabel: drpDisplayLabel(r) || r.label || r.key || 'Stored DR Pick'
+    }));
 
     // Apply current sort (default: date descending — most recent first)
     window.drpTableSortDir = window.drpTableSortDir || -1;
@@ -8383,7 +8412,7 @@ function showTab(id, el) {
 
 
     const sourceStatus = [
-      `<span class="tracker-pill ${repoTrackerLoaded?'hit':'pending'}">${repoTrackerLoaded?'✅':'💾'} Repo tracker.json ${repoTrackerLoaded?'loaded':'fallback: browser cache'}</span>`,
+      `<span class="tracker-pill ${repoTrackerLoaded?'hit':'pending'}">${repoTrackerLoaded?'✅':'💾'} Repo tracker.json ${repoTrackerLoaded?'source of truth':'fallback: browser cache'}</span>`,
       `<span class="tracker-pill hit">✅ Repo sync via GitHub Actions</span>`,
       `<span class="tracker-pill pending" onclick="window.exportDiamondTrackerData && window.exportDiamondTrackerData()" style="cursor:pointer">⬇ Manual local backup</span>`,
       `<span class="tracker-pill hit" onclick="window.importDiamondTrackerData && window.importDiamondTrackerData()" style="cursor:pointer">⬆ Import local backup</span>`,
@@ -8473,7 +8502,9 @@ function showTab(id, el) {
       gamePicks=extractGamePicks();
       const drpAccuracy=extractDRPicksAccuracy();
       const kpropsAccuracy=extractKPropsAccuracy();
-      drpAccuracy.forEach(r=>upsertMarketPick(store,r));
+      // Once repo tracker.json is loaded, Diamond Report Picks history is read-only from repo.
+      // Do not let the current mobile DOM rebuild/dedupe DRP history and change 20-8 into 17-11.
+      if (!repoTrackerLoaded) drpAccuracy.forEach(r=>upsertMarketPick(store,r));
       kpropsAccuracy.forEach(r=>upsertMarketPick(store,r));
       threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
       store.debug.lastError = '';

@@ -1,8 +1,14 @@
 # Changelog
 
-## v7.2 — Tracker Source-of-Truth Reload Fix
+## v7.3 — DR Picks Repository Source-of-Truth Fix
 
-- Fixed Diamond Report Picks history disappearing after Reload Repo Data on iPhone.
-- Preserved unparsed-but-valid repository DR Pick records instead of discarding them.
-- Updated DR Picks table rendering so fallback labels keep records visible.
-- Protected all-time DR Picks totals from mobile parser data loss.
+### Fixed
+- Diamond Report Picks — Daily + All-Time Accuracy now reads DR Picks history directly from `data/tracker.json`.
+- Prevented iPhone/mobile DOM parsing from dropping stored Diamond Report Picks after Reload Repo Data.
+- Stopped local browser cache from overriding repository DR Picks history.
+- Removed DR Picks table dedupe-by-matchup behavior so every stored repository row displays.
+- Preserved repository all-time records such as 20-8 when the repo contains the full record.
+
+### Deployment
+- Deployment Type: Index Only
+- Replace `index.html` only.
