@@ -6793,7 +6793,7 @@ function renderKProps() {
         kCountHTML = `<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:${kBg};border:1px solid ${kBorder};color:${kColor};border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px">${kIcon} ${kLabel} K Count: ${ks}</div>`;
       }
 
-      return `<div class="kprop-row">
+      return `<div class="kprop-row" data-pitcher-name="${p.pitcherName}" data-dr-line="${p.ouLine}" data-k-projection="${p.projK}" data-projected-line="${p.projK}" data-k-pick="${p.pred}">
         <img src="${hs(p.pitcherId)}" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);flex-shrink:0" onerror="this.style.visibility='hidden'" alt="">
         <div class="kprop-pitcher">
           <div class="kprop-name">${p.pitcherName}</div>
@@ -7799,8 +7799,9 @@ function showTab(id, el) {
     const kProjection = extractNumericValue(rec.kProjection || rec.projectedLine || rec.line);
     if(!Number.isFinite(kProjection)) return 'pending';
 
-    if(/OVER/i.test(rec.pick)) return kCount > kProjection ? 'win' : 'loss';
-    if(/UNDER/i.test(rec.pick)) return kCount < kProjection ? 'win' : 'loss';
+    const pickText = String(rec.pick || '').toUpperCase();
+    if(/OVER/.test(pickText)) return kCount > kProjection ? 'win' : 'loss';
+    if(/UNDER/.test(pickText)) return kCount < kProjection ? 'win' : 'loss';
     return 'pending';
   }
 
@@ -7865,14 +7866,18 @@ function showTab(id, el) {
     return rows.map((row,i)=>{
       const t=row.innerText || '';
       if(!t || isPlaceholderText(t)) return null;
-      const name=norm(row.querySelector('.kprop-name')?.textContent || t.split('\n')[0] || `Pitcher ${i+1}`);
-      const drLine=norm(row.querySelector('.kprop-line-val')?.textContent || '');
-      const rawKProjection=norm(row.querySelector('.kprop-pred-lbl')?.textContent || row.querySelector('.kprop-pred-val')?.textContent || '');
+      const name=norm(row.dataset.pitcherName || row.querySelector('.kprop-name')?.textContent || t.split('\n')[0] || `Pitcher ${i+1}`);
+      // Use stable data attributes from the original K Props render so live/final DOM patches
+      // do not corrupt the tracker. The visible K Props card can change from "6.2 PROJ" to
+      // "7K FINAL", but the tracker must keep the original K Projection and DR Line.
+      const drLine=norm(row.dataset.drLine || row.querySelector('.kprop-line-val')?.textContent || '');
+      const rawKProjection=norm(row.dataset.kProjection || row.dataset.projectedLine || row.querySelector('.kprop-pred-lbl')?.textContent || row.querySelector('.kprop-pred-val')?.textContent || '');
       const kProjectionNum = extractNumericValue(rawKProjection);
       const kProjection = Number.isFinite(kProjectionNum) ? String(kProjectionNum) : rawKProjection;
       // Projected Line is the DIE K Projection for Game, not the DR Line.
       const projectedLine = kProjection;
-      let pick = /UNDER/i.test(t) ? 'UNDER' : /OVER/i.test(t) ? 'OVER' : (rawKProjection || '—');
+      let pick = String(row.dataset.kPick || '').toUpperCase();
+      if(!pick || pick === 'PUSH') pick = /UNDER/i.test(t) ? 'UNDER' : /OVER/i.test(t) ? 'OVER' : (rawKProjection || '—');
       const finalKCount = findFinalKCountForPitcher(name);
       return {
         // Key is based on pitcher name only — NOT the line value, since sportsbook lines

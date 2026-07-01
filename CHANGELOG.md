@@ -1,8 +1,8 @@
 # Changelog
 
-## v6.4 – K Props Accuracy Verification Fix
-- Fixed K Props Tracker data mapping so Projected Line uses K Projection for Game.
-- Fixed K Props Right/Wrong grading to compare K Projection vs Final K Count.
-- Kept DR Line separate from Projected Line.
-- Fixed Over DR Line? logic to compare Final K Count vs DR Line.
-- Updated All Time DR Line Accuracy to use only DR Line values.
+## v6.5 — K Props Accuracy Status Fix
+
+- Fixed K Props + All-Time Accuracy showing `Wrong` incorrectly.
+- Added stable data attributes for K Projection, DR Line, projected line, and pick direction.
+- Kept Tracker grading independent from live/final card text changes.
+- Confirmed DR Line accuracy remains separate from K Projection accuracy.

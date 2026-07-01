@@ -1,18 +1,16 @@
 # Diamond Intelligence Engine (DIE)
-## Version 6.4 – K Props Accuracy Verification Fix
 
-This developer build uses the uploaded `index(20).html` base and updates the Tracker K Props accuracy logic.
+## Version 6.5 — K Props Accuracy Status Fix
 
-## Changes
-- Verified **K Props + All Time Accuracy** data mapping.
-- Ensured **Projected Line** displays the **K Projection for Game**, not the DR Line.
-- Kept **DR Line** as its own separate column.
-- Ensured **Over DR Line?** compares Final K Count against the DR Line only.
-- Ensured **Status** grades Right/Wrong by comparing K Projection for Game against Final K Count.
-- Protected **All Time DR Line Accuracy** from accidentally using Projected Line as DR Line.
+This developer build fixes the Tracker issue where **K Props — Daily + All-Time Accuracy** could show `Wrong` incorrectly after live/final K count updates.
 
-## DIE Foundation Note
-This keeps the K Props Tracker data cleaner for future DIE tuning:
-- K Projection evaluates the actual pick result.
-- DR Line evaluates whether the pitcher exceeded the model line.
-- The two metrics remain separate so DIE can learn from both correctly.
+### Changes
+- Preserved original K Projection values using stable row data attributes.
+- Preserved original DR Line values separately from K Projection.
+- Prevented live/final K count labels from overwriting tracker grading inputs.
+- Ensured `Projected Line` in Tracker equals the original K Projection, not DR Line.
+- Ensured `Status` compares original K Projection against Final K Count.
+- Ensured `Over DR Line?` compares original DR Line against Final K Count.
+
+### Notes
+The visible K Props card may update during live/final games, but the Tracker now uses the original projection data captured when the K Props card was first rendered.
