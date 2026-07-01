@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 /*
-  DEV DR DIE v8.6 - Tracker Snapshot Pipeline
+  DEV DR DIE v8.7 - Auto Save Today Predictions
 
-  Final-only Tracker rule:
-  - data/tracker.json stores finalized graded history only.
-  - data/today-predictions.json stores the pregame/current-day prediction snapshot.
-  - This script grades any snapshot rows whose games are final, appends only win/loss rows,
-    and leaves pending predictions out of tracker.json.
+  Final-only Tracker pipeline:
+  1) Ensure data/today-predictions.json has a same-day prediction snapshot.
+  2) Grade only games that are final.
+  3) Append/update only finalized win/loss rows in data/tracker.json.
+  4) Never write pending rows to tracker history.
 
-  If tracker.json is 0-0 and today-predictions.json is empty, the workflow is working but
-  there is nothing to grade yet. Create/populate the prediction snapshot before games finish.
+  Current auto-snapshot support:
+  - Diamond Report Picks (DRP) are generated from today's MLB schedule using
+    the same type of public inputs used by the site: probable pitchers, season
+    pitching stats, home-field edge, and matchup scoring.
+  - K Props and HR picks remain snapshot-ready but require a future dedicated
+    prediction export/engine before they can be auto-graded safely.
 */
 const fs = require('fs');
 const path = require('path');
@@ -24,9 +28,9 @@ function readJson(p, fallback){ try { return JSON.parse(fs.readFileSync(p, 'utf8
 function writeJson(p, data){ fs.mkdirSync(path.dirname(p), {recursive:true}); fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n'); }
 function todayCT(){ return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Chicago', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date()); }
 function nowIso(){ return new Date().toISOString(); }
-function normalizeTeam(t){ return String(t || '').trim().toUpperCase().replace('WSN','WSH').replace('AZ','ARI').replace('CHW','CWS').replace('OAK','ATH'); }
+function normalizeTeam(t){ return String(t || '').trim().toUpperCase().replace('WSN','WSH').replace('WAS','WSH').replace('AZ','ARI').replace('CHW','CWS').replace('OAK','ATH').replace('KCR','KC').replace('SDP','SD').replace('SFG','SF').replace('TBR','TB'); }
 function normResult(v){ const s = String(v || '').toLowerCase(); if (['win','right','hit','correct'].includes(s)) return 'win'; if (['loss','wrong','miss','incorrect'].includes(s)) return 'loss'; return 'pending'; }
-function isWinLoss(r){ return r && (normResult(r.result ?? r.status ?? r.outcome ?? r.grade) === 'win' || normResult(r.result ?? r.status ?? r.outcome ?? r.grade) === 'loss'); }
+function isWinLoss(r){ const x = normResult(r?.result ?? r?.status ?? r?.outcome ?? r?.grade); return x === 'win' || x === 'loss'; }
 function finalRows(rows){ return (rows || []).filter(isWinLoss).map(r => ({ ...r, result: normResult(r.result ?? r.status ?? r.outcome ?? r.grade) })); }
 function summaryFromRows(rows){ const final = finalRows(rows); const wins = final.filter(r => r.result === 'win').length; return { wins, losses: Math.max(final.length - wins, 0), total: final.length }; }
 function keyOf(row, type){ return row.key || `${row.date || todayCT()}|${type}|${row.label || row.player || row.pitcher || row.game || ''}|${row.pick || ''}`; }
@@ -40,11 +44,14 @@ function extractTeams(rec){
   if (keyPart.includes('-')) return keyPart.split('-').map(normalizeTeam).filter(Boolean).slice(0,2);
   return [];
 }
+async function fetchJson(url){
+  const res = await fetch(url, { headers: { accept:'application/json', 'user-agent':'Diamond-Report-DIE-Tracker/8.7' } });
+  if (!res.ok) throw new Error(`Fetch failed ${res.status}: ${url}`);
+  return res.json();
+}
 async function fetchMlbSchedule(date){
-  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=team`;
-  const res = await fetch(url, { headers: { accept:'application/json' } });
-  if (!res.ok) throw new Error(`MLB schedule fetch failed for ${date}: ${res.status}`);
-  const json = await res.json();
+  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=team,probablePitcher,linescore`;
+  const json = await fetchJson(url);
   const games = [];
   for (const d of json.dates || []) for (const g of d.games || []) {
     const state = String(g.status?.detailedState || g.status?.abstractGameState || '').toLowerCase();
@@ -53,10 +60,104 @@ async function fetchMlbSchedule(date){
     const home = normalizeTeam(g.teams?.home?.team?.abbreviation);
     const awayScore = Number(g.teams?.away?.score);
     const homeScore = Number(g.teams?.home?.score);
-    if (!away || !home || Number.isNaN(awayScore) || Number.isNaN(homeScore)) continue;
-    games.push({ away, home, awayScore, homeScore, isFinal, winner: awayScore > homeScore ? away : home });
+    games.push({
+      gamePk: g.gamePk,
+      gameDate: g.gameDate,
+      away,
+      home,
+      awayScore: Number.isFinite(awayScore) ? awayScore : null,
+      homeScore: Number.isFinite(homeScore) ? homeScore : null,
+      awayPitcher: g.teams?.away?.probablePitcher || null,
+      homePitcher: g.teams?.home?.probablePitcher || null,
+      isFinal,
+      winner: Number.isFinite(awayScore) && Number.isFinite(homeScore) ? (awayScore > homeScore ? away : homeScore > awayScore ? home : null) : null
+    });
   }
-  return games;
+  return games.filter(g => g.away && g.home);
+}
+async function fetchPitcherStats(personId){
+  if (!personId) return {};
+  try {
+    const d = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${personId}?hydrate=stats(group=pitching,type=season,season=2026)`);
+    return d.people?.[0]?.stats?.[0]?.splits?.[0]?.stat || {};
+  } catch { return {}; }
+}
+function num(v, fallback){ const n = parseFloat(v); return Number.isFinite(n) ? n : fallback; }
+async function buildDrpSnapshot(date){
+  const games = await fetchMlbSchedule(date);
+  const rows = [];
+  for (const g of games) {
+    const [awayStats, homeStats] = await Promise.all([
+      fetchPitcherStats(g.awayPitcher?.id),
+      fetchPitcherStats(g.homePitcher?.id)
+    ]);
+    let awayScore = 50;
+    let homeScore = 53; // home-field edge
+    const awayERA = num(awayStats.era, 4.5);
+    const homeERA = num(homeStats.era, 4.5);
+    const eraDiff = awayERA - homeERA;
+    if (Math.abs(eraDiff) > 0.3) {
+      if (eraDiff > 0) homeScore += Math.min(eraDiff * 3, 8);
+      else awayScore += Math.min(Math.abs(eraDiff) * 3, 8);
+    }
+    const awayWHIP = num(awayStats.whip, 1.3);
+    const homeWHIP = num(homeStats.whip, 1.3);
+    if (Math.abs(awayWHIP - homeWHIP) > 0.1) {
+      if (awayWHIP > homeWHIP) homeScore += 4;
+      else awayScore += 4;
+    }
+    const awayK9 = num(awayStats.strikeoutsPer9Inn, 8);
+    const homeK9 = num(homeStats.strikeoutsPer9Inn, 8);
+    if (homeK9 > awayK9 + 1) homeScore += 3;
+    else if (awayK9 > homeK9 + 1) awayScore += 3;
+    const gameHourCT = parseInt(new Date(g.gameDate).toLocaleString('en-US', { hour:'numeric', hour12:false, timeZone:'America/Chicago' }), 10);
+    if (Number.isFinite(gameHourCT) && gameHourCT < 17) homeScore += 2;
+    const total = awayScore + homeScore;
+    const awayPct = Math.round((awayScore / total) * 100);
+    const homePct = 100 - awayPct;
+    const pick = awayPct > homePct ? g.away : g.home;
+    rows.push({
+      key: `${date}|DRP|${[g.away, g.home].sort().join('-')}`,
+      type: 'drp',
+      label: `${g.away} @ ${g.home}`,
+      pick,
+      teams: [g.away, g.home],
+      date,
+      result: 'pending',
+      confidencePct: pick === g.away ? awayPct : homePct,
+      source: 'auto-snapshot-github-action',
+      snapshotVersion: '8.7'
+    });
+  }
+  return rows;
+}
+async function ensureSnapshot(date){
+  const snap = readJson(snapshotPath, { version:1, generatedAt:null, date:null, drp:[], kprop:[], hr:[] });
+  snap.version ||= 1;
+  snap.drp = Array.isArray(snap.drp) ? snap.drp : [];
+  snap.kprop = Array.isArray(snap.kprop) ? snap.kprop : [];
+  snap.hr = Array.isArray(snap.hr) ? snap.hr : [];
+  const hasSameDayRows = snap.date === date && (snap.drp.length || snap.kprop.length || snap.hr.length);
+  if (hasSameDayRows) return { snapshot: snap, created: false, drpCreated: 0 };
+  const drp = await buildDrpSnapshot(date);
+  const next = {
+    version: 2,
+    generatedAt: nowIso(),
+    date,
+    mode: 'auto-snapshot',
+    note: 'Generated by scripts/updateTracker.js. Tracker history remains final-only; pending snapshot rows are graded into data/tracker.json only after games are final.',
+    drp,
+    kprop: snap.kprop.filter(r => r.date === date),
+    hr: snap.hr.filter(r => r.date === date),
+    debug: {
+      previousSnapshotDate: snap.date || null,
+      drpRowsCreated: drp.length,
+      kpropAutoSnapshotSupported: false,
+      hrAutoSnapshotSupported: false
+    }
+  };
+  writeJson(snapshotPath, next);
+  return { snapshot: next, created: true, drpCreated: drp.length };
 }
 function findGame(games, a, b){ a = normalizeTeam(a); b = normalizeTeam(b); return games.find(g => (g.away === a && g.home === b) || (g.away === b && g.home === a)); }
 async function gradeDrpSnapshot(snapshotRows){
@@ -69,7 +170,7 @@ async function gradeDrpSnapshot(snapshotRows){
     const [a,b] = extractTeams(rec);
     if (!a || !b) continue;
     const game = findGame(schedules.get(date) || [], a, b);
-    if (!game || !game.isFinal) continue;
+    if (!game || !game.isFinal || !game.winner) continue;
     const pick = normalizeTeam(rec.pick);
     graded.push({ ...rec, type:'drp', date, result: pick === game.winner ? 'win':'loss', finalWinner: game.winner, finalScore: `${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}`, gradedAt: nowIso(), gradingSource:'mlb-stats-api-final-score', key: rec.key || `${date}|DRP|${[a,b].sort().join('-')}` });
   }
@@ -77,7 +178,7 @@ async function gradeDrpSnapshot(snapshotRows){
 }
 function buildTrackerBase(existing){
   const t = existing || {};
-  t.version = Math.max(Number(t.version || 0), 6);
+  t.version = Math.max(Number(t.version || 0), 7);
   t.generatedAt ||= null;
   t.picks ||= [];
   t.market ||= {};
@@ -93,8 +194,10 @@ function buildTrackerBase(existing){
 }
 async function main(){
   const now = nowIso();
+  const date = todayCT();
   const tracker = buildTrackerBase(readJson(trackerPath, {}));
-  const snap = readJson(snapshotPath, { drp:[], kprop:[], hr:[] });
+  const snapInfo = await ensureSnapshot(date);
+  const snap = snapInfo.snapshot;
   const snapshotDrp = Array.isArray(snap.drp) ? snap.drp : [];
   const snapshotK = Array.isArray(snap.kprop) ? snap.kprop : [];
   const snapshotHr = Array.isArray(snap.hr) ? snap.hr : [];
@@ -102,11 +205,9 @@ async function main(){
   let addedDrp = 0, addedK = 0, addedHr = 0;
   const gradedDrp = await gradeDrpSnapshot(snapshotDrp);
   for (const row of gradedDrp) if (upsertFinalRow(tracker.market.drp, row, 'DRP')) addedDrp++;
-
-  // K/HR require final counts/result already present in snapshot. Pending rows are intentionally skipped.
   for (const row of finalRows(snapshotK)) if (upsertFinalRow(tracker.market.kprop, { ...row, type:'kprop', gradedAt: row.gradedAt || now }, 'KPROP')) addedK++;
   for (const row of (snapshotHr || []).filter(r => r.final === true || isWinLoss(r))) {
-    const out = { ...row, date: row.date || todayCT(), final: true, hit: row.hit === true || normResult(row.result) === 'win', gradedAt: row.gradedAt || now };
+    const out = { ...row, date: row.date || date, final: true, hit: row.hit === true || normResult(row.result) === 'win', gradedAt: row.gradedAt || now };
     out.key = out.key || `${out.date}|HR|${String(out.player || '').toLowerCase()}|${normalizeTeam(out.team)}`;
     const idx = tracker.picks.findIndex(x => x.key === out.key);
     if (idx >= 0) tracker.picks[idx] = { ...tracker.picks[idx], ...out }; else tracker.picks.push(out);
@@ -116,7 +217,6 @@ async function main(){
   tracker.picks = (tracker.picks || []).filter(p => p.final === true);
   tracker.market.drp = finalRows(tracker.market.drp);
   tracker.market.kprop = finalRows(tracker.market.kprop);
-
   const hrWins = tracker.picks.filter(p => p.hit === true).length;
   tracker.allTime.hr = { wins: hrWins, losses: Math.max(tracker.picks.length - hrWins, 0), total: tracker.picks.length };
   tracker.allTime.drp = summaryFromRows(tracker.market.drp);
@@ -125,12 +225,14 @@ async function main(){
   tracker.debug = {
     ...tracker.debug,
     repoSync: true,
-    trackingMode: 'final-only-with-prediction-snapshot',
+    trackingMode: 'final-only-auto-snapshot',
     pendingRowsAllowed: false,
     localStorageHistoryAllowed: false,
     lastGithubActionRun: now,
-    currentDateCT: todayCT(),
+    currentDateCT: date,
     lastSnapshotSource: 'data/today-predictions.json',
+    snapshotCreatedThisRun: snapInfo.created,
+    snapshotRowsCreatedThisRun: { drp: snapInfo.drpCreated, kprop: 0, hr: 0 },
     snapshotRowsSeen: { drp: snapshotDrp.length, kprop: snapshotK.length, hr: snapshotHr.length },
     rowsAddedOrUpdated: { drp: addedDrp, kprop: addedK, hr: addedHr },
     allTimeSummaryUpdatedAt: now
@@ -138,15 +240,11 @@ async function main(){
   writeJson(trackerPath, tracker);
 
   const daily = readJson(dailyPath, { version:1, results:[] });
-  daily.version ||= 1; daily.results ||= []; daily.lastCheckedAt = now; daily.currentDateCT = todayCT(); writeJson(dailyPath, daily);
+  daily.version ||= 1; daily.results ||= []; daily.lastCheckedAt = now; daily.currentDateCT = date; writeJson(dailyPath, daily);
   const model = readJson(modelPath, { version:1, notes:[] });
   model.version ||= 1; model.generatedAt = now; model.notes ||= [];
-  model.notes = ['Tracker sync uses final-only historical rows.', 'Predictions must be snapshotted before grading via data/today-predictions.json.'];
+  model.notes = ['Tracker sync uses final-only historical rows.', 'DR Picks are auto-snapshotted if data/today-predictions.json is empty for the day.', 'K/HR snapshot automation is planned for the next tracker engine phase.'];
   writeJson(modelPath, model);
-
-  console.log(`Tracker sync complete. Snapshot seen: DRP=${snapshotDrp.length}, K=${snapshotK.length}, HR=${snapshotHr.length}. Added/updated: DRP=${addedDrp}, K=${addedK}, HR=${addedHr}. Totals: DRP ${tracker.allTime.drp.wins}-${tracker.allTime.drp.losses}, K ${tracker.allTime.kprop.wins}-${tracker.allTime.kprop.losses}, HR ${tracker.allTime.hr.wins}-${tracker.allTime.hr.losses}.`);
-  if (!snapshotDrp.length && !snapshotK.length && !snapshotHr.length) {
-    console.warn('No prediction snapshot rows found. This is why Tracker remains 0-0. Populate data/today-predictions.json before games are graded.');
-  }
+  console.log(`Tracker sync complete. Snapshot ${snapInfo.created ? 'created' : 'existing'}: DRP=${snapshotDrp.length}, K=${snapshotK.length}, HR=${snapshotHr.length}. Added/updated: DRP=${addedDrp}, K=${addedK}, HR=${addedHr}. Totals: DRP ${tracker.allTime.drp.wins}-${tracker.allTime.drp.losses}, K ${tracker.allTime.kprop.wins}-${tracker.allTime.kprop.losses}, HR ${tracker.allTime.hr.wins}-${tracker.allTime.hr.losses}.`);
 }
 main().catch(err => { console.error(err); process.exit(1); });
