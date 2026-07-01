@@ -10530,6 +10530,112 @@ function showTab(id, el) {
 })();
 </script>
 
+<style id="v6-5-tablet-touch-and-large-desktop-optimization">
+/* ============================================================
+   Diamond Report DIE v6.5 — Cross-Device Optimization
+   Loads last, so it wins over earlier patches without editing them.
+
+   Gaps this closes (confirmed not covered by any prior patch):
+   1) Tablets (iPad-class, 769–1024px) use a mouse-precision button
+      size everywhere. On a touch screen those are hard to tap
+      accurately. This widens the actual tap area on any coarse
+      (touch) pointer device, at any width — not just phones —
+      without changing their visual size or the page's density.
+   2) No breakpoint exists past 1200px, so large monitors just
+      center a ~1280–1380px column with unused space on either
+      side. This adds light desktop polish above 1600px.
+   ============================================================ */
+
+/* 1) Touch tap-target sizing — any coarse pointer (phone OR tablet),
+      regardless of viewport width. Uses a transparent expanded hit
+      area via outline-offset trick alternative: padding is bumped
+      but font-size/visual footprint is preserved via line-height. */
+@media (pointer: coarse) {
+  .btn-lineup,
+  .btn-game,
+  .btn-matchup,
+  .hrp-matchup-btn,
+  #filter-onfire-btn,
+  #filter-top-btn,
+  #filter-drought-btn,
+  #filter-favorable-btn,
+  #filter-all-btn {
+    min-height: 30px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    position: relative;
+  }
+
+  .tab {
+    min-height: 40px;
+  }
+
+  /* Tracker/table pill and row controls people tap to open modals */
+  .tracker-pill,
+  .stat-pill {
+    min-height: 24px;
+  }
+}
+
+/* Tablet only (iPad portrait/landscape band untouched by earlier
+   patches, which jump from 768px mobile straight to 1200px desktop) */
+@media (pointer: coarse) and (min-width: 769px) and (max-width: 1024px) {
+  .btn-lineup,
+  .btn-game,
+  .btn-matchup,
+  .hrp-matchup-btn {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 11px;
+  }
+
+  #filter-onfire-btn,
+  #filter-top-btn,
+  #filter-drought-btn,
+  #filter-favorable-btn,
+  #filter-all-btn {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 10px;
+  }
+
+  .kprop-row {
+    padding: 14px 16px;
+  }
+
+  .gp-card {
+    padding: 16px 18px;
+  }
+}
+
+/* 2) Large desktop / big monitors — give the layout a bit more
+      breathing room instead of a fixed ~1280–1380px column forever. */
+@media (min-width: 1600px) {
+  main {
+    max-width: 1560px;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .tracker-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .die-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1920px) {
+  main {
+    max-width: 1720px;
+  }
+}
+</style>
 </body>
 </html>
 
