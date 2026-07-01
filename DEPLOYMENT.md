@@ -1,46 +1,30 @@
-# DIE v8.1 Deployment
+# DEPLOYMENT – DIE v8.2
 
 ## Deployment Type
-🔴 Full Architecture Update
+🟡 Tracker Data + Script Update
 
-## Upload / replace these files and folders
+## Upload / Replace
+```text
+data/tracker.json
+scripts/updateTracker.js
+```
 
+## Do Not Change
 ```text
 index.html
 css/
 js/
 engine/
 config/
-README.md
-CHANGELOG.md
-DEPLOYMENT.md
-DIE_ARCHITECTURE.md
-```
-
-## Do not change unless intentionally updating data/workflows
-
-```text
-data/
-scripts/
 .github/
 ```
 
-## After upload
-
-1. Open the dev site.
-2. Hard refresh.
-3. Confirm the layout looks the same as v8.0.
-4. Open Tracker.
+## After Upload
+1. Commit the two files.
+2. Wait for GitHub Pages / Actions if applicable.
+3. Open dev site.
+4. Go to Tracker.
 5. Press Reload Repo Data.
-6. Confirm historical-only Tracker behavior remains intact.
+6. Confirm 6/30 Diamond Report Picks now appear as final graded rows.
 
-## Future UI work
-
-After this release, most layout edits should happen in:
-
-```text
-index.html
-css/styles.css
-```
-
-The `engine/` folder should not be edited for layout-only changes.
+Note: With the uploaded tracker data and official 6/30 finals, DR Picks grade to 17-11 overall.

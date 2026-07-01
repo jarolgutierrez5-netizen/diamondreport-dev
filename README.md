@@ -1,35 +1,19 @@
 # Diamond Intelligence Engine (DIE)
+## v8.2 – Tracker Final Grading Update
 
-## Version 8.1 — UI / Engine Separation
+This release updates the historical Tracker pipeline so Diamond Report Picks can be graded from final MLB scores and all-time records are calculated from final graded rows only.
 
-This release starts the modular architecture transition for DIE.
+## Key Updates
+- 6/30 Diamond Report Picks are finalized in `data/tracker.json`.
+- `scripts/updateTracker.js` now grades pending DR Picks from MLB final scores when available.
+- Pending rows do not count toward all-time summaries.
+- Repository remains the source of truth for Tracker history.
 
-### What changed
+## Deployment Type
+🟡 Tracker Data + Script Update
 
-- Extracted inline CSS into `css/styles.css`.
-- Added `js/app.js` as the application entry scaffold.
-- Added `engine/` scaffolds for future prediction, tracker, learning, scheduler, repository, confidence, and DR Line engines.
-- Added `config/dieConfig.json`.
-- Added `DIE_ARCHITECTURE.md`.
-- Preserved existing functionality from v8.0.
+Upload:
+- `data/tracker.json`
+- `scripts/updateTracker.js`
 
-### Purpose
-
-The goal is to let layout/UI work happen without touching the future DIE model files.
-
-### Safe to edit after this release
-
-- `index.html`
-- `css/styles.css`
-
-### Protected unless changing engine behavior
-
-- `engine/`
-- `config/`
-- `data/`
-- `scripts/`
-- `.github/`
-
-### Tracker rule
-
-The Tracker is historical-only and should use repository data as the source of truth.
+No `index.html` change is required for this release.
