@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /*
-  Diamond Intelligence Engine v8.2
-  Historical Tracker Final Grading
+  Diamond Intelligence Engine v8.3
+  Historical Tracker Reset + Final-Only Grading
 
-  Rule: tracker summaries are calculated from FINAL graded rows only.
-  Pending rows never affect all-time counts. DR Picks are graded from MLB final scores.
+  Rule: Tracker history starts from the reset tracker.json and stores/counts FINAL graded rows only.
+  Pending rows never affect all-time counts. DR Picks are graded from MLB final scores when rows exist.
 */
 const fs = require('fs');
 const path = require('path');
@@ -89,7 +89,8 @@ async function gradeDrpRows(drpRows){
 async function main(){
   const now = new Date().toISOString();
   const tracker = readJson(trackerPath, { version:4, generatedAt:null, picks:[], market:{drp:[], kprop:[]}, players:{}, teams:{}, days:{}, dailyResults:[], debug:{} });
-  tracker.version = 4;
+  tracker.version = Math.max(Number(tracker.version || 0), 5);
+  tracker.resetDate ||= tracker.debug?.currentDateCT || todayCT();
   tracker.picks ||= [];
   tracker.market ||= { drp: [], kprop: [] };
   tracker.market.drp ||= [];
