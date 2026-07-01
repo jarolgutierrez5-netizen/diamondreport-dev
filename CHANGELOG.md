@@ -1,21 +1,5 @@
 # Changelog
 
-## DIE v6.4 — Mobile Optimization Pass
-- Optimized phone layout across HR Potential, K Props, K's Today, Tracker, and DIE.
-- Improved sticky header/nav behavior on mobile.
-- Strengthened internal section scrolling.
-- Reduced horizontal overflow risk.
-- Preserved v6.3 K Props card rebuild.
-
-# Changelog
-
-## DIE v6.3 — K Props Card Rebuild
-- Rebuilt K Props into card layout across desktop, tablet, and mobile.
-- Fixed K count formatting so values display as `6K` instead of duplicated label/value text.
-- Added filter toolbar, legend, projected K display, DR line, quick read chips, and stat boxes.
-
-# Changelog
-
 ## DIE v6.2 — Mobile K Count Fix
 - Added visible strikeout count to mobile K's Today cards.
 - Changed mobile K stat row to K / IP / Pitches / Runs.
