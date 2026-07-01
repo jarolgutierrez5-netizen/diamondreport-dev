@@ -3688,12 +3688,21 @@ video {
       <div class="tracker-scroll">
         <table>
           <thead>
-            <tr><th>Pitcher</th><th>Pick</th><th>Line</th><th>Status</th></tr>
+            <tr><th>Pitcher</th><th>Pick</th><th>Projected Line</th><th>K Projection for Game</th><th>Final K Count</th><th>DR Line</th><th>Over DR Line?</th><th>Status</th></tr>
           </thead>
           <tbody id="tracker-kprops-results">
-            <tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
+            <tr><td colspan="8" style="text-align:left;color:var(--muted)">Waiting for K Props data…</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <div class="tracker-card" style="margin-bottom:16px">
+      <h3>All Time DR Line Accuracy <span id="drline-header-pct" class="tracker-header-pct"></span></h3>
+      <div id="tracker-drline-summary" class="tracker-grid" style="margin-bottom:0">
+        <div class="tracker-card"><h3>Over DR Line</h3><div class="tracker-big" id="tracker-drline-over">0</div><div class="tracker-sub" id="tracker-drline-over-sub">Waiting for final K counts</div></div>
+        <div class="tracker-card"><h3>Under/At DR Line</h3><div class="tracker-big" id="tracker-drline-under">0</div><div class="tracker-sub" id="tracker-drline-under-sub">Waiting for final K counts</div></div>
+        <div class="tracker-card"><h3>Tracked Final Props</h3><div class="tracker-big" id="tracker-drline-total">0</div><div class="tracker-sub">Used by DIE Foundation to tune future DR Lines</div></div>
       </div>
     </div>
 
@@ -7736,6 +7745,42 @@ function showTab(id, el) {
     return game.winner === pick ? 'win' : game.winner === 'TIE' ? 'push' : 'loss';
   }
 
+  function extractNumericValue(v){
+    const m = String(v || '').match(/-?\d+(?:\.\d+)?/);
+    return m ? Number(m[0]) : NaN;
+  }
+
+  function findFinalKCountForPitcher(name){
+    const root = document.getElementById('ks-today-props');
+    if(!root || !name) return null;
+    const target = String(name || '').toLowerCase().trim();
+    let kCount = null;
+    const rowEls = root.querySelectorAll('.ks-today-row');
+    const candidates = rowEls.length ? [...rowEls] : [...root.querySelectorAll('.stat-row, tr')];
+    candidates.forEach(row => {
+      if (kCount !== null) return;
+      const rowTextRaw = row.innerText || '';
+      const rowText = norm(rowTextRaw).toLowerCase();
+      if (!rowText.startsWith(target) && !rowText.includes(target)) return;
+      const m = rowText.match(/(\d+)\s*(?:k|ks|strikeout|strikeouts)\b/i) || rowText.match(/\b(\d+)\b/);
+      if (m) kCount = Number(m[1]);
+    });
+    return Number.isFinite(kCount) ? kCount : null;
+  }
+
+  function kpropStatusText(rec){
+    if (rec.result === 'win') return '<span class="tracker-pill hit">Right</span>';
+    if (rec.result === 'loss') return '<span class="tracker-pill miss">Wrong</span>';
+    return '<span class="tracker-pill pending">Pending</span>';
+  }
+
+  function kpropOverDRLine(rec){
+    const finalK = rec.finalKCount ?? findFinalKCountForPitcher(rec.label);
+    const drLine = extractNumericValue(rec.drLine || rec.line);
+    if (!Number.isFinite(finalK) || !Number.isFinite(drLine)) return '—';
+    return finalK > drLine ? 'Y' : 'N';
+  }
+
   function resolveKPropResult(rec){
     // K Props can only be graded when the pitcher has a final strikeout count visible.
     // If the page does not expose a final K count, keep it pending instead of guessing.
@@ -7743,31 +7788,17 @@ function showTab(id, el) {
     if(!finalsExist) return 'pending';
 
     const name = String(rec.label || '').toLowerCase().trim();
-    const root = document.getElementById('ks-today-props');
-    if(!root || !name) return 'pending';
+    if(!name) return 'pending';
 
-    let kCount = null;
-    // Only scan actual row containers (not every nested div) to avoid false/partial matches
-    // on narrow screens where text can wrap differently
-    const rowEls = root.querySelectorAll('.ks-today-row');
-    const candidates = rowEls.length ? [...rowEls] : [...root.querySelectorAll('.stat-row, tr')];
-
-    candidates.forEach(row => {
-      if (kCount !== null) return;
-      const rowText = norm(row.innerText || '').toLowerCase();
-      // Require the player name to appear as the start of the row's text (the name is always
-      // rendered first), not just "somewhere" in it — avoids accidental substring collisions
-      if (!rowText.startsWith(name) && !rowText.includes(name)) return;
-      const m = rowText.match(/(\d+)\s*(?:k|ks|strikeout|strikeouts)\b/i) || rowText.match(/\b(\d+)\b/);
-      if (m) kCount = Number(m[1]);
-    });
-
+    const kCount = findFinalKCountForPitcher(name);
     if(kCount === null || !Number.isFinite(kCount)) return 'pending';
-    const line = Number(String(rec.line || '').match(/(\d+(?:\.\d+)?)/)?.[1] || NaN);
-    if(!Number.isFinite(line)) return 'pending';
+    rec.finalKCount = kCount;
 
-    if(/OVER/i.test(rec.pick)) return kCount > line ? 'win' : 'loss';
-    if(/UNDER/i.test(rec.pick)) return kCount < line ? 'win' : 'loss';
+    const drLine = extractNumericValue(rec.drLine || rec.line);
+    if(!Number.isFinite(drLine)) return 'pending';
+
+    if(/OVER/i.test(rec.pick)) return kCount > drLine ? 'win' : 'loss';
+    if(/UNDER/i.test(rec.pick)) return kCount < drLine ? 'win' : 'loss';
     return 'pending';
   }
 
@@ -7833,9 +7864,11 @@ function showTab(id, el) {
       const t=row.innerText || '';
       if(!t || isPlaceholderText(t)) return null;
       const name=norm(row.querySelector('.kprop-name')?.textContent || t.split('\n')[0] || `Pitcher ${i+1}`);
-      const line=norm(row.querySelector('.kprop-line-val')?.textContent || '');
-      const pred=norm(row.querySelector('.kprop-pred-lbl')?.textContent || row.querySelector('.kprop-pred-val')?.textContent || '');
-      let pick = /UNDER/i.test(t) ? 'UNDER' : /OVER/i.test(t) ? 'OVER' : (pred || '—');
+      const drLine=norm(row.querySelector('.kprop-line-val')?.textContent || '');
+      const kProjection=norm(row.querySelector('.kprop-pred-lbl')?.textContent || row.querySelector('.kprop-pred-val')?.textContent || '');
+      const projectedLine = drLine;
+      let pick = /UNDER/i.test(t) ? 'UNDER' : /OVER/i.test(t) ? 'OVER' : (kProjection || '—');
+      const finalKCount = findFinalKCountForPitcher(name);
       return {
         // Key is based on pitcher name only — NOT the line value, since sportsbook lines
         // can shift during the day (e.g. 6.5 -> 7.0) and would otherwise create a duplicate row
@@ -7843,7 +7876,12 @@ function showTab(id, el) {
         type: 'kprop',
         label: name,
         pick,
-        line: line || '—',
+        line: projectedLine || '—',
+        projectedLine: projectedLine || '—',
+        kProjection: kProjection || '—',
+        finalKCount: finalKCount ?? null,
+        drLine: drLine || '—',
+        overDRLine: finalKCount !== null && Number.isFinite(extractNumericValue(drLine)) ? (finalKCount > extractNumericValue(drLine) ? 'Y' : 'N') : '—',
         result: 'pending',
         date: dayKey()
       };
@@ -8085,6 +8123,24 @@ function showTab(id, el) {
     set('tracker-kprops-all-sub', `${pct(kpAllDisplay.wins,kpAllDisplay.total)}% all-time • ${kpAllDisplay.total} final K props${kpAll.pending ? ` • ${kpAll.pending} not final excluded` : ''}`);
     setHeaderPct('kprops-header-pct', pct(kpAllDisplay.wins,kpAllDisplay.total), kpAllDisplay.total);
 
+    const drLineRows = (kpAll.list || []).filter(r => {
+      const finalK = r.finalKCount ?? findFinalKCountForPitcher(r.label);
+      const drLine = extractNumericValue(r.drLine || r.line);
+      return Number.isFinite(finalK) && Number.isFinite(drLine);
+    }).map(r => {
+      const finalK = r.finalKCount ?? findFinalKCountForPitcher(r.label);
+      const drLine = extractNumericValue(r.drLine || r.line);
+      return { ...r, finalKCount: finalK, drLine, overDRLine: finalK > drLine ? 'Y' : 'N' };
+    });
+    const drLineOver = drLineRows.filter(r => r.overDRLine === 'Y').length;
+    const drLineUnder = Math.max(drLineRows.length - drLineOver, 0);
+    set('tracker-drline-over', `${drLineOver}`);
+    set('tracker-drline-over-sub', `${pct(drLineOver, drLineRows.length)}% of final K props went over the DR Line`);
+    set('tracker-drline-under', `${drLineUnder}`);
+    set('tracker-drline-under-sub', `${pct(drLineUnder, drLineRows.length)}% finished at/under the DR Line`);
+    set('tracker-drline-total', `${drLineRows.length}`);
+    setHeaderPct('drline-header-pct', pct(drLineOver, drLineRows.length), drLineRows.length);
+
     const teamExtremes = diamondReportTeamExtremes(drpMatchupAll.list);
     set('tracker-drt-favorite', teamExtremes.favorite ? teamExtremes.favorite.team : '—');
     set('tracker-drt-favorite-sub', teamExtremes.favorite
@@ -8133,13 +8189,20 @@ function showTab(id, el) {
     }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for completed matchups. Single-team rows are hidden.</td></tr>');
 
     set('tracker-kprops-results', kpToday.list.length ? kpToday.list.map(r=>{
+      const finalK = r.finalKCount ?? findFinalKCountForPitcher(r.label);
+      const drLine = r.drLine || r.line || '—';
+      const overDR = finalK !== null && Number.isFinite(extractNumericValue(drLine)) ? (finalK > extractNumericValue(drLine) ? 'Y' : 'N') : (r.overDRLine || '—');
       return `<tr>
         <td>${r.label}</td>
         <td>${r.pick}</td>
-        <td>${r.line || '—'}</td>
-        <td>${statusBadge(r)}</td>
+        <td>${r.projectedLine || r.line || '—'}</td>
+        <td>${r.kProjection || '—'}</td>
+        <td>${finalK ?? '—'}</td>
+        <td>${drLine}</td>
+        <td>${overDR}</td>
+        <td>${kpropStatusText(r)}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
+    }).join('') : '<tr><td colspan="8" style="text-align:left;color:var(--muted)">Waiting for K Props data.</td></tr>');
 
 
     const sourceStatus = [
