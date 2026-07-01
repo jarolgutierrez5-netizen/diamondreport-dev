@@ -4163,6 +4163,1281 @@ video {
 })();
 </script>
 
+
+<style id="v6-3-k-props-card-rebuild">
+/* ============================================================
+   Diamond Report DIE v6.3 — K Props Card Rebuild
+   Applies the new K Props card layout across desktop, tablet, and mobile.
+   ============================================================ */
+
+#k-props-card-view {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+}
+
+#k-props-card-view .kpc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.kpc-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kpc-filter {
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.kpc-filter.all { border-color: #a78bfa99; color: #c4b5fd; }
+.kpc-filter.over { border-color: #22c55e99; color: #86efac; }
+.kpc-filter.under { border-color: #ef444499; color: #fca5a5; }
+.kpc-filter.line { border-color: #f59e0b99; color: #fbbf24; }
+
+.kpc-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: #8fa3c8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kpc-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.kpc-dot.over { background: #22c55e; }
+.kpc-dot.under { background: #ef4444; }
+
+.kpc-card {
+  position: relative;
+  background:
+    radial-gradient(circle at top left, rgba(96,165,250,.07), transparent 32%),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.kpc-card.over {
+  border-left: 4px solid #22c55e;
+}
+
+.kpc-card.under {
+  border-left: 4px solid #ef4444;
+}
+
+.kpc-card.push {
+  border-left: 4px solid #f59e0b;
+}
+
+.kpc-status {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #ef444499;
+  background: rgba(42,13,13,.8);
+  color: #fca5a5;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.kpc-main {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.25fr) minmax(220px, .95fr) 140px;
+  gap: 18px;
+  align-items: center;
+}
+
+.kpc-player {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+
+.kpc-headshot {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+
+.kpc-name {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.kpc-teams {
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.kpc-meta {
+  color: #8fa3c8;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.kpc-pick {
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 13px 15px;
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.kpc-pick.over {
+  border-color: #22c55e99;
+  background: rgba(13,42,26,.78);
+  color: #86efac;
+}
+
+.kpc-pick.under {
+  border-color: #ef444499;
+  background: rgba(42,13,13,.78);
+  color: #fca5a5;
+}
+
+.kpc-pick.push {
+  border-color: #f59e0b99;
+  background: rgba(42,24,0,.78);
+  color: #fbbf24;
+}
+
+.kpc-pick-title {
+  font-family: var(--dr-font-display, 'Bebas Neue', Impact, sans-serif);
+  font-size: 24px;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.kpc-pick-sub {
+  margin-top: 7px;
+  color: #a5b4fc;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.kpc-proj {
+  text-align: center;
+}
+
+.kpc-proj-label,
+.kpc-line-label {
+  color: #8fa3c8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.kpc-proj-value {
+  margin-top: 4px;
+  font-family: var(--dr-font-display, 'Bebas Neue', Impact, sans-serif);
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: .04em;
+}
+
+.kpc-proj-value.over { color: #86efac; }
+.kpc-proj-value.under { color: #fca5a5; }
+.kpc-proj-value.push { color: #fbbf24; }
+
+.kpc-opp-rate {
+  margin-top: 4px;
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.kpc-line-box {
+  border: 1px solid var(--border);
+  background: rgba(10,14,26,.72);
+  border-radius: 11px;
+  padding: 15px 12px;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.kpc-line-value {
+  margin-top: 5px;
+  color: #fff;
+  font-family: var(--dr-font-display, 'Bebas Neue', Impact, sans-serif);
+  font-size: 40px;
+  line-height: 1;
+}
+
+.kpc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.kpc-stat {
+  border: 1px solid var(--border);
+  background: rgba(10,14,26,.72);
+  border-radius: 9px;
+  padding: 10px;
+  text-align: center;
+}
+
+.kpc-stat.k { border-color: #22c55e88; background: rgba(13,42,26,.55); }
+.kpc-stat.ip { border-color: #ef444488; background: rgba(42,13,13,.55); }
+.kpc-stat.pitch { border-color: #f59e0b88; background: rgba(42,24,0,.55); }
+.kpc-stat.runs { border-color: #ef444488; background: rgba(42,13,13,.55); }
+
+.kpc-stat-label {
+  color: #9aa7c2;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.kpc-stat-value {
+  margin-top: 4px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.kpc-quick-title {
+  margin-top: 14px;
+  color: #9aa7c2;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.kpc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.kpc-chip {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: #8fa3c8;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.kpc-chip.over { border-color: #22c55e99; color: #86efac; background: rgba(13,42,26,.62); }
+.kpc-chip.under { border-color: #ef444499; color: #fca5a5; background: rgba(42,13,13,.62); }
+.kpc-chip.neu { border-color: #a78bfa99; color: #c4b5fd; background: rgba(26,18,51,.62); }
+.kpc-chip.rate { border-color: #f59e0b99; color: #fbbf24; background: rgba(42,24,0,.62); }
+.kpc-chip.k9 { border-color: #60a5fa99; color: #93c5fd; background: rgba(7,24,44,.62); }
+
+.kpc-summary {
+  margin-top: 10px;
+  color: #a5b4fc;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Hide old layout once card view is available */
+.kprops-card-mode .kprop-row {
+  display: none !important;
+}
+
+@media (max-width: 980px) {
+  .kpc-main {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, .85fr);
+  }
+
+  .kpc-line-box {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .kpc-proj {
+    text-align: left;
+  }
+}
+
+@media (max-width: 768px) {
+  #k-props-card-view {
+    max-height: 68vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-right: 3px;
+    padding-bottom: 72px;
+  }
+
+  #k-props-card-view .kpc-toolbar {
+    display: block;
+  }
+
+  .kpc-filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .kpc-filter {
+    padding: 8px 6px;
+    font-size: 10px;
+  }
+
+  .kpc-legend {
+    font-size: 10px;
+    gap: 10px;
+  }
+
+  .kpc-card {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .kpc-status {
+    top: 14px;
+    right: 14px;
+    padding: 5px 9px;
+    font-size: 10px;
+  }
+
+  .kpc-main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .kpc-player {
+    grid-template-columns: 58px minmax(0, 1fr);
+    padding-right: 76px;
+  }
+
+  .kpc-headshot {
+    width: 54px;
+    height: 54px;
+  }
+
+  .kpc-name {
+    font-size: 18px;
+  }
+
+  .kpc-teams {
+    font-size: 13px;
+  }
+
+  .kpc-meta {
+    font-size: 11px;
+  }
+
+  .kpc-pick {
+    min-height: 64px;
+    padding: 11px 12px;
+  }
+
+  .kpc-pick-title {
+    font-size: 19px;
+  }
+
+  .kpc-pick-sub {
+    font-size: 12px;
+  }
+
+  .kpc-proj {
+    text-align: center;
+  }
+
+  .kpc-proj-value {
+    font-size: 34px;
+  }
+
+  .kpc-line-box {
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 72px;
+    padding: 12px;
+  }
+
+  .kpc-line-value {
+    font-size: 34px;
+  }
+
+  .kpc-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .kpc-stat {
+    padding: 8px 5px;
+  }
+
+  .kpc-stat-label {
+    font-size: 8px;
+  }
+
+  .kpc-stat-value {
+    font-size: 14px;
+  }
+
+  .kpc-chip {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+
+  .kpc-summary {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 390px) {
+  .kpc-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpc-player {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .kpc-headshot {
+    width: 46px;
+    height: 46px;
+  }
+
+  .kpc-name {
+    font-size: 16px;
+  }
+
+  .kpc-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>
+
+<script id="v6-3-k-props-card-rebuild-script">
+(function () {
+  function text(el) {
+    return el ? (el.textContent || '').replace(/\s+/g, ' ').trim() : '';
+  }
+
+  function imgSrc(el) {
+    var img = el ? el.querySelector('img') : null;
+    return img ? img.src : '';
+  }
+
+  function normK(value) {
+    var m = String(value || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? m[1] + ' K' : '--';
+  }
+
+  function numOnly(value, fallback) {
+    var m = String(value || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? m[1] : (fallback || '--');
+  }
+
+  function pickClass(rowText) {
+    var t = rowText.toLowerCase();
+    if (t.includes('under')) return 'under';
+    if (t.includes('over')) return 'over';
+    return 'push';
+  }
+
+  function pickTitle(rowText) {
+    var t = rowText.toLowerCase();
+    if (t.includes('under')) {
+      if (t.includes('lower k profile')) return 'UNDER (LOWER K PROFILE)';
+      return 'UNDER';
+    }
+    if (t.includes('over')) {
+      if (t.includes('high-k matchup') || t.includes('high k matchup')) return 'OVER (HIGH K MATCHUP)';
+      return 'OVER';
+    }
+    if (t.includes('under lean')) return 'PUSH (UNDER LEAN)';
+    if (t.includes('over lean')) return 'PUSH (OVER LEAN)';
+    return 'PUSH';
+  }
+
+  function extractName(row) {
+    var nameEl = row.querySelector('.kprop-name') || row.querySelector('[style*="font-weight"]') || row.querySelector('strong');
+    var name = text(nameEl);
+    if (name) return name.split(/\s{2,}/)[0].trim();
+
+    var all = text(row);
+    return all.split(/(?:[A-Z]{2,3}\s*(?:@|vs)\s*[A-Z]{2,3})/)[0].replace(/LIVE|FINAL|PENDING/ig, '').trim() || 'Pitcher';
+  }
+
+  function extractTeams(rowText) {
+    var m = rowText.match(/[A-Z]{2,3}\s*(?:@|vs)\s*[A-Z]{2,3}/);
+    return m ? m[0].replace(/\s+/g, ' ') : 'Matchup';
+  }
+
+  function extractMeta(rowText) {
+    var hand = (rowText.match(/\b[LR]HP\b/i) || [''])[0];
+    var era = (rowText.match(/\d+(?:\.\d+)?\s*ERA/i) || [''])[0];
+    var k9 = (rowText.match(/\d+(?:\.\d+)?\s*K\/9/i) || [''])[0];
+    var time = (rowText.match(/\d{1,2}:\d{2}\s*(?:AM|PM)/i) || [''])[0];
+    return [hand, era, k9, time].filter(Boolean).join(' • ');
+  }
+
+  function extractProjected(rowText) {
+    var m = rowText.match(/(\d+(?:\.\d+)?)\s*(?:K\s*)?projected/i) ||
+            rowText.match(/(\d+(?:\.\d+)?)\s*PROJ/i);
+    return m ? m[1] + ' K' : '--';
+  }
+
+  function extractLine(rowText) {
+    var m = rowText.match(/DR\s*LINE\s*(\d+(?:\.\d+)?)/i) ||
+            rowText.match(/line\s*(\d+(?:\.\d+)?)/i);
+    return m ? m[1] : '--';
+  }
+
+  function extractK(rowText) {
+    var patterns = [
+      /\bK\s*(\d+(?:\.\d+)?)\s*K\b/i,
+      /\b(\d+(?:\.\d+)?)\s*K\b/i,
+      /Strikeouts?\s*[:\-]?\s*(\d+(?:\.\d+)?)/i
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+      var m = rowText.match(patterns[i]);
+      if (m) return m[1] + 'K';
+    }
+    return '--';
+  }
+
+  function extractIp(rowText) {
+    var m = rowText.match(/\b(\d+(?:\.\d+)?)\s*IP\b/i);
+    return m ? m[1] + ' IP' : '--';
+  }
+
+  function extractPitches(rowText) {
+    var m = rowText.match(/\b(\d+)\s*pitches\b/i);
+    return m ? m[1] : '--';
+  }
+
+  function extractRuns(rowText) {
+    var m = rowText.match(/\b(\d+)\s*Runs?\s*Allowed\b/i);
+    if (m) return m[1];
+    if (/Runs\s*--/i.test(rowText)) return '--';
+    return '--';
+  }
+
+  function extractOppRate(rowText) {
+    var m = rowText.match(/(\d+)%\s*opp\s*K\s*rate/i);
+    return m ? m[1] + '% OPP K RATE' : '';
+  }
+
+  function chipsFromRow(row, rowText, cls) {
+    var chips = [];
+    row.querySelectorAll('.kprop-chip,.tracker-pill,.k-ou-tag,.k-proj-tag').forEach(function(chip){
+      var c = text(chip);
+      if (c && !chips.includes(c) && chips.length < 6) chips.push(c);
+    });
+
+    if (!chips.length) {
+      chips.push(cls === 'under' ? 'UNDER' : 'OVER');
+      if (rowText.toLowerCase().includes('high')) chips.push('High-K matchup');
+      if (rowText.toLowerCase().includes('lower')) chips.push('Lower K profile');
+      var k9 = rowText.match(/\d+(?:\.\d+)?\s*K\/9/i);
+      if (k9) chips.push(k9[0]);
+      var opp = extractOppRate(rowText);
+      if (opp) chips.push(opp);
+    }
+
+    return chips.slice(0, 6);
+  }
+
+  function chipClass(c, cls) {
+    var t = c.toLowerCase();
+    if (t.includes('under')) return 'under';
+    if (t.includes('over')) return 'over';
+    if (t.includes('opp') || t.includes('rate')) return 'rate';
+    if (t.includes('k/9')) return 'k9';
+    return cls === 'under' ? 'under' : (cls === 'over' ? 'over' : 'neu');
+  }
+
+  function buildKPropsCards() {
+    var candidates = Array.from(document.querySelectorAll('.kprop-row'));
+    if (!candidates.length) return;
+
+    var first = candidates[0];
+    var container = document.getElementById('k-props-card-view');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'k-props-card-view';
+
+      var section = document.getElementById('props') || first.closest('section') || document.body;
+      var kTitle = Array.from(section.querySelectorAll('.section-title')).find(function(el){
+        return /K\s*PROPS/i.test(text(el));
+      });
+
+      if (kTitle) {
+        kTitle.insertAdjacentElement('afterend', container);
+      } else {
+        first.parentElement.insertBefore(container, first);
+      }
+    }
+
+    document.body.classList.add('kprops-card-mode');
+
+    var toolbar = [
+      '<div class="kpc-toolbar">',
+        '<div class="kpc-filters">',
+          '<button class="kpc-filter all" type="button">ALL</button>',
+          '<button class="kpc-filter over" type="button">OVER ↑</button>',
+          '<button class="kpc-filter under" type="button">UNDER ↓</button>',
+          '<button class="kpc-filter line" type="button">DR LINE</button>',
+        '</div>',
+        '<div class="kpc-legend">',
+          '<span><i class="kpc-dot over"></i> OVER = Projected Ks higher than line</span>',
+          '<span><i class="kpc-dot under"></i> UNDER = Projected Ks lower than line</span>',
+        '</div>',
+      '</div>'
+    ].join('');
+
+    var cards = candidates.map(function(row) {
+      var rowText = text(row);
+      var cls = pickClass(rowText);
+      var name = extractName(row);
+      var img = imgSrc(row);
+      var teams = extractTeams(rowText);
+      var meta = extractMeta(rowText);
+      var proj = extractProjected(rowText);
+      var line = extractLine(rowText);
+      var k = extractK(rowText);
+      var ip = extractIp(rowText);
+      var pitches = extractPitches(rowText);
+      var runs = extractRuns(rowText);
+      var oppRate = extractOppRate(rowText);
+      var chips = chipsFromRow(row, rowText, cls);
+      var summaryEl = row.querySelector('.kprop-summary');
+      var summary = text(summaryEl) || 'Projection updates throughout the day based on lineups, weather, and pitching matchups.';
+
+      return [
+        '<div class="kpc-card ' + cls + '">',
+          '<div class="kpc-status">● LIVE</div>',
+          '<div class="kpc-main">',
+            '<div class="kpc-player">',
+              img ? '<img class="kpc-headshot" src="' + img + '" alt="">' : '<div class="kpc-headshot"></div>',
+              '<div>',
+                '<div class="kpc-name">' + name + '</div>',
+                '<div class="kpc-teams">' + teams + '</div>',
+                '<div class="kpc-meta">' + (meta || 'Pitcher matchup') + '</div>',
+              '</div>',
+            '</div>',
+            '<div class="kpc-pick ' + cls + '">',
+              '<div class="kpc-pick-title">' + pickTitle(rowText) + '</div>',
+              '<div class="kpc-pick-sub">' + proj.replace(' K', '') + ' PROJ</div>',
+            '</div>',
+            '<div class="kpc-proj">',
+              '<div class="kpc-proj-label">Projected</div>',
+              '<div class="kpc-proj-value ' + cls + '">' + proj + '</div>',
+              '<div class="kpc-opp-rate">' + (oppRate || '') + '</div>',
+            '</div>',
+            '<div class="kpc-line-box">',
+              '<div class="kpc-line-label">DR Line</div>',
+              '<div class="kpc-line-value">' + line + '</div>',
+            '</div>',
+          '</div>',
+          '<div class="kpc-stats">',
+            '<div class="kpc-stat k"><div class="kpc-stat-label">K</div><div class="kpc-stat-value">' + k + '</div></div>',
+            '<div class="kpc-stat ip"><div class="kpc-stat-label">IP</div><div class="kpc-stat-value">' + ip + '</div></div>',
+            '<div class="kpc-stat pitch"><div class="kpc-stat-label">Pitches</div><div class="kpc-stat-value">' + pitches + '</div></div>',
+            '<div class="kpc-stat runs"><div class="kpc-stat-label">Runs</div><div class="kpc-stat-value">' + runs + '</div></div>',
+          '</div>',
+          '<div class="kpc-quick-title">Quick Read</div>',
+          '<div class="kpc-chips">' + chips.map(function(c){ return '<span class="kpc-chip ' + chipClass(c, cls) + '">' + c + '</span>'; }).join('') + '</div>',
+          '<div class="kpc-summary">' + summary + '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+
+    container.innerHTML = toolbar + cards;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(buildKPropsCards, 400);
+    setTimeout(buildKPropsCards, 1200);
+    setTimeout(buildKPropsCards, 2500);
+  });
+
+  window.addEventListener('load', function(){
+    setTimeout(buildKPropsCards, 500);
+    setTimeout(buildKPropsCards, 1600);
+  });
+
+  var obs = new MutationObserver(function(){
+    clearTimeout(window.__drKPropsCardTimer);
+    window.__drKPropsCardTimer = setTimeout(buildKPropsCards, 300);
+  });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var props = document.getElementById('props') || document.body;
+    obs.observe(props, { childList: true, subtree: true, characterData: true });
+  });
+})();
+</script>
+
+
+<style id="v6-4-mobile-optimization-pass">
+/* ============================================================
+   Diamond Report DIE v6.4 — Mobile Optimization Pass
+   Focus: iPhone/Android performance + layout stability.
+   - Better section spacing
+   - Cleaner mobile nav
+   - Prevents horizontal overflow
+   - Optimizes HR Potential, K Props, K's Today, Tracker, and DIE cards
+   - Improves tap targets and scroll behavior
+   ============================================================ */
+
+@media (max-width: 768px) {
+  html, body {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+
+  body {
+    min-height: 100svh !important;
+    background: var(--bg) !important;
+  }
+
+  body *:not(svg):not(svg *) {
+    max-width: 100%;
+  }
+
+  .header {
+    height: 50px !important;
+    padding: 0 10px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 200 !important;
+  }
+
+  .header .logo svg {
+    max-width: 190px !important;
+    height: auto !important;
+  }
+
+  .date-badge,
+  #header-date {
+    display: none !important;
+  }
+
+  .nav {
+    position: sticky !important;
+    top: 50px !important;
+    z-index: 190 !important;
+    padding: 7px 10px 0 !important;
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 4px !important;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .tab {
+    flex: 0 0 auto !important;
+    min-height: 36px !important;
+    padding: 7px 12px !important;
+    font-size: 10px !important;
+    letter-spacing: .045em !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+
+  main {
+    padding: 12px 10px 22px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .section-title {
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+    letter-spacing: .075em !important;
+    margin: 18px 0 12px !important;
+  }
+
+  .section-title:first-child {
+    margin-top: 8px !important;
+  }
+
+  .games-grid,
+  .tracker-grid,
+  .tracker-grid.tracker-grid-stack,
+  .die-grid,
+  .props-grid,
+  .hrs-today-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .game-card,
+  .tracker-card,
+  .die-card,
+  .gp-card,
+  .kpc-card,
+  .mhr-card,
+  .mks-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  .game-card,
+  .tracker-card,
+  .die-card {
+    padding: 12px !important;
+  }
+
+  .team-logo {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .team-abbr {
+    font-size: 20px !important;
+  }
+
+  .score-block {
+    font-size: 22px !important;
+  }
+
+  /* HR Potential mobile card scroll */
+  #mobile-hrp-cards {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    max-height: 70svh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding-right: 2px !important;
+    padding-bottom: 18px !important;
+  }
+
+  .mhr-card {
+    padding: 12px !important;
+  }
+
+  .mhr-top {
+    align-items: center !important;
+  }
+
+  .mhr-headshot {
+    width: 42px !important;
+    height: 42px !important;
+    flex-basis: 42px !important;
+  }
+
+  .mhr-name {
+    font-size: 16px !important;
+  }
+
+  .mhr-meta {
+    font-size: 11px !important;
+  }
+
+  .mhr-status {
+    font-size: 9px !important;
+    padding: 5px 8px !important;
+  }
+
+  .mhr-prob {
+    font-size: 32px !important;
+  }
+
+  .mhr-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .mhr-matchup button,
+  .mhr-matchup .hrp-matchup-btn {
+    min-height: 38px !important;
+    font-size: 10px !important;
+  }
+
+  /* K Props rebuilt cards */
+  #k-props-card-view {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  #k-props-card-view .kpc-toolbar {
+    display: block !important;
+    margin-bottom: 10px !important;
+  }
+
+  .kpc-filters {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .kpc-filter {
+    min-height: 38px !important;
+    padding: 8px 6px !important;
+    font-size: 10px !important;
+  }
+
+  .kpc-legend {
+    margin-top: 9px !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+  }
+
+  .kpc-card {
+    padding: 13px !important;
+    overflow: hidden !important;
+  }
+
+  .kpc-main {
+    grid-template-columns: 1fr !important;
+    gap: 11px !important;
+  }
+
+  .kpc-player {
+    grid-template-columns: 54px minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding-right: 72px !important;
+  }
+
+  .kpc-headshot {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .kpc-name {
+    font-size: 18px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .kpc-teams {
+    font-size: 12px !important;
+  }
+
+  .kpc-meta {
+    font-size: 10px !important;
+  }
+
+  .kpc-status {
+    top: 13px !important;
+    right: 13px !important;
+    font-size: 9px !important;
+    padding: 5px 8px !important;
+  }
+
+  .kpc-pick {
+    min-height: 62px !important;
+    padding: 10px 11px !important;
+  }
+
+  .kpc-pick-title {
+    font-size: 18px !important;
+    letter-spacing: .065em !important;
+  }
+
+  .kpc-pick-sub {
+    font-size: 11px !important;
+  }
+
+  .kpc-proj-value,
+  .kpc-line-value {
+    font-size: 32px !important;
+  }
+
+  .kpc-line-box {
+    min-height: 70px !important;
+    padding: 10px !important;
+  }
+
+  .kpc-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .kpc-stat {
+    padding: 7px 4px !important;
+  }
+
+  .kpc-stat-label {
+    font-size: 7.5px !important;
+  }
+
+  .kpc-stat-value {
+    font-size: 13px !important;
+    white-space: nowrap !important;
+  }
+
+  .kpc-chip {
+    font-size: 9px !important;
+    padding: 5px 7px !important;
+  }
+
+  .kpc-summary {
+    font-size: 10px !important;
+  }
+
+  /* K's Today cards */
+  #mobile-ks-cards {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    max-height: 70svh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding-right: 2px !important;
+    padding-bottom: 80px !important;
+  }
+
+  .mks-card {
+    padding: 12px !important;
+  }
+
+  .mks-headshot {
+    width: 42px !important;
+    height: 42px !important;
+    flex-basis: 42px !important;
+  }
+
+  .mks-name {
+    font-size: 16px !important;
+  }
+
+  .mks-meta {
+    font-size: 11px !important;
+  }
+
+  .mks-status {
+    font-size: 9px !important;
+    padding: 5px 8px !important;
+  }
+
+  .mks-progress {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .mks-badge {
+    min-height: 34px !important;
+    padding: 6px 4px !important;
+  }
+
+  .mks-badge .mks-badge-label {
+    font-size: 7px !important;
+  }
+
+  .mks-badge .mks-badge-value {
+    font-size: 10px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Tracker + DIE readability */
+  .tracker-card h3,
+  .die-card h4 {
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+  }
+
+  .tracker-big,
+  .die-big {
+    font-size: 28px !important;
+  }
+
+  .tracker-sub,
+  .die-small {
+    font-size: 10px !important;
+  }
+
+  .die-panel {
+    padding: 12px !important;
+    margin-top: 16px !important;
+  }
+
+  .die-title {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+  }
+
+  .die-status-list {
+    grid-template-columns: 1fr !important;
+  }
+
+  .die-weight-row {
+    grid-template-columns: 82px 1fr 36px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  main {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .header .logo svg {
+    max-width: 178px !important;
+  }
+
+  .tab {
+    font-size: 9px !important;
+    padding: 7px 10px !important;
+  }
+
+  .mhr-card,
+  .mks-card,
+  .kpc-card,
+  .tracker-card,
+  .die-card {
+    padding: 10px !important;
+  }
+
+  .mhr-headshot,
+  .mks-headshot {
+    width: 38px !important;
+    height: 38px !important;
+    flex-basis: 38px !important;
+  }
+
+  .mhr-name,
+  .mks-name,
+  .kpc-name {
+    font-size: 15px !important;
+  }
+
+  .kpc-player {
+    grid-template-columns: 46px minmax(0, 1fr) !important;
+    padding-right: 66px !important;
+  }
+
+  .kpc-headshot {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .kpc-stats,
+  .mks-progress {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .mhr-stats {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+
+<script id="v6-4-mobile-optimization-script">
+(function () {
+  function enableMobileOptimizations() {
+    if (window.innerWidth > 768) return;
+
+    // Prevent old desktop sections from creating page-wide overflow.
+    ['hr-potential-content', 'ks-today-props'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.style.maxWidth = '100%';
+        el.style.overflowX = 'hidden';
+      }
+    });
+
+    // Smooth internal scrolling for rebuilt sections.
+    ['mobile-hrp-cards', 'mobile-ks-cards', 'k-props-card-view'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.style.webkitOverflowScrolling = 'touch';
+        el.style.overscrollBehavior = 'contain';
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(enableMobileOptimizations, 300);
+    setTimeout(enableMobileOptimizations, 1200);
+  });
+
+  window.addEventListener('load', function () {
+    setTimeout(enableMobileOptimizations, 500);
+    setTimeout(enableMobileOptimizations, 1800);
+  });
+
+  window.addEventListener('resize', function () {
+    clearTimeout(window.__drV64Resize);
+    window.__drV64Resize = setTimeout(enableMobileOptimizations, 250);
+  });
+})();
+</script>
+
 </head>
 <body>
 
