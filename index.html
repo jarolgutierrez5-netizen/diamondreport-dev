@@ -7105,10 +7105,14 @@ function showTab(id, el) {
     return null;
   }
 
+  function isFinalMarketResult(result){
+    return result === 'win' || result === 'loss';
+  }
+
   function drpSourceRows(store){
     const repoStore = repoSourceStore();
-    const rows = repoStore?.market?.drp?.length ? repoStore.market.drp : (store?.market?.drp || []);
-    return Array.isArray(rows) ? rows : [];
+    const rows = repoStore?.market?.drp?.length ? repoStore.market.drp : [];
+    return Array.isArray(rows) ? rows.filter(r => isFinalMarketResult(r.result)) : [];
   }
 
   function drpSourceSummary(store){
@@ -7204,30 +7208,30 @@ function showTab(id, el) {
   function loadStore(){
     const repoStore = repoSourceStore();
     if (repoStore) return repoStore;
-    return mergeStores(readLocalStore(), safeStore());
+    const empty = safeStore();
+    empty.debug.lastError = 'tracker.json not loaded yet';
+    return empty;
   }
 
   function saveStore(s){
+    // v8.0 Historical Tracker: the browser is not allowed to write or merge
+    // historical tracker data. GitHub/repository JSON is the only source of truth.
     const store = normalizeStore(s);
-    store.generatedAt = new Date().toISOString();
     store.debug ||= {};
     store.debug.repoDataLoaded = repoTrackerLoaded;
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
-    catch(e){ console.warn('Tracker localStorage save failed:', e); }
     window.__diamondTrackerStore = store;
-    saveRepoSyncSnapshot(store); // no browser auto-downloads; GitHub Actions handle repo-side files
   }
 
   async function initPersistentTrackerData(){
     try {
+      clearTrackerBrowserCaches();
       await fetchFreshRepoTrackerData();
-      await backfillStalePendingPicks(repoTrackerSeed);
       repoTrackerSeed = updateAllTimeSummaryFromRows(normalizeMarketRowResults(repoTrackerSeed));
       window.__diamondTrackerStore = loadStore();
       if (window.syncDiamondTracker) window.syncDiamondTracker();
     } catch(e){
       repoTrackerLoaded = false;
-      console.warn('Repo tracker data not loaded; using browser cache only:', e.message || e);
+      console.warn('Repo tracker data not loaded; Tracker history will remain empty until tracker.json loads:', e.message || e);
     }
   }
 
@@ -8123,28 +8127,16 @@ function showTab(id, el) {
   }
 
   function marketStats(store, type, date){
-    store.market ||= { drp: [], kprop: [] };
-    const list = (store.market[type] || []).filter(x => !date || x.date === date).map(x => {
-      // Re-grade completed K props from repository data when the stored result is pending.
-      // This prevents iPhone reloads from showing final K prop games as Pending.
-      if (type === 'kprop') {
-        const normalized = normalizeMarketResultValue(x.result ?? x.status ?? x.outcome ?? x.grade ?? x.finalStatus);
-        const result = (normalized === 'win' || normalized === 'loss') ? normalized : resolveKPropResult({ ...x, result: normalized });
-        return { ...x, result };
-      }
-      if (type === 'drp') {
-        // Confirm/refresh DR Pick status from final-score data when available, while
-        // preserving stored win/loss results from the repository. This keeps the
-        // Status column and the right/wrong count aligned after Reload Repo Data.
-        const normalized = normalizeMarketResultValue(x.result ?? x.status ?? x.outcome ?? x.grade ?? x.finalStatus);
-        const result = (normalized === 'win' || normalized === 'loss' || normalized === 'push') ? normalized : resolveDRPickResult({ ...x, result: normalized });
-        return { ...x, result };
-      }
-      return x;
-    });
-    const graded = list.filter(x => x.result === 'win' || x.result === 'loss');
-    const wins = graded.filter(x => x.result === 'win').length;
-    return { wins, losses: Math.max(graded.length - wins, 0), total: graded.length, pending: list.length - graded.length, list };
+    // v8.0 Historical Tracker: only final, graded repository records are shown.
+    // Pending/live rows belong in live tabs, not the Tracker.
+    const repoStore = repoSourceStore() || normalizeStore(store);
+    repoStore.market ||= { drp: [], kprop: [] };
+    const list = (repoStore.market[type] || [])
+      .map(x => ({ ...x, result: normalizeMarketResultValue(x.result ?? x.status ?? x.outcome ?? x.grade ?? x.finalStatus) }))
+      .filter(x => isFinalMarketResult(x.result))
+      .filter(x => !date || x.date === date);
+    const wins = list.filter(x => x.result === 'win').length;
+    return { wins, losses: Math.max(list.length - wins, 0), total: list.length, pending: 0, list };
   }
 
   function marketAllTimeByKey(store, type, keyPart){
@@ -8315,7 +8307,7 @@ function showTab(id, el) {
     const kpAll=marketStats(store,'kprop');
 
     set('tracker-drp-today', `${drpMatchupToday.wins}-${drpMatchupToday.losses}`);
-    set('tracker-drp-today-sub', `${pct(drpMatchupToday.wins,drpMatchupToday.total)}% today • ${drpMatchupToday.total} final matchups${drpMatchupToday.pending ? ` • ${drpMatchupToday.pending} not final excluded` : ''}`);
+    set('tracker-drp-today-sub', `${pct(drpMatchupToday.wins,drpMatchupToday.total)}% today • ${drpMatchupToday.total} final matchups`);
 
     // Repo allTime.drp is the authoritative all-time total when it contains a larger
     // completed sample than the visible detailed rows. This keeps the card/header from
@@ -8323,17 +8315,17 @@ function showTab(id, el) {
     // subset (ex: 17-11) after Reload Repo Data on iPhone.
     const drpAllDisplay = drpSourceSummary(store);
     set('tracker-drp-all', `${drpAllDisplay.wins}-${drpAllDisplay.losses}`);
-    set('tracker-drp-all-sub', `${pct(drpAllDisplay.wins,drpAllDisplay.total)}% all-time • ${drpAllDisplay.total} final matchups${drpMatchupAll.pending ? ` • ${drpMatchupAll.pending} not final excluded` : ''}`);
+    set('tracker-drp-all-sub', `${pct(drpAllDisplay.wins,drpAllDisplay.total)}% all-time • ${drpAllDisplay.total} final matchups`);
     setHeaderPct('drp-header-pct', pct(drpAllDisplay.wins,drpAllDisplay.total), drpAllDisplay.total);
 
     set('tracker-kprops-today', `${kpToday.wins}-${kpToday.losses}`);
-    set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.total} final K props${kpToday.pending ? ` • ${kpToday.pending} not final excluded` : ''}`);
+    set('tracker-kprops-today-sub', `${pct(kpToday.wins,kpToday.total)}% today • ${kpToday.total} final K props`);
     const kpSummary = normalizedSummary(store.allTime?.kprop);
     // Detailed K Prop rows are the source of truth when available. The all-time card
     // should match the actual records shown/calculated after Reload Repo Data on iPhone.
     const kpAllDisplay = kpAll.total ? kpAll : kpSummary;
     set('tracker-kprops-all', `${kpAllDisplay.wins}-${kpAllDisplay.losses}`);
-    set('tracker-kprops-all-sub', `${pct(kpAllDisplay.wins,kpAllDisplay.total)}% all-time • ${kpAllDisplay.total} final K props${kpAll.pending ? ` • ${kpAll.pending} not final excluded` : ''}`);
+    set('tracker-kprops-all-sub', `${pct(kpAllDisplay.wins,kpAllDisplay.total)}% all-time • ${kpAllDisplay.total} final K props`);
     setHeaderPct('kprops-header-pct', pct(kpAllDisplay.wins,kpAllDisplay.total), kpAllDisplay.total);
 
     const drLineRows = (kpAll.list || []).filter(r => {
@@ -8441,10 +8433,9 @@ function showTab(id, el) {
 
 
     const sourceStatus = [
-      `<span class="tracker-pill ${repoTrackerLoaded?'hit':'pending'}">${repoTrackerLoaded?'✅':'💾'} Repo tracker.json ${repoTrackerLoaded?'source of truth':'fallback: browser cache'}</span>`,
+      `<span class="tracker-pill ${repoTrackerLoaded?'hit':'pending'}">${repoTrackerLoaded?'✅':'💾'} Repo tracker.json ${repoTrackerLoaded?'source of truth':'loading'}</span>`,
       `<span class="tracker-pill hit">✅ Repo sync via GitHub Actions</span>`,
-      `<span class="tracker-pill pending" onclick="window.exportDiamondTrackerData && window.exportDiamondTrackerData()" style="cursor:pointer">⬇ Manual local backup</span>`,
-      `<span class="tracker-pill hit" onclick="window.importDiamondTrackerData && window.importDiamondTrackerData()" style="cursor:pointer">⬆ Import local backup</span>`,
+      `<span class="tracker-pill hit">🔒 Historical Tracker read-only</span>`,
       `<span class="tracker-pill pending" onclick="window.resetDiamondTrackerLocalCache && window.resetDiamondTrackerLocalCache()" style="cursor:pointer">♻ Reload repo data</span>`,
       ...SOURCES.map(src => {
         const connected = src.live && ((src.name.includes('MLB Stats') ? (currentThreats.length || homers.size) : true));
@@ -8531,25 +8522,17 @@ function showTab(id, el) {
       gamePicks=extractGamePicks();
       const drpAccuracy=extractDRPicksAccuracy();
       const kpropsAccuracy=extractKPropsAccuracy();
-      // Once repo tracker.json is loaded, Diamond Report Picks history is read-only from repo.
-      // Do not let the current mobile DOM rebuild/dedupe DRP history and change 20-8 into 17-11.
-      if (!repoTrackerLoaded) drpAccuracy.forEach(r=>upsertMarketPick(store,r));
-      kpropsAccuracy.forEach(r=>upsertMarketPick(store,r));
-      threats.forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
+      // v8.0 Historical Tracker: do not save live/pending DOM rows into Tracker history.
+      // The automated repo-side grader should write only final records to tracker.json.
+      if (!repoTrackerLoaded) {
+        drpAccuracy.filter(r => isFinalMarketResult(normalizeMarketResultValue(r.result))).forEach(r=>upsertMarketPick(store,r));
+        kpropsAccuracy.filter(r => isFinalMarketResult(normalizeMarketResultValue(r.result))).forEach(r=>upsertMarketPick(store,r));
+        threats.filter(p => p.final === true).forEach(p=>upsert(store,p,homers.has(p.player.toLowerCase())));
+      }
       store.debug.lastError = '';
       store.debug.lastSync = new Date().toISOString();
       saveStore(store);
       render(store, threats, homers, gamePicks);
-
-      // Backfill any stuck pending picks from past dates via the MLB API (async,
-      // doesn't block this sync — re-renders automatically if anything resolves)
-      backfillStalePendingPicks(store).then(changed => {
-        if (changed) {
-          if (repoTrackerLoaded && repoTrackerSeed) repoTrackerSeed = updateAllTimeSummaryFromRows(normalizeMarketRowResults(store));
-          saveStore(store);
-          render(store, threats, homers, gamePicks);
-        }
-      }).catch(()=>{});
 
       return { threats, homers, gamePicks };
     } catch(e){

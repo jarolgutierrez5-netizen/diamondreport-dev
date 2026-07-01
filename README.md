@@ -1,17 +1,25 @@
-# Diamond Report DIE v7.4 — DR Picks Final Status Backfill Fix
+# Diamond Intelligence Engine (DIE)
+## v8.0 — Historical Tracker Rewrite
+
+This developer release changes the Tracker into a historical-only view.
+
+## What changed
+- Repository `data/tracker.json` is the source of truth for Tracker history.
+- Browser/local cached Tracker data is no longer merged into repository data.
+- Pending DR Picks and K Props are excluded from Tracker tables and all-time counts.
+- The Tracker is treated as read-only historical data.
+- Live/current-day projections remain on the normal live tabs, not in the Tracker.
 
 ## Deployment Type
 🟢 Index Only
 
-## Replace
+Replace only:
 - `index.html`
 
-## Changes
-- Fixes Diamond Report Picks from prior dates staying stuck on `Wait Final` after Reload Repo Data.
-- Preserves stored repo win/loss statuses before attempting any recalculation.
-- Backfills prior-date pending DR Picks using MLB final schedule data.
-- Keeps the corrected 6/29 DR Pick count logic intact.
-- Updates all-time DR Pick records from the same repo-backed source of truth.
+No changes required to:
+- `data/tracker.json`
+- `.github/workflows/`
+- `scripts/`
 
-## Notes
-No data files, scripts, or GitHub workflows need to be changed for this release.
+## Important behavior
+The Tracker will now show only final graded records already stored in the repository. If a date still shows no results, that means the repository has not stored graded final records for that date yet.
