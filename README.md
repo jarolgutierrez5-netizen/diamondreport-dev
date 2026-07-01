@@ -1,5 +1,5 @@
 # Diamond Intelligence Engine (DIE)
-## Version 5.6 — First-Load Data Initialization Fix
+## Version 5.7 — K's Today First-Load Fix
 
 Diamond Intelligence Engine (DIE) is a professional MLB analytics platform designed to combine live MLB data, advanced baseball metrics, historical tracking, and prediction intelligence into one clean, responsive web experience.
 
@@ -7,8 +7,17 @@ The long-term goal is to make DIE a centralized prediction engine for Home Run, 
 
 ---
 
-## Version 5.6 Changes
+## Version 5.7 Changes
 
+### K's Today First-Load Fix
+- Fixed **K's Today** in the Props tab so it initializes and populates on the first page load without requiring a manual reload.
+- Added a lightweight retry helper for K's Today when MLB schedule/boxscore data is still warming up.
+- Added K's Today to the Props background refresh cycle so it stays current alongside HR Potential and HRs Today.
+- Preserved the Tracker tab layout and behavior.
+
+---
+
+## Previous Version 5.6 Changes
 ### First-Load Fixes
 - Fixed **HRs Completed from Projection** so it no longer requires a page reload to populate correctly.
 - Fixed **Pitcher Report** so it warms and populates correctly on first page load.
@@ -120,7 +129,7 @@ Every future release should include:
 
 ## Current Version
 
-**Version:** 5.6  
+**Version:** 5.7  
 **Status:** Active Development  
 **Latest Update:** First-load data initialization fix for HRs Completed from Projection and Pitcher Report.
 

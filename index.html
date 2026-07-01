@@ -5902,8 +5902,32 @@ async function loadKsToday() {
   }
 }
 
-// Refresh Ks Today every 60s
-setInterval(() => { if (document.getElementById('ks-today-props')) loadKsToday(); }, 60000);
+// Robust K's Today startup/refresh helper. On a cold first load, the Props tab can be
+// initialized before the MLB schedule/boxscore response is ready, which left K's Today
+// empty until a manual reload. Run a few light retries and keep refreshing in the
+// background so the panel is populated the first time the Props tab is opened.
+let ksTodayRetryTimer = null;
+function loadKsTodayWithRetry(attempt = 0) {
+  const el = document.getElementById('ks-today-props');
+  if (!el) return;
+
+  Promise.resolve(loadKsToday()).then(() => {
+    const text = (el.textContent || '').trim().toLowerCase();
+    const stillWaiting = !text || text.includes('loading') || text.includes('no strikeout data yet') || text.includes('error loading ks');
+    if (stillWaiting && attempt < 4) {
+      clearTimeout(ksTodayRetryTimer);
+      ksTodayRetryTimer = setTimeout(() => loadKsTodayWithRetry(attempt + 1), [750, 1500, 3000, 5000][attempt] || 5000);
+    }
+  }).catch(() => {
+    if (attempt < 4) {
+      clearTimeout(ksTodayRetryTimer);
+      ksTodayRetryTimer = setTimeout(() => loadKsTodayWithRetry(attempt + 1), [750, 1500, 3000, 5000][attempt] || 5000);
+    }
+  });
+}
+
+// Refresh K's Today every 60s
+setInterval(() => { if (document.getElementById('ks-today-props')) loadKsTodayWithRetry(); }, 60000);
 
 
 // ── PROPS LIVE BANNER ────────────────────────────────────────────────
@@ -6811,7 +6835,7 @@ function initPropsTab() {
   propsInitDone = true;
   loadHRPotentialWithRetry();
   loadHRsToday();
-  loadKsToday();
+  loadKsTodayWithRetry();
   // loadKProps/loadGameProps are async — chain a tracker sync after each resolves so the
   // Diamond Report Picks / K Props tracker tables update without depending on the window-hook
   // pattern (which can miss this very first call if it fires before the hook attaches)
@@ -6824,6 +6848,7 @@ setInterval(() => {
   if (propsInitDone) {
     triggerHRPotentialRefresh();
     loadHRsToday();
+    loadKsTodayWithRetry();
   }
 }, 60000);
 
@@ -8462,6 +8487,7 @@ function bootDiamondReportStartup() {
   loadScores();
   initPropsTab();
   triggerHRPotentialRefresh();
+  loadKsTodayWithRetry();
   schedule5amHRRefresh();
 
   // Warm Pitcher Report data in the background so opening the tab does not require
