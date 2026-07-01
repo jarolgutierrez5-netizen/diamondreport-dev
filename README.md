@@ -1,38 +1,25 @@
-# DEV DR DIE v8.5 - Tracker Workflow Script Filename Fix
+# Diamond Intelligence Engine (DIE)
 
-This developer patch fixes the GitHub Actions tracker workflow failure where the workflow runs:
+## Version 8.4 — Props Tab Responsive Layout Fix
 
-```text
-node scripts/update-tracker.mjs
-```
+This developer build updates the Props tab layout while preserving the v8.x modular foundation.
 
-but the repository contains:
+### Updated
+- HR Potential and K's Today display next to each other on mobile and laptop.
+- HR's Today and HRs Completed From Projection display next to each other below the top row.
+- Mobile spacing, typography, and internal scroll behavior were tightened to avoid page overflow.
 
-```text
-scripts/updateTracker.js
-```
+### Deployment
+Primary file to upload:
+- `css/styles.css`
 
-The new `scripts/update-tracker.mjs` file is a wrapper that calls the existing `scripts/updateTracker.js` tracker updater.
+Optional documentation:
+- `README.md`
+- `CHANGELOG.md`
+- `DEPLOYMENT.md`
 
-## Deployment Type
+Do not update data, scripts, workflows, engine, or config for this UI-only release.
 
-Script-only patch.
 
-## Upload / Replace
-
-```text
-scripts/update-tracker.mjs
-```
-
-## Leave Unchanged
-
-```text
-index.html
-css/
-js/
-engine/
-config/
-data/
-.github/
-scripts/updateTracker.js
-```
+## DEV-DR-DIE-v8.6 Tracker Snapshot Pipeline
+The Tracker remains final-only. The workflow now grades finalized rows from `data/today-predictions.json` into `data/tracker.json`. If the snapshot file is empty, Tracker correctly remains 0-0 because there are no saved predictions to grade.

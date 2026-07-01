@@ -1,31 +1,20 @@
-# Deployment
+# DEV-DR-DIE-v8.6-Tracker-Snapshot-Pipeline
 
-## DEV DR DIE v8.5 - Tracker Workflow Script Filename Fix
+## Deployment Type
+Scripts + Data Template
 
-Deployment Type: Script-only patch
+## Replace / Add
+- `scripts/updateTracker.js`
+- `scripts/update-tracker.mjs`
+- `data/today-predictions.json`
 
-Upload/add:
+## Leave Unchanged
+- `index.html`
+- `css/`
+- `js/`
+- `engine/`
+- `config/`
+- `.github/`
 
-```text
-scripts/update-tracker.mjs
-```
-
-Do not change:
-
-```text
-index.html
-css/
-js/
-engine/
-config/
-data/
-.github/
-scripts/updateTracker.js
-```
-
-After upload:
-
-1. Commit the new file.
-2. Go to GitHub Actions.
-3. Re-run `update-tracker`.
-4. Confirm the workflow reaches the commit/update step.
+## Important
+If `data/today-predictions.json` is empty, the workflow can run successfully but Tracker will remain 0-0 because there are no prediction rows to grade.
