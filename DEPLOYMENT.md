@@ -1,28 +1,28 @@
-# Deployment — DEV-DR-DIE-v9.4-Tracker-Duplicate-Dedupe-Fix
+# Deployment - DEV-DR-DIE-v9.5-Tracker-Push-Conflict-Fix
 
-## Deployment Type
-Tracker script only.
-
-## Replace
+## Replace / upload
+- `.github/workflows/update-tracker.yml`
+- `.github/workflows/tracker-update.yml`
+- `.github/workflows/lineup-update.yml`
+- `.github/workflows/statcast-hot-hitters-update.yml`
 - `scripts/updateTracker.js`
 - `README.md`
 - `CHANGELOG.md`
 - `DEPLOYMENT.md`
 - `DIE_ARCHITECTURE.md`
 
-## Leave Unchanged
+## Leave unchanged
 - `index.html`
 - `css/`
 - `js/`
 - `engine/`
 - `config/`
 - `data/`
-- `.github/`
 - `scripts/update-tracker.mjs`
 
-## After Upload
+## After upload
 1. Commit the files.
-2. Run **Update Diamond Report Tracker** manually.
-3. Open the dev site Tracker tab.
-4. Press **Reload Repo Data**.
-5. Confirm Diamond Report Picks no longer shows duplicate rows/counts.
+2. Go to GitHub Actions.
+3. Cancel any currently running data workflows.
+4. Run **Update Diamond Report Tracker** manually.
+5. Confirm the workflow pushes successfully.

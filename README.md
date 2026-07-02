@@ -1,30 +1,14 @@
-# DEV DR DIE v9.4 - Tracker Duplicate Dedupe Fix
+# DEV DR DIE v9.5 - Tracker Push Conflict Fix
 
-Developer-only release.
+Developer-only workflow stability release.
 
-## Summary
-Fixes duplicated rows/counts in **Diamond Report Picks — Daily + All-Time Accuracy** after workflow reruns.
+## Changes
+- Adds one shared GitHub Actions concurrency group for all data-writing workflows.
+- Updates workflow Node runtime to Node 24.
+- Replaces fragile direct `git push`/auto-commit behavior with rebase-safe push retries.
+- Keeps `update-tracker.yml` as the owner of tracker grading.
+- Prevents `tracker-update.yml` from also grading/writing tracker history.
+- Includes the v9.4 tracker dedupe script.
 
-## What changed
-- Added final-row dedupe protection inside `scripts/updateTracker.js`.
-- DR Picks now collapse old team-pair keys and newer `gamePk` keys for the same matchup/date.
-- K Props and HR picks also get identity-based dedupe protection.
-- Tracker remains final-only: no Pending / Wait Final rows are written to history.
-
-## Upload
-Replace only:
-- `scripts/updateTracker.js`
-- `README.md`
-- `CHANGELOG.md`
-- `DEPLOYMENT.md`
-- `DIE_ARCHITECTURE.md`
-
-Leave unchanged:
-- `index.html`
-- `css/`
-- `js/`
-- `engine/`
-- `config/`
-- `data/`
-- `.github/`
-- `scripts/update-tracker.mjs`
+## Deployment
+Upload only the workflow files and `scripts/updateTracker.js` listed in `DEPLOYMENT.md`.

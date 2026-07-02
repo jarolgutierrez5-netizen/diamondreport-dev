@@ -1,13 +1,9 @@
 # Changelog
 
-## DEV-DR-DIE-v9.4-Tracker-Duplicate-Dedupe-Fix
-
-### Fixed
-- Prevented duplicate Diamond Report Picks rows/counts after workflow reruns.
-- Added migration-safe dedupe for old DRP team-pair keys and newer `gamePk` keys.
-- Added dedupe protection for K Props and HR tracker rows.
-
-### Notes
-- No UI files changed.
-- No data files should be hand-edited.
-- Run the tracker workflow once after upload to let the script clean/dedupe `data/tracker.json` automatically.
+## DEV-DR-DIE-v9.5-Tracker-Push-Conflict-Fix
+- Fixed non-fast-forward GitHub Actions push failures.
+- Added shared workflow concurrency across data-writing jobs.
+- Added pull/rebase/push retry logic.
+- Updated workflow Node version from 20 to 24.
+- Kept tracker grading under a single authoritative workflow.
+- Preserved v9.4 tracker duplicate dedupe logic.

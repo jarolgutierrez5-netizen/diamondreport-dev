@@ -1,12 +1,18 @@
-# DIE Architecture Note — v9.4
+# DIE Architecture Note - v9.5
 
-Tracker history remains repository-first and final-only.
+This release stabilizes the Developer repository automation layer.
 
-This release adds identity-based deduplication in `scripts/updateTracker.js` so workflow reruns cannot double-count the same final result.
+## Rule
+Only `update-tracker.yml` owns Tracker grading and tracker history writes.
 
-Canonical tracker identities:
-- DR Picks: date + `gamePk` when available, with migration fallback to date + team pair.
-- K Props: date + `gamePk` + pitcher identity.
-- HR Picks: date + `gamePk` + player identity.
+## Data-writing workflows
+All data-writing workflows share the same concurrency group:
 
-The UI continues to read `data/tracker.json`; no UI logic changed in this release.
+`diamond-report-data-${{ github.ref }}`
+
+This prevents overlapping data jobs from pushing competing commits to `main`.
+
+## Tracker source of truth
+- `data/today-predictions.json` stores the daily snapshot.
+- `data/tracker.json` stores finalized historical tracker records.
+- The website displays repository data only.
