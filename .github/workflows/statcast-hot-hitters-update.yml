@@ -9,22 +9,49 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: diamond-report-data-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   update-statcast-hot-hitters:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout latest main
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+      - name: Sync with remote before update
+        run: |
+          git fetch origin main
+          git pull --ff-only origin main
       - name: Update Statcast hot hitters
         run: node scripts/updateStatcastHotHitters.js
-      - name: Commit updated hot hitter data
+      - name: Commit and push hot hitter data safely
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/statcast-hot-hitters.json
-          git diff --cached --quiet && echo "No Statcast hot hitter changes" || git commit -m "Update Statcast hot hitters"
-          git push
+          if git diff --cached --quiet; then
+            echo "No Statcast hot hitter changes to commit."
+            exit 0
+          fi
+          git commit -m "Update Statcast hot hitters"
+          for attempt in 1 2 3; do
+            echo "Push attempt ${attempt}..."
+            git fetch origin main
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "Statcast data pushed successfully."
+              exit 0
+            fi
+            echo "Push failed; retrying after short delay..."
+            git rebase --abort || true
+            sleep 5
+          done
+          echo "Failed to push Statcast data after retries."
+          exit 1

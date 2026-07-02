@@ -3,7 +3,6 @@ name: Hourly Lineup Intelligence
 on:
   schedule:
     # Hourly lineup checks from 7:00 AM through 11:00 PM Central during daylight saving time.
-    # GitHub cron is UTC. During standard time this runs one hour earlier in Central time.
     - cron: "0 12-23 * * *"
     - cron: "0 0-4 * * *"
   workflow_dispatch:
@@ -17,25 +16,50 @@ permissions:
   contents: write
 
 concurrency:
-  group: lineup-intelligence-${{ github.ref }}
-  cancel-in-progress: true
+  group: diamond-report-data-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   update-lineups:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout latest main
+        uses: actions/checkout@v4
         with:
-          node-version: "20"
+          ref: main
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Sync with remote before update
+        run: |
+          git fetch origin main
+          git pull --ff-only origin main
       - name: Update MLB lineups and intelligence
         env:
           LINEUP_DATE: ${{ github.event.inputs.lineup_date }}
         run: node scripts/updateLineups.js
-      - name: Commit lineup data
+      - name: Commit and push lineup data safely
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/lineups.json data/lineup-intelligence.json
-          git diff --cached --quiet || git commit -m "Update MLB lineup intelligence"
-          git push
+          if git diff --cached --quiet; then
+            echo "No lineup changes to commit."
+            exit 0
+          fi
+          git commit -m "Update MLB lineup intelligence"
+          for attempt in 1 2 3; do
+            echo "Push attempt ${attempt}..."
+            git fetch origin main
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "Lineup data pushed successfully."
+              exit 0
+            fi
+            echo "Push failed; retrying after short delay..."
+            git rebase --abort || true
+            sleep 5
+          done
+          echo "Failed to push lineup data after retries."
+          exit 1

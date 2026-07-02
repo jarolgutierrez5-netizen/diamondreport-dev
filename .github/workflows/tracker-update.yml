@@ -2,7 +2,7 @@ name: Repo Data Sync
 
 on:
   schedule:
-    # Repo data refresh for lineups/model support only. Tracker grading is owned by update-tracker.yml.
+    # Hourly daytime repository data sync. Tracker grading is owned by update-tracker.yml.
     - cron: "0 12-23 * * *"
     - cron: "0 0-5 * * *"
   workflow_dispatch:
@@ -11,23 +11,48 @@ permissions:
   contents: write
 
 concurrency:
-  group: repo-data-sync-${{ github.ref }}
-  cancel-in-progress: true
+  group: diamond-report-data-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   update-repo-data:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout latest main
+        uses: actions/checkout@v4
         with:
-          node-version: "20"
+          ref: main
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Sync with remote before update
+        run: |
+          git fetch origin main
+          git pull --ff-only origin main
       - name: Update lineups data
         run: node scripts/updateLineups.js
-      - name: Commit repo data changes
+      - name: Commit and push repo data safely
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/model-data.json data/lineups.json
-          git diff --cached --quiet || git commit -m "Sync Diamond Report lineup data"
-          git push
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/lineups.json data/lineup-intelligence.json data/model-data.json
+          if git diff --cached --quiet; then
+            echo "No repo data changes to commit."
+            exit 0
+          fi
+          git commit -m "Sync Diamond Report repo data"
+          for attempt in 1 2 3; do
+            echo "Push attempt ${attempt}..."
+            git fetch origin main
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "Repo data pushed successfully."
+              exit 0
+            fi
+            echo "Push failed; retrying after short delay..."
+            git rebase --abort || true
+            sleep 5
+          done
+          echo "Failed to push repo data after retries."
+          exit 1
