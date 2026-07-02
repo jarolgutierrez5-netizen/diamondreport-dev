@@ -1,25 +1,44 @@
-# DEPLOYMENT — DEV-DR-DIE-v9.2-Add-Tracker-Tab
+# Deployment
+
+## Build
+DEV-DR-DIE-v9.3-HR-K-Tracker-Snapshot-Fix
 
 ## Deployment Type
-Developer UI + workflow package
+Tracker Pipeline Script Update
 
 ## Upload / Replace
-- index.html
-- css/styles.css
-- .github/workflows/update-tracker.yml
-- .github/workflows/tracker-update.yml
-- scripts/updateTracker.js
-- README.md
-- CHANGELOG.md
-- DEPLOYMENT.md
-- DIE_ARCHITECTURE.md
 
-## Do Not Replace
-- data/
-- engine/
-- config/
-- js/app.js
-- scripts/update-tracker.mjs
+```text
+scripts/updateTracker.js
+README.md
+CHANGELOG.md
+DEPLOYMENT.md
+```
 
-## Notes
-Tracker tab and Tracker section are included. Tracker remains repository-source/final-only.
+## Leave Unchanged
+
+```text
+index.html
+css/
+js/
+engine/
+config/
+data/tracker.json
+data/today-predictions.json
+.github/
+scripts/update-tracker.mjs
+```
+
+## After Upload
+
+1. Commit the changes.
+2. Run **Update Diamond Report Tracker** manually in GitHub Actions.
+3. Check `data/today-predictions.json`.
+   - `drp` should have rows.
+   - `kprop` should have rows if probable starters are available.
+   - `hr` should have rows if `data/lineups.json` has lineup data.
+4. After games finalize, check `data/tracker.json`.
+   - `market.drp` should update.
+   - `market.kprop` should update.
+   - `picks` should update for HR.
+5. Open the dev Tracker tab and press **Reload Repo Data**.

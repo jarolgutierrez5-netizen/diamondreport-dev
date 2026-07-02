@@ -1,34 +1,33 @@
-# Diamond Intelligence Engine Architecture
+# DIE Architecture Notes
 
-## v8.1 UI / Engine Separation
+## DEV-DR-DIE-v9.3-HR-K-Tracker-Snapshot-Fix
 
-This release starts separating the presentation layer from the engine layer.
+The Tracker remains a historical, final-only data store.
 
-## Safe to edit
+### Source of truth
 
-- `index.html`
-- `css/styles.css`
+```text
+data/tracker.json
+```
 
-## Protected unless changing engine behavior
+### Snapshot source
 
-- `engine/`
-- `config/`
-- `data/`
-- `scripts/`
-- `.github/`
+```text
+data/today-predictions.json
+```
 
-## Current status
+### Grading script
 
-- CSS has been extracted from `index.html` into `css/styles.css`.
-- `js/app.js` has been added as a non-invasive app entry point.
-- Engine modules have been scaffolded for future migration.
-- Existing production logic remains intact to reduce risk.
+```text
+scripts/updateTracker.js
+```
 
-## Rule
+### Supported tracker markets
 
-The Tracker should use the repository as the source of truth and should only display finalized historical data.
+- Diamond Report Picks (`market.drp`)
+- K Props (`market.kprop`)
+- HR Picks (`picks`)
 
+### Rule
 
-## DEV-DR-DIE-v9.1 Layout Formatting Merge
-
-The Developer UI continues to use the existing `index.html` and modular `css/styles.css` structure. Layout formatting was imported from `index(22).html` into the stylesheet only, while Developer Tracker and workflow logic remain preserved.
+Pending rows are allowed in `today-predictions.json`, but only finalized win/loss records are written into `tracker.json`.
