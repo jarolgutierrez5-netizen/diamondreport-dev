@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  DEV DR DIE v9.3 - HR/K Tracker Snapshot Fix
+  DEV DR DIE v9.4 - Tracker Duplicate Dedupe Fix
 
   Final-only Tracker pipeline:
   1) Ensure data/today-predictions.json has a same-day prediction snapshot.
@@ -12,6 +12,7 @@
   - Diamond Report Picks (DRP) are generated from today's MLB schedule.
   - K Props are generated from probable starters and graded against final boxscore strikeouts.
   - HR picks are generated from lineup data and graded against final boxscore home runs.
+  - Final tracker rows are deduplicated on every run so reruns never double-count games.
   Tracker history remains final-only: pending/push rows are never stored in tracker.json.
 */
 const fs = require('fs');
@@ -34,10 +35,60 @@ function isWinLoss(r){ const x = normResult(r?.result ?? r?.status ?? r?.outcome
 function finalRows(rows){ return (rows || []).filter(isWinLoss).map(r => ({ ...r, result: normResult(r.result ?? r.status ?? r.outcome ?? r.grade) })); }
 function summaryFromRows(rows){ const final = finalRows(rows); const wins = final.filter(r => r.result === 'win').length; return { wins, losses: Math.max(final.length - wins, 0), total: final.length }; }
 function keyOf(row, type){
-  if (row.gamePk) return `${row.date || todayCT()}|${type}|${row.gamePk}`;
-  return row.key || `${row.date || todayCT()}|${type}|${row.label || row.player || row.pitcher || row.game || ''}|${row.pick || ''}`;
+  const date = row.date || todayCT();
+  if (type === 'DRP') {
+    if (row.gamePk) return `${date}|DRP|${row.gamePk}`;
+    const teams = extractTeams(row);
+    if (teams.length >= 2) return `${date}|DRP|${teams.map(normalizeTeam).sort().join('-')}`;
+  }
+  if (type === 'KPROP') {
+    if (row.gamePk && (row.pitcherId || row.label || row.pitcher)) return `${date}|KPROP|${row.gamePk}|${row.pitcherId || String(row.label || row.pitcher || '').toLowerCase()}`;
+  }
+  if (type === 'HR') {
+    if (row.gamePk && (row.playerId || row.player)) return `${date}|HR|${row.gamePk}|${row.playerId || String(row.player || '').toLowerCase()}`;
+  }
+  return row.key || `${date}|${type}|${row.label || row.player || row.pitcher || row.game || ''}|${row.pick || ''}`;
 }
-function upsertFinalRow(arr, row, type){ if (!isWinLoss(row)) return false; row.key = keyOf(row, type); row.result = normResult(row.result ?? row.status ?? row.outcome ?? row.grade); const idx = arr.findIndex(x => keyOf(x, type) === row.key); if (idx >= 0) arr[idx] = { ...arr[idx], ...row }; else arr.push(row); return true; }
+function pairKeyOf(row, type){
+  const date = row.date || todayCT();
+  if (type === 'DRP') {
+    const teams = extractTeams(row);
+    if (teams.length >= 2) return `${date}|DRP|PAIR|${teams.map(normalizeTeam).sort().join('-')}`;
+  }
+  if (type === 'KPROP') return `${date}|KPROP|PITCHER|${row.pitcherId || String(row.label || row.pitcher || '').toLowerCase()}`;
+  if (type === 'HR') return `${date}|HR|PLAYER|${row.playerId || String(row.player || '').toLowerCase()}|${normalizeTeam(row.team)}`;
+  return '';
+}
+function sameTrackerRow(a, b, type){
+  if (!a || !b) return false;
+  if (keyOf(a, type) === keyOf(b, type)) return true;
+  // Migration guard: collapse old team-pair DRP keys with newer gamePk DRP keys for the same date/game.
+  if (type === 'DRP') {
+    const ap = pairKeyOf(a, type);
+    const bp = pairKeyOf(b, type);
+    if (ap && bp && ap === bp) return true;
+  }
+  return false;
+}
+function upsertFinalRow(arr, row, type){
+  if (!isWinLoss(row)) return false;
+  row.key = keyOf(row, type);
+  row.result = normResult(row.result ?? row.status ?? row.outcome ?? row.grade);
+  const idx = arr.findIndex(x => sameTrackerRow(x, row, type));
+  if (idx >= 0) arr[idx] = { ...arr[idx], ...row, key: keyOf(row, type) };
+  else arr.push(row);
+  return true;
+}
+function dedupeFinalRows(rows, type){
+  const out = [];
+  for (const raw of finalRows(rows)) {
+    const row = { ...raw, key: keyOf(raw, type) };
+    const idx = out.findIndex(x => sameTrackerRow(x, row, type));
+    if (idx >= 0) out[idx] = { ...out[idx], ...row, key: keyOf(row, type) };
+    else out.push(row);
+  }
+  return out;
+}
 function extractTeams(rec){
   const teams = Array.isArray(rec.teams) ? rec.teams.map(normalizeTeam).filter(Boolean) : [];
   if (teams.length >= 2) return teams.slice(0,2);
@@ -435,8 +486,9 @@ async function main(){
   }
 
   tracker.picks = (tracker.picks || []).filter(p => p.final === true);
-  tracker.market.drp = finalRows(tracker.market.drp);
-  tracker.market.kprop = finalRows(tracker.market.kprop);
+  tracker.market.drp = dedupeFinalRows(tracker.market.drp, 'DRP');
+  tracker.market.kprop = dedupeFinalRows(tracker.market.kprop, 'KPROP');
+  tracker.picks = dedupeFinalRows(tracker.picks, 'HR');
   const hrWins = tracker.picks.filter(p => p.hit === true).length;
   tracker.allTime.hr = { wins: hrWins, losses: Math.max(tracker.picks.length - hrWins, 0), total: tracker.picks.length };
   tracker.allTime.drp = summaryFromRows(tracker.market.drp);
@@ -463,7 +515,7 @@ async function main(){
   daily.version ||= 1; daily.results ||= []; daily.lastCheckedAt = now; daily.currentDateCT = date; writeJson(dailyPath, daily);
   const model = readJson(modelPath, { version:1, notes:[] });
   model.version ||= 1; model.generatedAt = now; model.notes ||= [];
-  model.notes = ['Tracker sync uses final-only historical rows.', 'DR Picks, K Props, and HR picks are auto-snapshotted if data/today-predictions.json is missing rows for the day.', 'K Props are graded from final boxscore strikeouts. HR picks are graded from final boxscore home runs.'];
+  model.notes = ['Tracker sync uses final-only historical rows.', 'DR Picks, K Props, and HR picks are auto-snapshotted if data/today-predictions.json is missing rows for the day.', 'K Props are graded from final boxscore strikeouts. HR picks are graded from final boxscore home runs.', 'Tracker rows are deduplicated by game/player identity on every run to prevent workflow reruns from double-counting results.'];
   writeJson(modelPath, model);
   console.log(`Tracker sync complete. Snapshot ${snapInfo.created ? 'created' : 'existing'}: DRP=${snapshotDrp.length}, K=${snapshotK.length}, HR=${snapshotHr.length}. Added/updated: DRP=${addedDrp}, K=${addedK}, HR=${addedHr}. Totals: DRP ${tracker.allTime.drp.wins}-${tracker.allTime.drp.losses}, K ${tracker.allTime.kprop.wins}-${tracker.allTime.kprop.losses}, HR ${tracker.allTime.hr.wins}-${tracker.allTime.hr.losses}.`);
 }
