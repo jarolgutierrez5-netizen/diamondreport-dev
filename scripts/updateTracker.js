@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  DEV DR DIE v8.7 - Auto Save Today Predictions
+  DEV DR DIE v9.0 - Workflow Consolidation
 
   Final-only Tracker pipeline:
   1) Ensure data/today-predictions.json has a same-day prediction snapshot.
@@ -33,7 +33,10 @@ function normResult(v){ const s = String(v || '').toLowerCase(); if (['win','rig
 function isWinLoss(r){ const x = normResult(r?.result ?? r?.status ?? r?.outcome ?? r?.grade); return x === 'win' || x === 'loss'; }
 function finalRows(rows){ return (rows || []).filter(isWinLoss).map(r => ({ ...r, result: normResult(r.result ?? r.status ?? r.outcome ?? r.grade) })); }
 function summaryFromRows(rows){ const final = finalRows(rows); const wins = final.filter(r => r.result === 'win').length; return { wins, losses: Math.max(final.length - wins, 0), total: final.length }; }
-function keyOf(row, type){ return row.key || `${row.date || todayCT()}|${type}|${row.label || row.player || row.pitcher || row.game || ''}|${row.pick || ''}`; }
+function keyOf(row, type){
+  if (row.gamePk) return `${row.date || todayCT()}|${type}|${row.gamePk}`;
+  return row.key || `${row.date || todayCT()}|${type}|${row.label || row.player || row.pitcher || row.game || ''}|${row.pick || ''}`;
+}
 function upsertFinalRow(arr, row, type){ if (!isWinLoss(row)) return false; row.key = keyOf(row, type); row.result = normResult(row.result ?? row.status ?? row.outcome ?? row.grade); const idx = arr.findIndex(x => keyOf(x, type) === row.key); if (idx >= 0) arr[idx] = { ...arr[idx], ...row }; else arr.push(row); return true; }
 function extractTeams(rec){
   const teams = Array.isArray(rec.teams) ? rec.teams.map(normalizeTeam).filter(Boolean) : [];
@@ -117,7 +120,8 @@ async function buildDrpSnapshot(date){
     const homePct = 100 - awayPct;
     const pick = awayPct > homePct ? g.away : g.home;
     rows.push({
-      key: `${date}|DRP|${[g.away, g.home].sort().join('-')}`,
+      key: `${date}|DRP|${g.gamePk}`,
+      gamePk: g.gamePk,
       type: 'drp',
       label: `${g.away} @ ${g.home}`,
       pick,
@@ -126,7 +130,7 @@ async function buildDrpSnapshot(date){
       result: 'pending',
       confidencePct: pick === g.away ? awayPct : homePct,
       source: 'auto-snapshot-github-action',
-      snapshotVersion: '8.7'
+      snapshotVersion: '9.0'
     });
   }
   return rows;
@@ -159,7 +163,14 @@ async function ensureSnapshot(date){
   writeJson(snapshotPath, next);
   return { snapshot: next, created: true, drpCreated: drp.length };
 }
-function findGame(games, a, b){ a = normalizeTeam(a); b = normalizeTeam(b); return games.find(g => (g.away === a && g.home === b) || (g.away === b && g.home === a)); }
+function findGame(games, a, b, gamePk){
+  if (gamePk) {
+    const byPk = games.find(g => String(g.gamePk) === String(gamePk));
+    if (byPk) return byPk;
+  }
+  a = normalizeTeam(a); b = normalizeTeam(b);
+  return games.find(g => (g.away === a && g.home === b) || (g.away === b && g.home === a));
+}
 async function gradeDrpSnapshot(snapshotRows){
   const dates = [...new Set((snapshotRows || []).map(r => r.date || todayCT()))];
   const schedules = new Map();
@@ -169,10 +180,10 @@ async function gradeDrpSnapshot(snapshotRows){
     const date = rec.date || todayCT();
     const [a,b] = extractTeams(rec);
     if (!a || !b) continue;
-    const game = findGame(schedules.get(date) || [], a, b);
+    const game = findGame(schedules.get(date) || [], a, b, rec.gamePk);
     if (!game || !game.isFinal || !game.winner) continue;
     const pick = normalizeTeam(rec.pick);
-    graded.push({ ...rec, type:'drp', date, result: pick === game.winner ? 'win':'loss', finalWinner: game.winner, finalScore: `${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}`, gradedAt: nowIso(), gradingSource:'mlb-stats-api-final-score', key: rec.key || `${date}|DRP|${[a,b].sort().join('-')}` });
+    graded.push({ ...rec, type:'drp', date, gamePk: game.gamePk || rec.gamePk, result: pick === game.winner ? 'win':'loss', finalWinner: game.winner, finalScore: `${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}`, gradedAt: nowIso(), gradingSource:'mlb-stats-api-final-score', key: `${date}|DRP|${game.gamePk || rec.gamePk || [a,b].sort().join('-')}` });
   }
   return graded;
 }
