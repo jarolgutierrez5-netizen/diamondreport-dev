@@ -1,33 +1,12 @@
-# DIE Architecture Notes
+# DIE Architecture Note — v9.4
 
-## DEV-DR-DIE-v9.3-HR-K-Tracker-Snapshot-Fix
+Tracker history remains repository-first and final-only.
 
-The Tracker remains a historical, final-only data store.
+This release adds identity-based deduplication in `scripts/updateTracker.js` so workflow reruns cannot double-count the same final result.
 
-### Source of truth
+Canonical tracker identities:
+- DR Picks: date + `gamePk` when available, with migration fallback to date + team pair.
+- K Props: date + `gamePk` + pitcher identity.
+- HR Picks: date + `gamePk` + player identity.
 
-```text
-data/tracker.json
-```
-
-### Snapshot source
-
-```text
-data/today-predictions.json
-```
-
-### Grading script
-
-```text
-scripts/updateTracker.js
-```
-
-### Supported tracker markets
-
-- Diamond Report Picks (`market.drp`)
-- K Props (`market.kprop`)
-- HR Picks (`picks`)
-
-### Rule
-
-Pending rows are allowed in `today-predictions.json`, but only finalized win/loss records are written into `tracker.json`.
+The UI continues to read `data/tracker.json`; no UI logic changed in this release.
