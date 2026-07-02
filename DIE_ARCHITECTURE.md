@@ -27,3 +27,8 @@ This release starts separating the presentation layer from the engine layer.
 ## Rule
 
 The Tracker should use the repository as the source of truth and should only display finalized historical data.
+
+
+## DEV-DR-DIE-v9.1 Layout Formatting Merge
+
+The Developer UI continues to use the existing `index.html` and modular `css/styles.css` structure. Layout formatting was imported from `index(22).html` into the stylesheet only, while Developer Tracker and workflow logic remain preserved.

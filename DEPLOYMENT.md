@@ -1,20 +1,25 @@
-# DEV-DR-DIE-v8.6-Tracker-Snapshot-Pipeline
+# DEPLOYMENT — DEV-DR-DIE-v9.2-Add-Tracker-Tab
 
 ## Deployment Type
-Scripts + Data Template
+Developer UI + workflow package
 
-## Replace / Add
-- `scripts/updateTracker.js`
-- `scripts/update-tracker.mjs`
-- `data/today-predictions.json`
+## Upload / Replace
+- index.html
+- css/styles.css
+- .github/workflows/update-tracker.yml
+- .github/workflows/tracker-update.yml
+- scripts/updateTracker.js
+- README.md
+- CHANGELOG.md
+- DEPLOYMENT.md
+- DIE_ARCHITECTURE.md
 
-## Leave Unchanged
-- `index.html`
-- `css/`
-- `js/`
-- `engine/`
-- `config/`
-- `.github/`
+## Do Not Replace
+- data/
+- engine/
+- config/
+- js/app.js
+- scripts/update-tracker.mjs
 
-## Important
-If `data/today-predictions.json` is empty, the workflow can run successfully but Tracker will remain 0-0 because there are no prediction rows to grade.
+## Notes
+Tracker tab and Tracker section are included. Tracker remains repository-source/final-only.
