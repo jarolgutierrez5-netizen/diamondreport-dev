@@ -1,10 +1,6 @@
-# Deployment - DEV-DR-DIE-v9.5-Tracker-Push-Conflict-Fix
+# Deployment - DEV-DR-DIE-v9.6-Full-Slate-Snapshot-Fix
 
 ## Replace / upload
-- `.github/workflows/update-tracker.yml`
-- `.github/workflows/tracker-update.yml`
-- `.github/workflows/lineup-update.yml`
-- `.github/workflows/statcast-hot-hitters-update.yml`
 - `scripts/updateTracker.js`
 - `README.md`
 - `CHANGELOG.md`
@@ -18,11 +14,12 @@
 - `engine/`
 - `config/`
 - `data/`
+- `.github/`
 - `scripts/update-tracker.mjs`
 
 ## After upload
 1. Commit the files.
 2. Go to GitHub Actions.
-3. Cancel any currently running data workflows.
-4. Run **Update Diamond Report Tracker** manually.
-5. Confirm the workflow pushes successfully.
+3. Run **Update Diamond Report Tracker** manually.
+4. Open `data/today-predictions.json` and confirm the DRP row count increases to the full slate.
+5. Open the dev site and press **Reload Repo Data**.

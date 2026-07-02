@@ -1,18 +1,17 @@
-# DIE Architecture Note - v9.5
+# DIE Architecture Note - v9.6
 
-This release stabilizes the Developer repository automation layer.
+This release improves the Developer tracker snapshot layer.
 
-## Rule
-Only `update-tracker.yml` owns Tracker grading and tracker history writes.
+## Problem fixed
+A same-day snapshot could be created while only part of the MLB slate was available. Because the script previously only created DRP/K/HR rows when the snapshot section was empty, later workflow runs reused the partial snapshot and never added missing games.
 
-## Data-writing workflows
-All data-writing workflows share the same concurrency group:
+## New rule
+Every tracker workflow run rebuilds the available same-day slate and merges in missing rows.
 
-`diamond-report-data-${{ github.ref }}`
+## Data flow
+- `data/today-predictions.json` remains the daily prediction snapshot.
+- `scripts/updateTracker.js` now tops off missing DRP/K/HR snapshot rows on each run.
+- `data/tracker.json` still stores finalized historical records only.
 
-This prevents overlapping data jobs from pushing competing commits to `main`.
-
-## Tracker source of truth
-- `data/today-predictions.json` stores the daily snapshot.
-- `data/tracker.json` stores finalized historical tracker records.
-- The website displays repository data only.
+## Still protected
+The website UI remains unchanged. This release does not modify `index.html`, CSS, engine files, or data files directly.
