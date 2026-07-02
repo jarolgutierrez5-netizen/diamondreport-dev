@@ -2,8 +2,7 @@ name: Repo Data Sync
 
 on:
   schedule:
-    # Morning seed/check, hourly daytime refreshes, and late-night grading window.
-    # Times are UTC. This approximates 7 AM through midnight Central depending on DST.
+    # Repo data refresh for lineups/model support only. Tracker grading is owned by update-tracker.yml.
     - cron: "0 12-23 * * *"
     - cron: "0 0-5 * * *"
   workflow_dispatch:
@@ -23,14 +22,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Update tracker data
-        run: node scripts/updateTracker.js
       - name: Update lineups data
         run: node scripts/updateLineups.js
       - name: Commit repo data changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/tracker.json data/daily-results.json data/model-data.json data/lineups.json
-          git diff --cached --quiet || git commit -m "Sync Diamond Report data"
+          git add data/model-data.json data/lineups.json
+          git diff --cached --quiet || git commit -m "Sync Diamond Report lineup data"
           git push
