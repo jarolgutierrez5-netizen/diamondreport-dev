@@ -1,7 +1,7 @@
 {
   "version": 6,
   "date": "2026-07-02",
-  "generatedAt": "2026-07-02T10:19:43.670Z",
+  "generatedAt": "2026-07-02T10:20:02.166Z",
   "timezone": "America/Chicago",
   "status": {
     "allConfirmed": false,
@@ -22,7 +22,7 @@
       "status": "Scheduled",
       "matchup": "DET @ TEX",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:44.674Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.495Z",
       "teams": {
         "away": {
           "id": 116,
@@ -233,7 +233,7 @@
       "status": "Scheduled",
       "matchup": "LAA @ SEA",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:44.837Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.545Z",
       "teams": {
         "away": {
           "id": 108,
@@ -444,7 +444,7 @@
       "status": "Scheduled",
       "matchup": "PIT @ PHI",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:43.670Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.166Z",
       "teams": {
         "away": {
           "id": 134,
@@ -655,7 +655,7 @@
       "status": "Scheduled",
       "matchup": "CIN @ MIL",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:43.847Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.231Z",
       "teams": {
         "away": {
           "id": 113,
@@ -866,7 +866,7 @@
       "status": "Scheduled",
       "matchup": "SD @ LAD",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:44.996Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.595Z",
       "teams": {
         "away": {
           "id": 135,
@@ -1077,7 +1077,7 @@
       "status": "Scheduled",
       "matchup": "TB @ KC",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:44.511Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.442Z",
       "teams": {
         "away": {
           "id": 139,
@@ -1288,7 +1288,7 @@
       "status": "Scheduled",
       "matchup": "MIA @ COL",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:44.008Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.283Z",
       "teams": {
         "away": {
           "id": 146,
@@ -1499,7 +1499,7 @@
       "status": "Scheduled",
       "matchup": "CWS @ CLE",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:44.188Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.336Z",
       "teams": {
         "away": {
           "id": 145,
@@ -1710,7 +1710,7 @@
       "status": "Scheduled",
       "matchup": "STL @ ATL",
       "allLineupsConfirmed": false,
-      "lastCheckedAt": "2026-07-02T10:19:44.347Z",
+      "lastCheckedAt": "2026-07-02T10:20:02.389Z",
       "teams": {
         "away": {
           "id": 138,
