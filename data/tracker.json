@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "generatedAt": "2026-07-01T20:31:34.573Z",
+  "version": 7,
+  "generatedAt": "2026-07-02T00:01:36.297Z",
   "resetAt": "2026-07-01T16:06:52Z",
   "resetDate": "2026-07-01",
   "resetReason": "User requested a clean historical Tracker reset. Tracker starts recording finalized records from reset date forward.",
@@ -9,7 +9,122 @@
   "teams": {},
   "days": {},
   "market": {
-    "drp": [],
+    "drp": [
+      {
+        "key": "2026-07-01|DRP|BAL-CWS",
+        "type": "drp",
+        "label": "CWS @ BAL",
+        "pick": "BAL",
+        "teams": [
+          "CWS",
+          "BAL"
+        ],
+        "date": "2026-07-01",
+        "result": "win",
+        "confidencePct": 58,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "8.7",
+        "finalWinner": "BAL",
+        "finalScore": "CWS 1 - BAL 6",
+        "gradedAt": "2026-07-02T00:01:37.648Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      },
+      {
+        "key": "2026-07-01|DRP|CLE-TEX",
+        "type": "drp",
+        "label": "TEX @ CLE",
+        "pick": "CLE",
+        "teams": [
+          "TEX",
+          "CLE"
+        ],
+        "date": "2026-07-01",
+        "result": "win",
+        "confidencePct": 53,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "8.7",
+        "finalWinner": "CLE",
+        "finalScore": "TEX 4 - CLE 9",
+        "gradedAt": "2026-07-02T00:01:37.648Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      },
+      {
+        "key": "2026-07-01|DRP|BOS-WSH",
+        "type": "drp",
+        "label": "WSH @ BOS",
+        "pick": "BOS",
+        "teams": [
+          "WSH",
+          "BOS"
+        ],
+        "date": "2026-07-01",
+        "result": "loss",
+        "confidencePct": 52,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "8.7",
+        "finalWinner": "WSH",
+        "finalScore": "WSH 10 - BOS 2",
+        "gradedAt": "2026-07-02T00:01:37.648Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      },
+      {
+        "key": "2026-07-01|DRP|DET-NYY",
+        "type": "drp",
+        "label": "DET @ NYY",
+        "pick": "NYY",
+        "teams": [
+          "DET",
+          "NYY"
+        ],
+        "date": "2026-07-01",
+        "result": "loss",
+        "confidencePct": 50,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "8.7",
+        "finalWinner": "DET",
+        "finalScore": "DET 6 - NYY 2",
+        "gradedAt": "2026-07-02T00:01:37.648Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      },
+      {
+        "key": "2026-07-01|DRP|CHC-SD",
+        "type": "drp",
+        "label": "SD @ CHC",
+        "pick": "CHC",
+        "teams": [
+          "SD",
+          "CHC"
+        ],
+        "date": "2026-07-01",
+        "result": "win",
+        "confidencePct": 51,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "8.7",
+        "finalWinner": "CHC",
+        "finalScore": "SD 3 - CHC 23",
+        "gradedAt": "2026-07-02T00:01:37.648Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      },
+      {
+        "key": "2026-07-01|DRP|NYM-TOR",
+        "type": "drp",
+        "label": "NYM @ TOR",
+        "pick": "TOR",
+        "teams": [
+          "NYM",
+          "TOR"
+        ],
+        "date": "2026-07-01",
+        "result": "win",
+        "confidencePct": 56,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "8.7",
+        "finalWinner": "TOR",
+        "finalScore": "NYM 3 - TOR 9",
+        "gradedAt": "2026-07-02T00:01:37.648Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      }
+    ],
     "kprop": []
   },
   "dailyResults": [],
@@ -18,20 +133,26 @@
     "repoSync": true,
     "repoSyncNote": "Historical tracker sync: only final graded records count toward all-time accuracy. Pending rows are ignored by summaries and hidden by the UI.",
     "currentDateCT": "2026-07-01",
-    "lastGithubActionRun": "2026-07-01T20:31:34.573Z",
-    "allTimeSummaryUpdatedAt": "2026-07-01T20:31:34.573Z",
-    "trackingMode": "final-only-with-prediction-snapshot",
+    "lastGithubActionRun": "2026-07-02T00:01:36.297Z",
+    "allTimeSummaryUpdatedAt": "2026-07-02T00:01:36.297Z",
+    "trackingMode": "final-only-auto-snapshot",
     "localStorageHistoryAllowed": false,
     "pendingRowsAllowed": false,
     "lastDrpRowsAutoGraded": 0,
     "lastSnapshotSource": "data/today-predictions.json",
     "snapshotRowsSeen": {
-      "drp": 0,
+      "drp": 14,
       "kprop": 0,
       "hr": 0
     },
     "rowsAddedOrUpdated": {
-      "drp": 0,
+      "drp": 6,
+      "kprop": 0,
+      "hr": 0
+    },
+    "snapshotCreatedThisRun": true,
+    "snapshotRowsCreatedThisRun": {
+      "drp": 14,
       "kprop": 0,
       "hr": 0
     }
@@ -48,9 +169,9 @@
       "total": 0
     },
     "drp": {
-      "wins": 0,
-      "losses": 0,
-      "total": 0
+      "wins": 4,
+      "losses": 2,
+      "total": 6
     },
     "drLine": {
       "over": 0,

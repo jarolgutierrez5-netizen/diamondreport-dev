@@ -1,7 +1,7 @@
 {
   "version": 6,
   "date": "2026-07-01",
-  "generatedAt": "2026-07-01T22:56:46.245Z",
+  "generatedAt": "2026-07-02T00:01:37.963Z",
   "timezone": "America/Chicago",
   "status": {
     "allConfirmed": true,
@@ -10,7 +10,7 @@
     "pendingTeams": 0,
     "confirmedGames": 14,
     "totalGames": 14,
-    "skippedConfirmedTeams": 13,
+    "skippedConfirmedTeams": 28,
     "message": "All MLB batting lineups are confirmed. HR Projections, Pitcher Reports, and K Props can use official lineups."
   },
   "note": "Official MLB batting order is used as soon as the Stats API boxscore exposes at least nine batters. Confirmed teams are preserved and skipped on later hourly runs. Projected teams keep updating until confirmed.",
@@ -22,7 +22,7 @@
       "status": "Final",
       "matchup": "NYM @ TOR",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.246Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 121,
@@ -919,7 +919,7 @@
       "status": "In Progress",
       "matchup": "PIT @ PHI",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.246Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 134,
@@ -1361,7 +1361,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.264Z"
+          "confirmedAt": "2026-07-01T22:56:46.264Z",
+          "skippedBecauseAlreadyConfirmed": true
         },
         "home": {
           "id": 143,
@@ -1803,7 +1804,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.264Z"
+          "confirmedAt": "2026-07-01T22:56:46.264Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     },
@@ -1814,7 +1816,7 @@
       "status": "Final",
       "matchup": "DET @ NYY",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.246Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 116,
@@ -2708,10 +2710,10 @@
       "gamePk": 823767,
       "date": "2026-07-01",
       "gameDate": "2026-07-02T00:10:00Z",
-      "status": "Pre-Game",
+      "status": "Warmup",
       "matchup": "CIN @ MIL",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.297Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 113,
@@ -3153,7 +3155,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.309Z"
+          "confirmedAt": "2026-07-01T22:56:46.309Z",
+          "skippedBecauseAlreadyConfirmed": true
         },
         "home": {
           "id": 158,
@@ -3595,7 +3598,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.309Z"
+          "confirmedAt": "2026-07-01T22:56:46.309Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     },
@@ -3603,10 +3607,10 @@
       "gamePk": 824094,
       "date": "2026-07-01",
       "gameDate": "2026-07-01T23:40:00Z",
-      "status": "Pre-Game",
+      "status": "In Progress",
       "matchup": "TB @ KC",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.277Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 139,
@@ -4048,7 +4052,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.288Z"
+          "confirmedAt": "2026-07-01T22:56:46.288Z",
+          "skippedBecauseAlreadyConfirmed": true
         },
         "home": {
           "id": 118,
@@ -4490,7 +4495,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.288Z"
+          "confirmedAt": "2026-07-01T22:56:46.288Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     },
@@ -4498,10 +4504,10 @@
       "gamePk": 824174,
       "date": "2026-07-01",
       "gameDate": "2026-07-02T00:10:00Z",
-      "status": "Pre-Game",
+      "status": "Warmup",
       "matchup": "MIN @ HOU",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.288Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 142,
@@ -5386,7 +5392,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.297Z"
+          "confirmedAt": "2026-07-01T22:56:46.297Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     },
@@ -5397,7 +5404,7 @@
       "status": "Pre-Game",
       "matchup": "MIA @ COL",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.309Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 146,
@@ -5839,7 +5846,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.321Z"
+          "confirmedAt": "2026-07-01T22:56:46.321Z",
+          "skippedBecauseAlreadyConfirmed": true
         },
         "home": {
           "id": 115,
@@ -6281,7 +6289,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.321Z"
+          "confirmedAt": "2026-07-01T22:56:46.321Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     },
@@ -6292,7 +6301,7 @@
       "status": "Final",
       "matchup": "TEX @ CLE",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.245Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 140,
@@ -7189,7 +7198,7 @@
       "status": "Final",
       "matchup": "SD @ CHC",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.246Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 135,
@@ -8086,7 +8095,7 @@
       "status": "Final",
       "matchup": "WSH @ BOS",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.246Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 120,
@@ -8983,7 +8992,7 @@
       "status": "Final",
       "matchup": "CWS @ BAL",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.245Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.963Z",
       "teams": {
         "away": {
           "id": 145,
@@ -9877,10 +9886,10 @@
       "gamePk": 824905,
       "date": "2026-07-01",
       "gameDate": "2026-07-01T23:15:00Z",
-      "status": "Warmup",
+      "status": "In Progress",
       "matchup": "STL @ ATL",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.264Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 138,
@@ -10322,7 +10331,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.276Z"
+          "confirmedAt": "2026-07-01T22:56:46.276Z",
+          "skippedBecauseAlreadyConfirmed": true
         },
         "home": {
           "id": 144,
@@ -10764,7 +10774,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.277Z"
+          "confirmedAt": "2026-07-01T22:56:46.277Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     },
@@ -10775,7 +10786,7 @@
       "status": "Pre-Game",
       "matchup": "LAD @ ATH",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.321Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 119,
@@ -11217,7 +11228,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.332Z"
+          "confirmedAt": "2026-07-01T22:56:46.332Z",
+          "skippedBecauseAlreadyConfirmed": true
         },
         "home": {
           "id": 133,
@@ -11659,7 +11671,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.332Z"
+          "confirmedAt": "2026-07-01T22:56:46.332Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     },
@@ -11670,7 +11683,7 @@
       "status": "Pre-Game",
       "matchup": "SF @ AZ",
       "allLineupsConfirmed": true,
-      "lastCheckedAt": "2026-07-01T22:56:46.332Z",
+      "lastCheckedAt": "2026-07-02T00:01:37.964Z",
       "teams": {
         "away": {
           "id": 137,
@@ -12112,7 +12125,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.342Z"
+          "confirmedAt": "2026-07-01T22:56:46.342Z",
+          "skippedBecauseAlreadyConfirmed": true
         },
         "home": {
           "id": 109,
@@ -12554,7 +12568,8 @@
           ],
           "source": "confirmed MLB batting lineup",
           "confirmed": true,
-          "confirmedAt": "2026-07-01T22:56:46.342Z"
+          "confirmedAt": "2026-07-01T22:56:46.342Z",
+          "skippedBecauseAlreadyConfirmed": true
         }
       }
     }
