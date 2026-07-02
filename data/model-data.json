@@ -4,10 +4,11 @@
   "teams": {},
   "confidence": {},
   "note": "Reserved for learned model signals.",
-  "generatedAt": "2026-07-02T00:33:39.782Z",
+  "generatedAt": "2026-07-02T00:42:46.995Z",
   "notes": [
     "Tracker sync uses final-only historical rows.",
     "DR Picks, K Props, and HR picks are auto-snapshotted if data/today-predictions.json is missing rows for the day.",
-    "K Props are graded from final boxscore strikeouts. HR picks are graded from final boxscore home runs."
+    "K Props are graded from final boxscore strikeouts. HR picks are graded from final boxscore home runs.",
+    "Tracker rows are deduplicated by game/player identity on every run to prevent workflow reruns from double-counting results."
   ]
 }
