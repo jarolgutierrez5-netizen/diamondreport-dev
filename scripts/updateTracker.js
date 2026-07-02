@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  DEV DR DIE v9.4 - Tracker Duplicate Dedupe Fix
+  DEV DR DIE v9.6 - Full Slate Snapshot Fix
 
   Final-only Tracker pipeline:
   1) Ensure data/today-predictions.json has a same-day prediction snapshot.
@@ -13,6 +13,7 @@
   - K Props are generated from probable starters and graded against final boxscore strikeouts.
   - HR picks are generated from lineup data and graded against final boxscore home runs.
   - Final tracker rows are deduplicated on every run so reruns never double-count games.
+  - Same-day snapshots are topped off on every run so a partial early snapshot does not miss late/remaining games.
   Tracker history remains final-only: pending/push rows are never stored in tracker.json.
 */
 const fs = require('fs');
@@ -88,6 +89,31 @@ function dedupeFinalRows(rows, type){
     else out.push(row);
   }
   return out;
+}
+
+function mergeSnapshotRows(existing, fresh, type){
+  const out = [];
+  for (const row of Array.isArray(existing) ? existing : []) {
+    if (!row) continue;
+    const keyed = { ...row, key: keyOf(row, type) };
+    const idx = out.findIndex(x => sameTrackerRow(x, keyed, type));
+    if (idx >= 0) out[idx] = { ...out[idx], ...keyed };
+    else out.push(keyed);
+  }
+  let added = 0;
+  for (const row of Array.isArray(fresh) ? fresh : []) {
+    if (!row) continue;
+    const keyed = { ...row, key: keyOf(row, type) };
+    const idx = out.findIndex(x => sameTrackerRow(x, keyed, type));
+    if (idx >= 0) {
+      // Preserve any already-graded/local fields while refreshing schedule metadata.
+      out[idx] = { ...keyed, ...out[idx], key: keyOf(out[idx], type) };
+    } else {
+      out.push(keyed);
+      added++;
+    }
+  }
+  return { rows: out, added };
 }
 function extractTeams(rec){
   const teams = Array.isArray(rec.teams) ? rec.teams.map(normalizeTeam).filter(Boolean) : [];
@@ -240,7 +266,7 @@ async function buildDrpSnapshot(date){
       result: 'pending',
       confidencePct: pick === g.away ? awayPct : homePct,
       source: 'auto-snapshot-github-action',
-      snapshotVersion: '9.0'
+      snapshotVersion: '9.6'
     });
   }
   return rows;
@@ -277,7 +303,7 @@ async function buildKPropSnapshot(date){
         result: 'pending',
         date,
         source: 'auto-k-snapshot-github-action',
-        snapshotVersion: '9.3'
+        snapshotVersion: '9.6'
       });
     }
   }
@@ -310,7 +336,7 @@ function buildHrSnapshotFromLineups(date){
           final: false,
           hit: false,
           source: 'auto-hr-snapshot-lineups',
-          snapshotVersion: '9.3',
+          snapshotVersion: '9.6',
           date
         });
       }
@@ -338,9 +364,24 @@ async function ensureSnapshot(date){
   next.kprop = Array.isArray(next.kprop) ? next.kprop.filter(r => r.date === date) : [];
   next.hr = Array.isArray(next.hr) ? next.hr.filter(r => r.date === date) : [];
   let drpCreated = 0, kCreated = 0, hrCreated = 0;
-  if (!next.drp.length) { next.drp = await buildDrpSnapshot(date); drpCreated = next.drp.length; }
-  if (!next.kprop.length) { next.kprop = await buildKPropSnapshot(date); kCreated = next.kprop.length; }
-  if (!next.hr.length) { next.hr = buildHrSnapshotFromLineups(date); hrCreated = next.hr.length; }
+  // Always rebuild the available same-day slate and merge in any missing rows.
+  // This prevents an early/partial snapshot from locking the tracker to only a
+  // subset of the day's games. Existing rows are preserved; only missing games
+  // are added.
+  const freshDrp = await buildDrpSnapshot(date);
+  const mergedDrp = mergeSnapshotRows(next.drp, freshDrp, 'DRP');
+  next.drp = mergedDrp.rows;
+  drpCreated = mergedDrp.added;
+
+  const freshK = await buildKPropSnapshot(date);
+  const mergedK = mergeSnapshotRows(next.kprop, freshK, 'KPROP');
+  next.kprop = mergedK.rows;
+  kCreated = mergedK.added;
+
+  const freshHr = buildHrSnapshotFromLineups(date);
+  const mergedHr = mergeSnapshotRows(next.hr, freshHr, 'HR');
+  next.hr = mergedHr.rows;
+  hrCreated = mergedHr.added;
   next.version = Math.max(Number(next.version || 0), 3);
   next.generatedAt = nowIso();
   next.date = date;
