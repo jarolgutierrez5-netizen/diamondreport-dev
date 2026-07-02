@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  DEV DR DIE v9.0 - Workflow Consolidation
+  DEV DR DIE v9.3 - HR/K Tracker Snapshot Fix
 
   Final-only Tracker pipeline:
   1) Ensure data/today-predictions.json has a same-day prediction snapshot.
@@ -9,11 +9,10 @@
   4) Never write pending rows to tracker history.
 
   Current auto-snapshot support:
-  - Diamond Report Picks (DRP) are generated from today's MLB schedule using
-    the same type of public inputs used by the site: probable pitchers, season
-    pitching stats, home-field edge, and matchup scoring.
-  - K Props and HR picks remain snapshot-ready but require a future dedicated
-    prediction export/engine before they can be auto-graded safely.
+  - Diamond Report Picks (DRP) are generated from today's MLB schedule.
+  - K Props are generated from probable starters and graded against final boxscore strikeouts.
+  - HR picks are generated from lineup data and graded against final boxscore home runs.
+  Tracker history remains final-only: pending/push rows are never stored in tracker.json.
 */
 const fs = require('fs');
 const path = require('path');
@@ -23,6 +22,7 @@ const trackerPath = path.join(DATA_DIR, 'tracker.json');
 const snapshotPath = path.join(DATA_DIR, 'today-predictions.json');
 const dailyPath = path.join(DATA_DIR, 'daily-results.json');
 const modelPath = path.join(DATA_DIR, 'model-data.json');
+const lineupsPath = path.join(DATA_DIR, 'lineups.json');
 
 function readJson(p, fallback){ try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; } }
 function writeJson(p, data){ fs.mkdirSync(path.dirname(p), {recursive:true}); fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n'); }
@@ -86,6 +86,65 @@ async function fetchPitcherStats(personId){
   } catch { return {}; }
 }
 function num(v, fallback){ const n = parseFloat(v); return Number.isFinite(n) ? n : fallback; }
+
+function roundHalf(n){ return Math.round(Number(n || 0) * 2) / 2; }
+function round1(n){ return Math.round(Number(n || 0) * 10) / 10; }
+function teamSideForPitcher(game, pitcherId){
+  if (String(game.awayPitcher?.id || '') === String(pitcherId || '')) return { side:'away', team:game.away, opponent:game.home };
+  if (String(game.homePitcher?.id || '') === String(pitcherId || '')) return { side:'home', team:game.home, opponent:game.away };
+  return null;
+}
+async function fetchBoxscore(gamePk){
+  if (!gamePk) return null;
+  try { return await fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`); }
+  catch (e) { console.warn(`Boxscore fetch failed for ${gamePk}: ${e.message || e}`); return null; }
+}
+function boxscorePlayerStats(box, playerId, group){
+  if (!box || !playerId) return null;
+  const teams = [box.teams?.away, box.teams?.home].filter(Boolean);
+  for (const team of teams) {
+    const p = team.players?.[`ID${playerId}`];
+    if (p) return { player:p, stats:p.stats?.[group] || {} };
+  }
+  return null;
+}
+function pitcherFinalKs(box, pitcherId){
+  const found = boxscorePlayerStats(box, pitcherId, 'pitching');
+  const k = Number(found?.stats?.strikeOuts);
+  return Number.isFinite(k) ? k : null;
+}
+function batterFinalHrs(box, playerId){
+  const found = boxscorePlayerStats(box, playerId, 'batting');
+  const hr = Number(found?.stats?.homeRuns);
+  return Number.isFinite(hr) ? hr : 0;
+}
+function inningsNumber(ip){
+  if (ip == null) return null;
+  const s = String(ip);
+  const [whole, frac] = s.split('.');
+  const w = Number(whole || 0);
+  const outs = frac === '1' ? 1 : frac === '2' ? 2 : 0;
+  return Number.isFinite(w) ? w + outs / 3 : null;
+}
+function projectedKsFromStats(stat){
+  const k9 = num(stat.strikeoutsPer9Inn, null);
+  const ip = inningsNumber(stat.inningsPitched);
+  const gamesStarted = num(stat.gamesStarted, null);
+  let expectedIp = 5.4;
+  if (ip && gamesStarted && gamesStarted > 0) expectedIp = Math.max(4.2, Math.min(6.5, ip / gamesStarted));
+  const projected = (k9 || 7.8) * expectedIp / 9;
+  return { projected: round1(projected), expectedIp: round1(expectedIp), k9: round1(k9 || 7.8) };
+}
+function hrScoreForBatter(b){
+  const st = b.stats || {};
+  const hr = num(st.homeRuns, 0);
+  const ab = Math.max(num(st.atBats, 0), 1);
+  const slg = num(st.slg, 0.350);
+  const ops = num(st.ops, 0.650);
+  const airOuts = num(st.airOuts, 0);
+  const orderBoost = Math.max(0, 10 - num(b.order, 9)) * 0.12;
+  return round1((hr / ab) * 120 + hr * 0.12 + Math.max(0, slg - 0.35) * 9 + Math.max(0, ops - 0.65) * 4 + Math.min(airOuts / 100, 1.5) + orderBoost);
+}
 async function buildDrpSnapshot(date){
   const games = await fetchMlbSchedule(date);
   const rows = [];
@@ -135,33 +194,117 @@ async function buildDrpSnapshot(date){
   }
   return rows;
 }
+
+async function buildKPropSnapshot(date){
+  const games = await fetchMlbSchedule(date);
+  const rows = [];
+  for (const g of games) {
+    for (const slot of [g.awayPitcher, g.homePitcher]) {
+      if (!slot?.id) continue;
+      const side = teamSideForPitcher(g, slot.id);
+      if (!side) continue;
+      const stat = await fetchPitcherStats(slot.id);
+      const proj = projectedKsFromStats(stat);
+      const drLine = roundHalf(proj.projected);
+      const pick = proj.projected >= drLine ? 'OVER' : 'UNDER';
+      rows.push({
+        key: `${date}|KPROP|${g.gamePk}|${slot.id}`,
+        gamePk: g.gamePk,
+        pitcherId: slot.id,
+        type: 'kprop',
+        label: slot.fullName || slot.name || `Pitcher ${slot.id}`,
+        pitcher: slot.fullName || slot.name || `Pitcher ${slot.id}`,
+        team: side.team,
+        opponent: side.opponent,
+        pick,
+        line: String(drLine),
+        projectedLine: proj.projected,
+        kProjectionForGame: proj.projected,
+        drLine,
+        expectedIp: proj.expectedIp,
+        k9: proj.k9,
+        result: 'pending',
+        date,
+        source: 'auto-k-snapshot-github-action',
+        snapshotVersion: '9.3'
+      });
+    }
+  }
+  return rows;
+}
+function buildHrSnapshotFromLineups(date){
+  const lineups = readJson(lineupsPath, { games:{} });
+  const games = lineups.games || {};
+  const candidates = [];
+  for (const g of Object.values(games)) {
+    if (String(g.date || '') !== String(date)) continue;
+    const matchup = g.matchup || '';
+    for (const sideName of ['away','home']) {
+      const side = g.teams?.[sideName];
+      const team = normalizeTeam(side?.abbr);
+      for (const b of side?.lineup || []) {
+        const score = hrScoreForBatter(b);
+        if (!b?.id || !b?.name || score <= 0) continue;
+        candidates.push({
+          key: `${date}|HR|${g.gamePk}|${b.id}`,
+          gamePk: g.gamePk,
+          playerId: b.id,
+          player: b.name,
+          team,
+          matchup,
+          battingOrder: b.order || null,
+          position: b.pos || '',
+          hrPct: Math.max(1, Math.min(15, score)),
+          result: 'pending',
+          final: false,
+          hit: false,
+          source: 'auto-hr-snapshot-lineups',
+          snapshotVersion: '9.3',
+          date
+        });
+      }
+    }
+  }
+  candidates.sort((a,b) => Number(b.hrPct || 0) - Number(a.hrPct || 0));
+  return candidates.slice(0, 25);
+}
 async function ensureSnapshot(date){
   const snap = readJson(snapshotPath, { version:1, generatedAt:null, date:null, drp:[], kprop:[], hr:[] });
   snap.version ||= 1;
   snap.drp = Array.isArray(snap.drp) ? snap.drp : [];
   snap.kprop = Array.isArray(snap.kprop) ? snap.kprop : [];
   snap.hr = Array.isArray(snap.hr) ? snap.hr : [];
-  const hasSameDayRows = snap.date === date && (snap.drp.length || snap.kprop.length || snap.hr.length);
-  if (hasSameDayRows) return { snapshot: snap, created: false, drpCreated: 0 };
-  const drp = await buildDrpSnapshot(date);
-  const next = {
+  const sameDay = snap.date === date;
+  const next = sameDay ? { ...snap } : {
     version: 2,
     generatedAt: nowIso(),
     date,
     mode: 'auto-snapshot',
     note: 'Generated by scripts/updateTracker.js. Tracker history remains final-only; pending snapshot rows are graded into data/tracker.json only after games are final.',
-    drp,
-    kprop: snap.kprop.filter(r => r.date === date),
-    hr: snap.hr.filter(r => r.date === date),
-    debug: {
-      previousSnapshotDate: snap.date || null,
-      drpRowsCreated: drp.length,
-      kpropAutoSnapshotSupported: false,
-      hrAutoSnapshotSupported: false
-    }
+    drp: [], kprop: [], hr: [], debug: { previousSnapshotDate: snap.date || null }
+  };
+  next.drp = Array.isArray(next.drp) ? next.drp.filter(r => r.date === date) : [];
+  next.kprop = Array.isArray(next.kprop) ? next.kprop.filter(r => r.date === date) : [];
+  next.hr = Array.isArray(next.hr) ? next.hr.filter(r => r.date === date) : [];
+  let drpCreated = 0, kCreated = 0, hrCreated = 0;
+  if (!next.drp.length) { next.drp = await buildDrpSnapshot(date); drpCreated = next.drp.length; }
+  if (!next.kprop.length) { next.kprop = await buildKPropSnapshot(date); kCreated = next.kprop.length; }
+  if (!next.hr.length) { next.hr = buildHrSnapshotFromLineups(date); hrCreated = next.hr.length; }
+  next.version = Math.max(Number(next.version || 0), 3);
+  next.generatedAt = nowIso();
+  next.date = date;
+  next.mode = 'auto-snapshot';
+  next.debug = {
+    ...(next.debug || {}),
+    drpRowsCreated: drpCreated,
+    kpropRowsCreated: kCreated,
+    hrRowsCreated: hrCreated,
+    kpropAutoSnapshotSupported: true,
+    hrAutoSnapshotSupported: true,
+    lineupsSource: 'data/lineups.json'
   };
   writeJson(snapshotPath, next);
-  return { snapshot: next, created: true, drpCreated: drp.length };
+  return { snapshot: next, created: !sameDay || drpCreated > 0 || kCreated > 0 || hrCreated > 0, drpCreated, kCreated, hrCreated };
 }
 function findGame(games, a, b, gamePk){
   if (gamePk) {
@@ -184,6 +327,70 @@ async function gradeDrpSnapshot(snapshotRows){
     if (!game || !game.isFinal || !game.winner) continue;
     const pick = normalizeTeam(rec.pick);
     graded.push({ ...rec, type:'drp', date, gamePk: game.gamePk || rec.gamePk, result: pick === game.winner ? 'win':'loss', finalWinner: game.winner, finalScore: `${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}`, gradedAt: nowIso(), gradingSource:'mlb-stats-api-final-score', key: `${date}|DRP|${game.gamePk || rec.gamePk || [a,b].sort().join('-')}` });
+  }
+  return graded;
+}
+
+async function gradeKPropSnapshot(snapshotRows){
+  const dates = [...new Set((snapshotRows || []).map(r => r.date || todayCT()))];
+  const schedules = new Map();
+  const boxscores = new Map();
+  for (const d of dates) { try { schedules.set(d, await fetchMlbSchedule(d)); } catch (e) { console.warn(e.message || e); schedules.set(d, []); } }
+  const graded = [];
+  for (const rec of snapshotRows || []) {
+    const date = rec.date || todayCT();
+    const games = schedules.get(date) || [];
+    const game = rec.gamePk ? games.find(g => String(g.gamePk) === String(rec.gamePk)) : null;
+    if (!game || !game.isFinal) continue;
+    if (!boxscores.has(game.gamePk)) boxscores.set(game.gamePk, await fetchBoxscore(game.gamePk));
+    const finalKCount = pitcherFinalKs(boxscores.get(game.gamePk), rec.pitcherId);
+    if (finalKCount == null) continue;
+    const drLine = num(rec.drLine ?? rec.line, null);
+    if (drLine == null) continue;
+    const pick = String(rec.pick || '').toUpperCase();
+    let result = 'pending';
+    if (pick === 'OVER') result = finalKCount > drLine ? 'win' : finalKCount < drLine ? 'loss' : 'pending';
+    if (pick === 'UNDER') result = finalKCount < drLine ? 'win' : finalKCount > drLine ? 'loss' : 'pending';
+    if (!['win','loss'].includes(result)) continue;
+    graded.push({
+      ...rec,
+      type:'kprop',
+      result,
+      finalKCount,
+      overDrLine: finalKCount > drLine ? 'Y' : 'N',
+      finalScore: `${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}`,
+      gradedAt: nowIso(),
+      gradingSource:'mlb-stats-api-boxscore',
+      key: `${date}|KPROP|${game.gamePk}|${rec.pitcherId || rec.label}`
+    });
+  }
+  return graded;
+}
+async function gradeHrSnapshot(snapshotRows){
+  const dates = [...new Set((snapshotRows || []).map(r => r.date || todayCT()))];
+  const schedules = new Map();
+  const boxscores = new Map();
+  for (const d of dates) { try { schedules.set(d, await fetchMlbSchedule(d)); } catch (e) { console.warn(e.message || e); schedules.set(d, []); } }
+  const graded = [];
+  for (const rec of snapshotRows || []) {
+    const date = rec.date || todayCT();
+    const games = schedules.get(date) || [];
+    const game = rec.gamePk ? games.find(g => String(g.gamePk) === String(rec.gamePk)) : null;
+    if (!game || !game.isFinal) continue;
+    if (!boxscores.has(game.gamePk)) boxscores.set(game.gamePk, await fetchBoxscore(game.gamePk));
+    const finalHR = batterFinalHrs(boxscores.get(game.gamePk), rec.playerId);
+    graded.push({
+      ...rec,
+      type:'hr',
+      final:true,
+      hit: finalHR > 0,
+      result: finalHR > 0 ? 'win':'loss',
+      finalHR,
+      finalScore: `${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}`,
+      gradedAt: nowIso(),
+      gradingSource:'mlb-stats-api-boxscore',
+      key: `${date}|HR|${game.gamePk}|${rec.playerId || String(rec.player || '').toLowerCase()}`
+    });
   }
   return graded;
 }
@@ -215,11 +422,13 @@ async function main(){
 
   let addedDrp = 0, addedK = 0, addedHr = 0;
   const gradedDrp = await gradeDrpSnapshot(snapshotDrp);
+  const gradedK = await gradeKPropSnapshot(snapshotK);
+  const gradedHr = await gradeHrSnapshot(snapshotHr);
   for (const row of gradedDrp) if (upsertFinalRow(tracker.market.drp, row, 'DRP')) addedDrp++;
-  for (const row of finalRows(snapshotK)) if (upsertFinalRow(tracker.market.kprop, { ...row, type:'kprop', gradedAt: row.gradedAt || now }, 'KPROP')) addedK++;
-  for (const row of (snapshotHr || []).filter(r => r.final === true || isWinLoss(r))) {
+  for (const row of gradedK) if (upsertFinalRow(tracker.market.kprop, { ...row, type:'kprop', gradedAt: row.gradedAt || now }, 'KPROP')) addedK++;
+  for (const row of gradedHr) {
     const out = { ...row, date: row.date || date, final: true, hit: row.hit === true || normResult(row.result) === 'win', gradedAt: row.gradedAt || now };
-    out.key = out.key || `${out.date}|HR|${String(out.player || '').toLowerCase()}|${normalizeTeam(out.team)}`;
+    out.key = out.key || `${out.date}|HR|${out.gamePk || ''}|${out.playerId || String(out.player || '').toLowerCase()}`;
     const idx = tracker.picks.findIndex(x => x.key === out.key);
     if (idx >= 0) tracker.picks[idx] = { ...tracker.picks[idx], ...out }; else tracker.picks.push(out);
     addedHr++;
@@ -243,7 +452,7 @@ async function main(){
     currentDateCT: date,
     lastSnapshotSource: 'data/today-predictions.json',
     snapshotCreatedThisRun: snapInfo.created,
-    snapshotRowsCreatedThisRun: { drp: snapInfo.drpCreated, kprop: 0, hr: 0 },
+    snapshotRowsCreatedThisRun: { drp: snapInfo.drpCreated, kprop: snapInfo.kCreated || 0, hr: snapInfo.hrCreated || 0 },
     snapshotRowsSeen: { drp: snapshotDrp.length, kprop: snapshotK.length, hr: snapshotHr.length },
     rowsAddedOrUpdated: { drp: addedDrp, kprop: addedK, hr: addedHr },
     allTimeSummaryUpdatedAt: now
@@ -254,7 +463,7 @@ async function main(){
   daily.version ||= 1; daily.results ||= []; daily.lastCheckedAt = now; daily.currentDateCT = date; writeJson(dailyPath, daily);
   const model = readJson(modelPath, { version:1, notes:[] });
   model.version ||= 1; model.generatedAt = now; model.notes ||= [];
-  model.notes = ['Tracker sync uses final-only historical rows.', 'DR Picks are auto-snapshotted if data/today-predictions.json is empty for the day.', 'K/HR snapshot automation is planned for the next tracker engine phase.'];
+  model.notes = ['Tracker sync uses final-only historical rows.', 'DR Picks, K Props, and HR picks are auto-snapshotted if data/today-predictions.json is missing rows for the day.', 'K Props are graded from final boxscore strikeouts. HR picks are graded from final boxscore home runs.'];
   writeJson(modelPath, model);
   console.log(`Tracker sync complete. Snapshot ${snapInfo.created ? 'created' : 'existing'}: DRP=${snapshotDrp.length}, K=${snapshotK.length}, HR=${snapshotHr.length}. Added/updated: DRP=${addedDrp}, K=${addedK}, HR=${addedHr}. Totals: DRP ${tracker.allTime.drp.wins}-${tracker.allTime.drp.losses}, K ${tracker.allTime.kprop.wins}-${tracker.allTime.kprop.losses}, HR ${tracker.allTime.hr.wins}-${tracker.allTime.hr.losses}.`);
 }
