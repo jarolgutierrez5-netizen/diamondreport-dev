@@ -1,6 +1,6 @@
 {
   "version": 7,
-  "generatedAt": "2026-07-02T00:42:46.995Z",
+  "generatedAt": "2026-07-02T02:31:59.373Z",
   "resetAt": "2026-07-01T16:06:52Z",
   "resetDate": "2026-07-01",
   "resetReason": "User requested a clean historical Tracker reset. Tracker starts recording finalized records from reset date forward.",
@@ -24,7 +24,7 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "NYM 3 - TOR 9",
-      "gradedAt": "2026-07-02T00:42:47.302Z",
+      "gradedAt": "2026-07-02T02:31:59.654Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -46,7 +46,7 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "DET 6 - NYY 2",
-      "gradedAt": "2026-07-02T00:42:47.308Z",
+      "gradedAt": "2026-07-02T02:31:59.665Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -68,7 +68,7 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "DET 6 - NYY 2",
-      "gradedAt": "2026-07-02T00:42:47.308Z",
+      "gradedAt": "2026-07-02T02:31:59.671Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -90,7 +90,7 @@
       "type": "hr",
       "finalHR": 1,
       "finalScore": "WSH 10 - BOS 2",
-      "gradedAt": "2026-07-02T00:42:47.313Z",
+      "gradedAt": "2026-07-02T02:31:59.676Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -112,7 +112,7 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "CWS 1 - BAL 6",
-      "gradedAt": "2026-07-02T00:42:47.319Z",
+      "gradedAt": "2026-07-02T02:31:59.692Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -134,7 +134,7 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "WSH 10 - BOS 2",
-      "gradedAt": "2026-07-02T00:42:47.319Z",
+      "gradedAt": "2026-07-02T02:31:59.692Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -156,7 +156,7 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "DET 6 - NYY 2",
-      "gradedAt": "2026-07-02T00:42:47.319Z",
+      "gradedAt": "2026-07-02T02:31:59.692Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -178,7 +178,7 @@
       "type": "hr",
       "finalHR": 1,
       "finalScore": "SD 3 - CHC 23",
-      "gradedAt": "2026-07-02T00:42:47.325Z",
+      "gradedAt": "2026-07-02T02:31:59.697Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -200,7 +200,7 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "WSH 10 - BOS 2",
-      "gradedAt": "2026-07-02T00:42:47.325Z",
+      "gradedAt": "2026-07-02T02:31:59.697Z",
       "gradingSource": "mlb-stats-api-boxscore"
     },
     {
@@ -222,7 +222,161 @@
       "type": "hr",
       "finalHR": 0,
       "finalScore": "NYM 3 - TOR 9",
-      "gradedAt": "2026-07-02T00:42:47.325Z",
+      "gradedAt": "2026-07-02T02:31:59.697Z",
+      "gradingSource": "mlb-stats-api-boxscore"
+    },
+    {
+      "key": "2026-07-01|HR|823446|699013",
+      "gamePk": 823446,
+      "playerId": 699013,
+      "player": "Esmerlyn Valdez",
+      "team": "PIT",
+      "matchup": "PIT @ PHI",
+      "battingOrder": 4,
+      "position": "RF",
+      "hrPct": 15,
+      "result": "loss",
+      "final": true,
+      "hit": false,
+      "source": "auto-hr-snapshot-lineups",
+      "snapshotVersion": "9.3",
+      "date": "2026-07-01",
+      "type": "hr",
+      "finalHR": 0,
+      "finalScore": "PIT 6 - PHI 10",
+      "gradedAt": "2026-07-02T02:31:59.659Z",
+      "gradingSource": "mlb-stats-api-boxscore"
+    },
+    {
+      "key": "2026-07-01|HR|823446|656941",
+      "gamePk": 823446,
+      "playerId": 656941,
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "matchup": "PIT @ PHI",
+      "battingOrder": 2,
+      "position": "DH",
+      "hrPct": 15,
+      "result": "loss",
+      "final": true,
+      "hit": false,
+      "source": "auto-hr-snapshot-lineups",
+      "snapshotVersion": "9.3",
+      "date": "2026-07-01",
+      "type": "hr",
+      "finalHR": 0,
+      "finalScore": "PIT 6 - PHI 10",
+      "gradedAt": "2026-07-02T02:31:59.659Z",
+      "gradingSource": "mlb-stats-api-boxscore"
+    },
+    {
+      "key": "2026-07-01|HR|824094|691406",
+      "gamePk": 824094,
+      "playerId": 691406,
+      "player": "Junior Caminero",
+      "team": "TB",
+      "matchup": "TB @ KC",
+      "battingOrder": 3,
+      "position": "3B",
+      "hrPct": 15,
+      "result": "win",
+      "final": true,
+      "hit": true,
+      "source": "auto-hr-snapshot-lineups",
+      "snapshotVersion": "9.3",
+      "date": "2026-07-01",
+      "type": "hr",
+      "finalHR": 1,
+      "finalScore": "TB 4 - KC 0",
+      "gradedAt": "2026-07-02T02:31:59.670Z",
+      "gradingSource": "mlb-stats-api-boxscore"
+    },
+    {
+      "key": "2026-07-01|HR|823446|547180",
+      "gamePk": 823446,
+      "playerId": 547180,
+      "player": "Bryce Harper",
+      "team": "PHI",
+      "matchup": "PIT @ PHI",
+      "battingOrder": 3,
+      "position": "1B",
+      "hrPct": 14.6,
+      "result": "loss",
+      "final": true,
+      "hit": false,
+      "source": "auto-hr-snapshot-lineups",
+      "snapshotVersion": "9.3",
+      "date": "2026-07-01",
+      "type": "hr",
+      "finalHR": 0,
+      "finalScore": "PIT 6 - PHI 10",
+      "gradedAt": "2026-07-02T02:31:59.671Z",
+      "gradingSource": "mlb-stats-api-boxscore"
+    },
+    {
+      "key": "2026-07-01|HR|823446|664040",
+      "gamePk": 823446,
+      "playerId": 664040,
+      "player": "Brandon Lowe",
+      "team": "PIT",
+      "matchup": "PIT @ PHI",
+      "battingOrder": 2,
+      "position": "2B",
+      "hrPct": 14,
+      "result": "loss",
+      "final": true,
+      "hit": false,
+      "source": "auto-hr-snapshot-lineups",
+      "snapshotVersion": "9.3",
+      "date": "2026-07-01",
+      "type": "hr",
+      "finalHR": 0,
+      "finalScore": "PIT 6 - PHI 10",
+      "gradedAt": "2026-07-02T02:31:59.676Z",
+      "gradingSource": "mlb-stats-api-boxscore"
+    },
+    {
+      "key": "2026-07-01|HR|824905|621566",
+      "gamePk": 824905,
+      "playerId": 621566,
+      "player": "Matt Olson",
+      "team": "ATL",
+      "matchup": "STL @ ATL",
+      "battingOrder": 3,
+      "position": "1B",
+      "hrPct": 14,
+      "result": "loss",
+      "final": true,
+      "hit": false,
+      "source": "auto-hr-snapshot-lineups",
+      "snapshotVersion": "9.3",
+      "date": "2026-07-01",
+      "type": "hr",
+      "finalHR": 0,
+      "finalScore": "STL 1 - ATL 5",
+      "gradedAt": "2026-07-02T02:31:59.686Z",
+      "gradingSource": "mlb-stats-api-boxscore"
+    },
+    {
+      "key": "2026-07-01|HR|824905|691023",
+      "gamePk": 824905,
+      "playerId": 691023,
+      "player": "Jordan Walker",
+      "team": "STL",
+      "matchup": "STL @ ATL",
+      "battingOrder": 4,
+      "position": "RF",
+      "hrPct": 12.7,
+      "result": "loss",
+      "final": true,
+      "hit": false,
+      "source": "auto-hr-snapshot-lineups",
+      "snapshotVersion": "9.3",
+      "date": "2026-07-01",
+      "type": "hr",
+      "finalHR": 0,
+      "finalScore": "STL 1 - ATL 5",
+      "gradedAt": "2026-07-02T02:31:59.697Z",
       "gradingSource": "mlb-stats-api-boxscore"
     }
   ],
@@ -247,7 +401,7 @@
         "snapshotVersion": "9.0",
         "finalWinner": "BAL",
         "finalScore": "CWS 1 - BAL 6",
-        "gradedAt": "2026-07-02T00:33:41.029Z",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
         "gradingSource": "mlb-stats-api-final-score",
         "gamePk": 824818
       },
@@ -267,7 +421,7 @@
         "snapshotVersion": "9.0",
         "finalWinner": "CLE",
         "finalScore": "TEX 4 - CLE 9",
-        "gradedAt": "2026-07-02T00:33:41.029Z",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
         "gradingSource": "mlb-stats-api-final-score",
         "gamePk": 824419
       },
@@ -287,7 +441,7 @@
         "snapshotVersion": "9.0",
         "finalWinner": "WSH",
         "finalScore": "WSH 10 - BOS 2",
-        "gradedAt": "2026-07-02T00:33:41.029Z",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
         "gradingSource": "mlb-stats-api-final-score",
         "gamePk": 824740
       },
@@ -307,7 +461,7 @@
         "snapshotVersion": "9.0",
         "finalWinner": "DET",
         "finalScore": "DET 6 - NYY 2",
-        "gradedAt": "2026-07-02T00:33:41.029Z",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
         "gradingSource": "mlb-stats-api-final-score",
         "gamePk": 823530
       },
@@ -327,7 +481,7 @@
         "snapshotVersion": "9.0",
         "finalWinner": "CHC",
         "finalScore": "SD 3 - CHC 23",
-        "gradedAt": "2026-07-02T00:33:41.029Z",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
         "gradingSource": "mlb-stats-api-final-score",
         "gamePk": 824660
       },
@@ -347,9 +501,69 @@
         "snapshotVersion": "9.0",
         "finalWinner": "TOR",
         "finalScore": "NYM 3 - TOR 9",
-        "gradedAt": "2026-07-02T00:33:41.029Z",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
         "gradingSource": "mlb-stats-api-final-score",
         "gamePk": 822791
+      },
+      {
+        "key": "2026-07-01|DRP|823446",
+        "gamePk": 823446,
+        "type": "drp",
+        "label": "PIT @ PHI",
+        "pick": "PHI",
+        "teams": [
+          "PIT",
+          "PHI"
+        ],
+        "date": "2026-07-01",
+        "result": "win",
+        "confidencePct": 52,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "9.0",
+        "finalWinner": "PHI",
+        "finalScore": "PIT 6 - PHI 10",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      },
+      {
+        "key": "2026-07-01|DRP|824905",
+        "gamePk": 824905,
+        "type": "drp",
+        "label": "STL @ ATL",
+        "pick": "ATL",
+        "teams": [
+          "STL",
+          "ATL"
+        ],
+        "date": "2026-07-01",
+        "result": "win",
+        "confidencePct": 51,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "9.0",
+        "finalWinner": "ATL",
+        "finalScore": "STL 1 - ATL 5",
+        "gradedAt": "2026-07-02T02:31:59.552Z",
+        "gradingSource": "mlb-stats-api-final-score"
+      },
+      {
+        "key": "2026-07-01|DRP|824094",
+        "gamePk": 824094,
+        "type": "drp",
+        "label": "TB @ KC",
+        "pick": "TB",
+        "teams": [
+          "TB",
+          "KC"
+        ],
+        "date": "2026-07-01",
+        "result": "win",
+        "confidencePct": 53,
+        "source": "auto-snapshot-github-action",
+        "snapshotVersion": "9.0",
+        "finalWinner": "TB",
+        "finalScore": "TB 4 - KC 0",
+        "gradedAt": "2026-07-02T02:31:59.553Z",
+        "gradingSource": "mlb-stats-api-final-score"
       }
     ],
     "kprop": [
@@ -376,7 +590,7 @@
         "finalKCount": 4,
         "overDrLine": "N",
         "finalScore": "CWS 1 - BAL 6",
-        "gradedAt": "2026-07-02T00:42:47.252Z",
+        "gradedAt": "2026-07-02T02:31:59.573Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -402,7 +616,7 @@
         "finalKCount": 4,
         "overDrLine": "N",
         "finalScore": "TEX 4 - CLE 9",
-        "gradedAt": "2026-07-02T00:42:47.261Z",
+        "gradedAt": "2026-07-02T02:31:59.584Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -428,7 +642,7 @@
         "finalKCount": 5,
         "overDrLine": "N",
         "finalScore": "WSH 10 - BOS 2",
-        "gradedAt": "2026-07-02T00:42:47.269Z",
+        "gradedAt": "2026-07-02T02:31:59.594Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -454,7 +668,7 @@
         "finalKCount": 7,
         "overDrLine": "Y",
         "finalScore": "DET 6 - NYY 2",
-        "gradedAt": "2026-07-02T00:42:47.276Z",
+        "gradedAt": "2026-07-02T02:31:59.602Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -480,7 +694,7 @@
         "finalKCount": 6,
         "overDrLine": "Y",
         "finalScore": "SD 3 - CHC 23",
-        "gradedAt": "2026-07-02T00:42:47.283Z",
+        "gradedAt": "2026-07-02T02:31:59.610Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -506,7 +720,7 @@
         "finalKCount": 1,
         "overDrLine": "N",
         "finalScore": "NYM 3 - TOR 9",
-        "gradedAt": "2026-07-02T00:42:47.289Z",
+        "gradedAt": "2026-07-02T02:31:59.618Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -532,7 +746,7 @@
         "finalKCount": 7,
         "overDrLine": "Y",
         "finalScore": "CWS 1 - BAL 6",
-        "gradedAt": "2026-07-02T00:42:47.252Z",
+        "gradedAt": "2026-07-02T02:31:59.573Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -558,7 +772,7 @@
         "finalKCount": 7,
         "overDrLine": "Y",
         "finalScore": "TEX 4 - CLE 9",
-        "gradedAt": "2026-07-02T00:42:47.261Z",
+        "gradedAt": "2026-07-02T02:31:59.584Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -584,7 +798,7 @@
         "finalKCount": 1,
         "overDrLine": "N",
         "finalScore": "WSH 10 - BOS 2",
-        "gradedAt": "2026-07-02T00:42:47.269Z",
+        "gradedAt": "2026-07-02T02:31:59.594Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -610,7 +824,7 @@
         "finalKCount": 7,
         "overDrLine": "Y",
         "finalScore": "DET 6 - NYY 2",
-        "gradedAt": "2026-07-02T00:42:47.276Z",
+        "gradedAt": "2026-07-02T02:31:59.602Z",
         "gradingSource": "mlb-stats-api-boxscore"
       },
       {
@@ -636,7 +850,137 @@
         "finalKCount": 4,
         "overDrLine": "N",
         "finalScore": "NYM 3 - TOR 9",
-        "gradedAt": "2026-07-02T00:42:47.289Z",
+        "gradedAt": "2026-07-02T02:31:59.618Z",
+        "gradingSource": "mlb-stats-api-boxscore"
+      },
+      {
+        "key": "2026-07-01|KPROP|823446|694973",
+        "gamePk": 823446,
+        "pitcherId": 694973,
+        "type": "kprop",
+        "label": "Paul Skenes",
+        "pitcher": "Paul Skenes",
+        "team": "PIT",
+        "opponent": "PHI",
+        "pick": "OVER",
+        "line": "6.5",
+        "projectedLine": 6.6,
+        "kProjectionForGame": 6.6,
+        "drLine": 6.5,
+        "expectedIp": 5.4,
+        "k9": 11,
+        "result": "loss",
+        "date": "2026-07-01",
+        "source": "auto-k-snapshot-github-action",
+        "snapshotVersion": "9.3",
+        "finalKCount": 5,
+        "overDrLine": "N",
+        "finalScore": "PIT 6 - PHI 10",
+        "gradedAt": "2026-07-02T02:31:59.627Z",
+        "gradingSource": "mlb-stats-api-boxscore"
+      },
+      {
+        "key": "2026-07-01|KPROP|823446|554430",
+        "gamePk": 823446,
+        "pitcherId": 554430,
+        "type": "kprop",
+        "label": "Zack Wheeler",
+        "pitcher": "Zack Wheeler",
+        "team": "PHI",
+        "opponent": "PIT",
+        "pick": "OVER",
+        "line": "6.5",
+        "projectedLine": 6.5,
+        "kProjectionForGame": 6.5,
+        "drLine": 6.5,
+        "expectedIp": 6.2,
+        "k9": 9.5,
+        "result": "win",
+        "date": "2026-07-01",
+        "source": "auto-k-snapshot-github-action",
+        "snapshotVersion": "9.3",
+        "finalKCount": 10,
+        "overDrLine": "Y",
+        "finalScore": "PIT 6 - PHI 10",
+        "gradedAt": "2026-07-02T02:31:59.627Z",
+        "gradingSource": "mlb-stats-api-boxscore"
+      },
+      {
+        "key": "2026-07-01|KPROP|824905|700241",
+        "gamePk": 824905,
+        "pitcherId": 700241,
+        "type": "kprop",
+        "label": "Michael McGreevy",
+        "pitcher": "Michael McGreevy",
+        "team": "STL",
+        "opponent": "ATL",
+        "pick": "OVER",
+        "line": "3.5",
+        "projectedLine": 3.5,
+        "kProjectionForGame": 3.5,
+        "drLine": 3.5,
+        "expectedIp": 5.5,
+        "k9": 5.6,
+        "result": "loss",
+        "date": "2026-07-01",
+        "source": "auto-k-snapshot-github-action",
+        "snapshotVersion": "9.3",
+        "finalKCount": 3,
+        "overDrLine": "N",
+        "finalScore": "STL 1 - ATL 5",
+        "gradedAt": "2026-07-02T02:31:59.636Z",
+        "gradingSource": "mlb-stats-api-boxscore"
+      },
+      {
+        "key": "2026-07-01|KPROP|824094|663556",
+        "gamePk": 824094,
+        "pitcherId": 663556,
+        "type": "kprop",
+        "label": "Shane McClanahan",
+        "pitcher": "Shane McClanahan",
+        "team": "TB",
+        "opponent": "KC",
+        "pick": "OVER",
+        "line": "4.5",
+        "projectedLine": 4.7,
+        "kProjectionForGame": 4.7,
+        "drLine": 4.5,
+        "expectedIp": 4.8,
+        "k9": 8.9,
+        "result": "loss",
+        "date": "2026-07-01",
+        "source": "auto-k-snapshot-github-action",
+        "snapshotVersion": "9.3",
+        "finalKCount": 4,
+        "overDrLine": "N",
+        "finalScore": "TB 4 - KC 0",
+        "gradedAt": "2026-07-02T02:31:59.643Z",
+        "gradingSource": "mlb-stats-api-boxscore"
+      },
+      {
+        "key": "2026-07-01|KPROP|824094|607625",
+        "gamePk": 824094,
+        "pitcherId": 607625,
+        "type": "kprop",
+        "label": "Seth Lugo",
+        "pitcher": "Seth Lugo",
+        "team": "KC",
+        "opponent": "TB",
+        "pick": "UNDER",
+        "line": "4.5",
+        "projectedLine": 4.4,
+        "kProjectionForGame": 4.4,
+        "drLine": 4.5,
+        "expectedIp": 5.5,
+        "k9": 7.1,
+        "result": "loss",
+        "date": "2026-07-01",
+        "source": "auto-k-snapshot-github-action",
+        "snapshotVersion": "9.3",
+        "finalKCount": 7,
+        "overDrLine": "Y",
+        "finalScore": "TB 4 - KC 0",
+        "gradedAt": "2026-07-02T02:31:59.643Z",
         "gradingSource": "mlb-stats-api-boxscore"
       }
     ]
@@ -647,8 +991,8 @@
     "repoSync": true,
     "repoSyncNote": "Historical tracker sync: only final graded records count toward all-time accuracy. Pending rows are ignored by summaries and hidden by the UI.",
     "currentDateCT": "2026-07-01",
-    "lastGithubActionRun": "2026-07-02T00:42:46.995Z",
-    "allTimeSummaryUpdatedAt": "2026-07-02T00:42:46.995Z",
+    "lastGithubActionRun": "2026-07-02T02:31:59.373Z",
+    "allTimeSummaryUpdatedAt": "2026-07-02T02:31:59.373Z",
     "trackingMode": "final-only-auto-snapshot",
     "localStorageHistoryAllowed": false,
     "pendingRowsAllowed": false,
@@ -660,9 +1004,9 @@
       "hr": 25
     },
     "rowsAddedOrUpdated": {
-      "drp": 6,
-      "kprop": 11,
-      "hr": 10
+      "drp": 9,
+      "kprop": 16,
+      "hr": 17
     },
     "snapshotCreatedThisRun": false,
     "snapshotRowsCreatedThisRun": {
@@ -673,19 +1017,19 @@
   },
   "allTime": {
     "hr": {
-      "wins": 2,
-      "losses": 8,
-      "total": 10
+      "wins": 3,
+      "losses": 14,
+      "total": 17
     },
     "kprop": {
-      "wins": 3,
-      "losses": 8,
-      "total": 11
+      "wins": 4,
+      "losses": 12,
+      "total": 16
     },
     "drp": {
-      "wins": 4,
+      "wins": 7,
       "losses": 2,
-      "total": 6
+      "total": 9
     },
     "drLine": {
       "over": 0,

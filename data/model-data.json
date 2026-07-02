@@ -4,7 +4,7 @@
   "teams": {},
   "confidence": {},
   "note": "Reserved for learned model signals.",
-  "generatedAt": "2026-07-02T00:42:46.995Z",
+  "generatedAt": "2026-07-02T02:31:59.373Z",
   "notes": [
     "Tracker sync uses final-only historical rows.",
     "DR Picks, K Props, and HR picks are auto-snapshotted if data/today-predictions.json is missing rows for the day.",
