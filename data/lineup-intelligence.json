@@ -1,21 +1,348 @@
 {
   "version": 1,
   "date": "2026-07-02",
-  "generatedAt": "2026-07-02T10:20:02.166Z",
+  "generatedAt": "2026-07-02T18:17:31.745Z",
   "status": {
     "allConfirmed": false,
-    "confirmedTeams": 0,
+    "confirmedTeams": 6,
     "totalTeams": 18,
-    "pendingTeams": 18,
-    "confirmedGames": 0,
+    "pendingTeams": 12,
+    "confirmedGames": 3,
     "totalGames": 9,
     "skippedConfirmedTeams": 0,
-    "message": "18 team lineup(s) still projected. Hourly Action keeps checking only unconfirmed teams."
+    "message": "12 team lineup(s) still projected. Hourly Action keeps checking only unconfirmed teams."
   },
-  "changedGames": [],
-  "impactedTeams": [],
-  "recalcNeeded": false,
-  "recalcTargets": [],
+  "changedGames": [
+    {
+      "gamePk": 823442,
+      "matchup": "PIT @ PHI"
+    },
+    {
+      "gamePk": 823765,
+      "matchup": "CIN @ MIL"
+    },
+    {
+      "gamePk": 824335,
+      "matchup": "MIA @ COL"
+    },
+    {
+      "gamePk": 824906,
+      "matchup": "STL @ ATL"
+    }
+  ],
+  "impactedTeams": [
+    {
+      "gamePk": 823442,
+      "matchup": "PIT @ PHI",
+      "side": "away",
+      "team": "PIT",
+      "becameOfficial": true,
+      "changed": true,
+      "added": [
+        "Ryan O'Hearn",
+        "Nick Gonzales",
+        "Marcell Ozuna"
+      ],
+      "removed": [
+        "Billy Cook",
+        "Henry Davis",
+        "Konnor Griffin"
+      ],
+      "orderChanges": [
+        {
+          "name": "Jake Mangum",
+          "order": 1
+        },
+        {
+          "name": "Esmerlyn Valdez",
+          "order": 4
+        },
+        {
+          "name": "Endy Rodríguez",
+          "order": 8
+        },
+        {
+          "name": "Jared Triolo",
+          "order": 9
+        }
+      ],
+      "recalc": [
+        "HR Projections",
+        "Pitcher Reports",
+        "K Props"
+      ]
+    },
+    {
+      "gamePk": 823442,
+      "matchup": "PIT @ PHI",
+      "side": "home",
+      "team": "PHI",
+      "becameOfficial": true,
+      "changed": true,
+      "added": [
+        "Trea Turner",
+        "Kyle Schwarber",
+        "Justin Crawford",
+        "Rafael Marchán"
+      ],
+      "removed": [
+        "Derek Hill",
+        "Edmundo Sosa",
+        "Garrett Stubbs",
+        "J.T. Realmuto"
+      ],
+      "orderChanges": [
+        {
+          "name": "Brandon Marsh",
+          "order": 4
+        },
+        {
+          "name": "Alec Bohm",
+          "order": 5
+        },
+        {
+          "name": "Bryson Stott",
+          "order": 6
+        }
+      ],
+      "recalc": [
+        "HR Projections",
+        "Pitcher Reports",
+        "K Props"
+      ]
+    },
+    {
+      "gamePk": 823765,
+      "matchup": "CIN @ MIL",
+      "side": "away",
+      "team": "CIN",
+      "becameOfficial": true,
+      "changed": true,
+      "added": [
+        "Sal Stewart",
+        "TJ Friedl"
+      ],
+      "removed": [
+        "Ivan Johnson",
+        "Matt McLain"
+      ],
+      "orderChanges": [
+        {
+          "name": "Elly De La Cruz",
+          "order": 1
+        },
+        {
+          "name": "JJ Bleday",
+          "order": 3
+        },
+        {
+          "name": "Eugenio Suárez",
+          "order": 4
+        },
+        {
+          "name": "Nathaniel Lowe",
+          "order": 5
+        },
+        {
+          "name": "Noelvi Marte",
+          "order": 6
+        },
+        {
+          "name": "Edwin Arroyo",
+          "order": 7
+        },
+        {
+          "name": "Jose Trevino",
+          "order": 8
+        }
+      ],
+      "recalc": [
+        "HR Projections",
+        "Pitcher Reports",
+        "K Props"
+      ]
+    },
+    {
+      "gamePk": 823765,
+      "matchup": "CIN @ MIL",
+      "side": "home",
+      "team": "MIL",
+      "becameOfficial": true,
+      "changed": true,
+      "added": [
+        "William Contreras",
+        "Jake Bauers",
+        "Sal Frelick"
+      ],
+      "removed": [
+        "Andrew Vaughn",
+        "Blake Perkins",
+        "Gary Sánchez"
+      ],
+      "orderChanges": [
+        {
+          "name": "Christian Yelich",
+          "order": 1
+        },
+        {
+          "name": "Jackson Chourio",
+          "order": 2
+        },
+        {
+          "name": "Garrett Mitchell",
+          "order": 6
+        },
+        {
+          "name": "Cooper Pratt",
+          "order": 8
+        },
+        {
+          "name": "David Hamilton",
+          "order": 9
+        }
+      ],
+      "recalc": [
+        "HR Projections",
+        "Pitcher Reports",
+        "K Props"
+      ]
+    },
+    {
+      "gamePk": 824335,
+      "matchup": "MIA @ COL",
+      "side": "away",
+      "team": "MIA",
+      "becameOfficial": true,
+      "changed": true,
+      "added": [
+        "Liam Hicks",
+        "Otto Lopez",
+        "Xavier Edwards",
+        "Owen Caissie"
+      ],
+      "removed": [
+        "Brian Navarreto",
+        "Esteury Ruiz",
+        "Heriberto Hernández",
+        "Leo Jiménez"
+      ],
+      "orderChanges": [
+        {
+          "name": "Kyle Stowers",
+          "order": 3
+        },
+        {
+          "name": "Griffin Conine",
+          "order": 5
+        },
+        {
+          "name": "Jakob Marsee",
+          "order": 7
+        },
+        {
+          "name": "Javier Sanoja",
+          "order": 8
+        },
+        {
+          "name": "Joe Mack",
+          "order": 9
+        }
+      ],
+      "recalc": [
+        "HR Projections",
+        "Pitcher Reports",
+        "K Props"
+      ]
+    },
+    {
+      "gamePk": 824335,
+      "matchup": "MIA @ COL",
+      "side": "home",
+      "team": "COL",
+      "becameOfficial": true,
+      "changed": true,
+      "added": [
+        "TJ Rumfield",
+        "Willi Castro",
+        "Troy Johnston"
+      ],
+      "removed": [
+        "Braxton Fulford",
+        "Ezequiel Tovar",
+        "Hunter Goodman"
+      ],
+      "orderChanges": [
+        {
+          "name": "Jake McCarthy",
+          "order": 1
+        },
+        {
+          "name": "Mickey Moniak",
+          "order": 2
+        },
+        {
+          "name": "Cole Carrigg",
+          "order": 6
+        },
+        {
+          "name": "Kyle Karros",
+          "order": 7
+        },
+        {
+          "name": "Brett Sullivan",
+          "order": 8
+        },
+        {
+          "name": "Edouard Julien",
+          "order": 9
+        }
+      ],
+      "recalc": [
+        "HR Projections",
+        "Pitcher Reports",
+        "K Props"
+      ]
+    },
+    {
+      "gamePk": 824906,
+      "matchup": "STL @ ATL",
+      "side": "home",
+      "team": "ATL",
+      "becameOfficial": false,
+      "changed": true,
+      "added": [
+        "Jim Jarvis"
+      ],
+      "removed": [
+        "Mauricio Dubón"
+      ],
+      "orderChanges": [
+        {
+          "name": "Joey Bart",
+          "order": 7
+        },
+        {
+          "name": "Jorge Mateo",
+          "order": 8
+        },
+        {
+          "name": "Matt Olson",
+          "order": 9
+        }
+      ],
+      "recalc": [
+        "HR Projections",
+        "Pitcher Reports",
+        "K Props"
+      ]
+    }
+  ],
+  "recalcNeeded": true,
+  "recalcTargets": [
+    "HR Projections",
+    "Pitcher Reports",
+    "K Props"
+  ],
   "games": {
     "822884": {
       "gamePk": 822884,
@@ -212,193 +539,193 @@
     "823442": {
       "gamePk": 823442,
       "matchup": "PIT @ PHI",
-      "status": "Scheduled",
-      "allLineupsConfirmed": false,
+      "status": "In Progress",
+      "allLineupsConfirmed": true,
       "away": {
         "abbr": "PIT",
-        "confirmed": false,
-        "source": "projected active-roster lineup",
+        "confirmed": true,
+        "source": "confirmed MLB batting lineup",
         "topPowerBats": [
           {
-            "order": 1,
-            "id": 695257,
-            "name": "Billy Cook",
+            "order": 4,
+            "id": 699013,
+            "name": "Esmerlyn Valdez",
             "pos": "RF",
-            "score": 2.65
+            "score": 9.84
           },
           {
             "order": 2,
             "id": 664040,
             "name": "Brandon Lowe",
             "pos": "2B",
-            "score": 2.65
+            "score": 6.41
+          },
+          {
+            "order": 8,
+            "id": 682848,
+            "name": "Endy Rodríguez",
+            "pos": "C",
+            "score": 5.37
+          },
+          {
+            "order": 5,
+            "id": 656811,
+            "name": "Ryan O'Hearn",
+            "pos": "1B",
+            "score": 5.31
           },
           {
             "order": 3,
             "id": 668804,
             "name": "Bryan Reynolds",
             "pos": "LF",
-            "score": 2.65
-          },
-          {
-            "order": 4,
-            "id": 682848,
-            "name": "Endy Rodríguez",
-            "pos": "C",
-            "score": 2.65
-          },
-          {
-            "order": 5,
-            "id": 699013,
-            "name": "Esmerlyn Valdez",
-            "pos": "RF",
-            "score": 2.65
+            "score": 4.78
           }
         ],
-        "avgPowerScore": 2.65,
-        "avgKRate": 0.22,
-        "lineupKey": "1:695257|2:664040|3:668804|4:682848|5:699013|6:680779|7:663968|8:669707|9:804606"
+        "avgPowerScore": 4.76,
+        "avgKRate": 0.245,
+        "lineupKey": "1:663968|2:664040|3:668804|4:699013|5:656811|6:693304|7:542303|8:682848|9:669707"
       },
       "home": {
         "abbr": "PHI",
-        "confirmed": false,
-        "source": "projected active-roster lineup",
+        "confirmed": true,
+        "source": "confirmed MLB batting lineup",
         "topPowerBats": [
           {
-            "order": 1,
-            "id": 664761,
-            "name": "Alec Bohm",
-            "pos": "3B",
-            "score": 2.65
-          },
-          {
             "order": 2,
-            "id": 669016,
-            "name": "Brandon Marsh",
-            "pos": "LF",
-            "score": 2.65
+            "id": 656941,
+            "name": "Kyle Schwarber",
+            "pos": "DH",
+            "score": 8.55
           },
           {
             "order": 3,
             "id": 547180,
             "name": "Bryce Harper",
             "pos": "1B",
-            "score": 2.65
+            "score": 6.76
           },
           {
             "order": 4,
-            "id": 681082,
-            "name": "Bryson Stott",
-            "pos": "2B",
-            "score": 2.65
+            "id": 669016,
+            "name": "Brandon Marsh",
+            "pos": "LF",
+            "score": 5.65
           },
           {
             "order": 5,
-            "id": 656537,
-            "name": "Derek Hill",
-            "pos": "RF",
-            "score": 2.65
+            "id": 664761,
+            "name": "Alec Bohm",
+            "pos": "3B",
+            "score": 3.93
+          },
+          {
+            "order": 6,
+            "id": 681082,
+            "name": "Bryson Stott",
+            "pos": "2B",
+            "score": 3.71
           }
         ],
-        "avgPowerScore": 2.65,
-        "avgKRate": 0.22,
-        "lineupKey": "1:664761|2:669016|3:547180|4:681082|5:656537|6:624641|7:687282|8:596117|9:592663"
+        "avgPowerScore": 4.42,
+        "avgKRate": 0.223,
+        "lineupKey": "1:607208|2:656941|3:547180|4:669016|5:664761|6:681082|7:687282|8:702222|9:665561"
       }
     },
     "823765": {
       "gamePk": 823765,
       "matchup": "CIN @ MIL",
-      "status": "Scheduled",
-      "allLineupsConfirmed": false,
+      "status": "In Progress",
+      "allLineupsConfirmed": true,
       "away": {
         "abbr": "CIN",
-        "confirmed": false,
-        "source": "projected active-roster lineup",
+        "confirmed": true,
+        "source": "confirmed MLB batting lineup",
         "topPowerBats": [
           {
-            "order": 1,
-            "id": 695490,
-            "name": "Edwin Arroyo",
-            "pos": "2B",
-            "score": 2.65
-          },
-          {
-            "order": 2,
-            "id": 682829,
-            "name": "Elly De La Cruz",
-            "pos": "SS",
-            "score": 2.65
-          },
-          {
             "order": 3,
-            "id": 553993,
-            "name": "Eugenio Suárez",
-            "pos": "DH",
-            "score": 2.65
-          },
-          {
-            "order": 4,
-            "id": 671155,
-            "name": "Ivan Johnson",
-            "pos": "2B",
-            "score": 2.65
-          },
-          {
-            "order": 5,
             "id": 668709,
             "name": "JJ Bleday",
             "pos": "LF",
-            "score": 2.65
-          }
-        ],
-        "avgPowerScore": 2.65,
-        "avgKRate": 0.22,
-        "lineupKey": "1:695490|2:682829|3:553993|4:671155|5:668709|6:624431|7:680574|8:663993|9:682622"
-      },
-      "home": {
-        "abbr": "MIL",
-        "confirmed": false,
-        "source": "projected active-roster lineup",
-        "topPowerBats": [
-          {
-            "order": 1,
-            "id": 683734,
-            "name": "Andrew Vaughn",
-            "pos": "1B",
-            "score": 2.65
+            "score": 6.48
           },
           {
             "order": 2,
-            "id": 663368,
-            "name": "Blake Perkins",
-            "pos": "CF",
-            "score": 2.65
+            "id": 701398,
+            "name": "Sal Stewart",
+            "pos": "3B",
+            "score": 5.7
+          },
+          {
+            "order": 5,
+            "id": 663993,
+            "name": "Nathaniel Lowe",
+            "pos": "1B",
+            "score": 5.59
+          },
+          {
+            "order": 1,
+            "id": 682829,
+            "name": "Elly De La Cruz",
+            "pos": "SS",
+            "score": 5.58
+          },
+          {
+            "order": 6,
+            "id": 682622,
+            "name": "Noelvi Marte",
+            "pos": "RF",
+            "score": 5.01
+          }
+        ],
+        "avgPowerScore": 4.24,
+        "avgKRate": 0.24,
+        "lineupKey": "1:682829|2:701398|3:668709|4:553993|5:663993|6:682622|7:695490|8:624431|9:670770"
+      },
+      "home": {
+        "abbr": "MIL",
+        "confirmed": true,
+        "source": "confirmed MLB batting lineup",
+        "topPowerBats": [
+          {
+            "order": 5,
+            "id": 641343,
+            "name": "Jake Bauers",
+            "pos": "1B",
+            "score": 6.22
+          },
+          {
+            "order": 2,
+            "id": 694192,
+            "name": "Jackson Chourio",
+            "pos": "LF",
+            "score": 6.16
           },
           {
             "order": 3,
             "id": 668930,
             "name": "Brice Turang",
             "pos": "2B",
-            "score": 2.65
+            "score": 4.92
+          },
+          {
+            "order": 6,
+            "id": 669003,
+            "name": "Garrett Mitchell",
+            "pos": "CF",
+            "score": 4.25
           },
           {
             "order": 4,
-            "id": 592885,
-            "name": "Christian Yelich",
-            "pos": "DH",
-            "score": 2.65
-          },
-          {
-            "order": 5,
-            "id": 806198,
-            "name": "Cooper Pratt",
-            "pos": "SS",
-            "score": 2.65
+            "id": 661388,
+            "name": "William Contreras",
+            "pos": "C",
+            "score": 4.04
           }
         ],
-        "avgPowerScore": 2.65,
-        "avgKRate": 0.22,
-        "lineupKey": "1:683734|2:663368|3:668930|4:592885|5:806198|6:666152|7:669003|8:596142|9:694192"
+        "avgPowerScore": 4.04,
+        "avgKRate": 0.227,
+        "lineupKey": "1:592885|2:694192|3:668930|4:661388|5:641343|6:669003|7:686217|8:806198|9:666152"
       }
     },
     "823935": {
@@ -596,97 +923,97 @@
     "824335": {
       "gamePk": 824335,
       "matchup": "MIA @ COL",
-      "status": "Scheduled",
-      "allLineupsConfirmed": false,
+      "status": "Pre-Game",
+      "allLineupsConfirmed": true,
       "away": {
         "abbr": "MIA",
-        "confirmed": false,
-        "source": "projected active-roster lineup",
+        "confirmed": true,
+        "source": "confirmed MLB batting lineup",
         "topPowerBats": [
           {
-            "order": 1,
-            "id": 640459,
-            "name": "Brian Navarreto",
-            "pos": "C",
-            "score": 2.65
-          },
-          {
-            "order": 2,
-            "id": 665923,
-            "name": "Esteury Ruiz",
-            "pos": "RF",
-            "score": 2.65
-          },
-          {
-            "order": 3,
+            "order": 5,
             "id": 665052,
             "name": "Griffin Conine",
             "pos": "LF",
-            "score": 2.65
+            "score": 6.36
           },
-          {
-            "order": 4,
-            "id": 681715,
-            "name": "Heriberto Hernández",
-            "pos": "LF",
-            "score": 2.65
-          },
-          {
-            "order": 5,
-            "id": 805300,
-            "name": "Jakob Marsee",
-            "pos": "CF",
-            "score": 2.65
-          }
-        ],
-        "avgPowerScore": 2.65,
-        "avgKRate": 0.22,
-        "lineupKey": "1:640459|2:665923|3:665052|4:681715|5:805300|6:691594|7:691788|8:669065|9:677870"
-      },
-      "home": {
-        "abbr": "COL",
-        "confirmed": false,
-        "source": "projected active-roster lineup",
-        "topPowerBats": [
           {
             "order": 1,
-            "id": 690924,
-            "name": "Braxton Fulford",
+            "id": 689414,
+            "name": "Liam Hicks",
             "pos": "DH",
-            "score": 2.65
+            "score": 5.46
           },
           {
-            "order": 2,
-            "id": 664954,
-            "name": "Brett Sullivan",
+            "order": 6,
+            "id": 683357,
+            "name": "Owen Caissie",
+            "pos": "RF",
+            "score": 5.23
+          },
+          {
+            "order": 9,
+            "id": 691788,
+            "name": "Joe Mack",
             "pos": "C",
-            "score": 2.65
+            "score": 4.92
           },
           {
             "order": 3,
+            "id": 669065,
+            "name": "Kyle Stowers",
+            "pos": "1B",
+            "score": 4.58
+          }
+        ],
+        "avgPowerScore": 4.47,
+        "avgKRate": 0.211,
+        "lineupKey": "1:689414|2:672640|3:669065|4:669364|5:665052|6:683357|7:805300|8:691594|9:691788"
+      },
+      "home": {
+        "abbr": "COL",
+        "confirmed": true,
+        "source": "confirmed MLB batting lineup",
+        "topPowerBats": [
+          {
+            "order": 2,
+            "id": 666160,
+            "name": "Mickey Moniak",
+            "pos": "LF",
+            "score": 7.83
+          },
+          {
+            "order": 6,
             "id": 694249,
             "name": "Cole Carrigg",
             "pos": "CF",
-            "score": 2.65
+            "score": 5.55
           },
           {
-            "order": 4,
-            "id": 666397,
-            "name": "Edouard Julien",
-            "pos": "2B",
-            "score": 2.65
+            "order": 3,
+            "id": 681198,
+            "name": "TJ Rumfield",
+            "pos": "1B",
+            "score": 5.09
           },
           {
-            "order": 5,
-            "id": 678662,
-            "name": "Ezequiel Tovar",
-            "pos": "SS",
-            "score": 2.65
+            "order": 1,
+            "id": 664983,
+            "name": "Jake McCarthy",
+            "pos": "RF",
+            "score": 4.27
+          },
+          {
+            "order": 8,
+            "id": 664954,
+            "name": "Brett Sullivan",
+            "pos": "C",
+            "score": 4.2
           }
         ],
-        "avgPowerScore": 2.65,
-        "avgKRate": 0.22,
-        "lineupKey": "1:690924|2:664954|3:694249|4:666397|5:678662|6:696100|7:664983|8:691720|9:666160"
+        "avgPowerScore": 4.48,
+        "avgKRate": 0.209,
+        "lineupKey": "1:664983|2:666160|3:681198|4:650489|5:687859|6:694249|7:691720|8:664954|9:666397"
       }
     },
     "824416": {
@@ -878,7 +1205,7 @@
         ],
         "avgPowerScore": 2.65,
         "avgKRate": 0.22,
-        "lineupKey": "1:663586|2:642086|3:686948|4:642201|5:673490|6:663698|7:622761|8:621566|9:643289"
+        "lineupKey": "1:663586|2:642086|3:686948|4:642201|5:673490|6:805347|7:663698|8:622761|9:621566"
       }
     }
   }
