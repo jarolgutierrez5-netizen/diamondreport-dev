@@ -4,10 +4,10 @@
   "teams": {},
   "confidence": {},
   "note": "Reserved for learned model signals.",
-  "generatedAt": "2026-07-02T00:01:36.297Z",
+  "generatedAt": "2026-07-02T00:33:39.782Z",
   "notes": [
     "Tracker sync uses final-only historical rows.",
-    "DR Picks are auto-snapshotted if data/today-predictions.json is empty for the day.",
-    "K/HR snapshot automation is planned for the next tracker engine phase."
+    "DR Picks, K Props, and HR picks are auto-snapshotted if data/today-predictions.json is missing rows for the day.",
+    "K Props are graded from final boxscore strikeouts. HR picks are graded from final boxscore home runs."
   ]
 }
