@@ -1,0 +1,41 @@
+name: Sync Pitcher Statcast
+
+on:
+  # Run every morning before first pitch and again mid-afternoon
+  # (probables are usually confirmed by 10 AM ET)
+  schedule:
+    - cron: '0 14 * * *'   # 10:00 AM ET (UTC-4 during DST)
+    - cron: '0 18 * * *'   # 2:00 PM ET  (in case late scratches/changes)
+  # Allow manual trigger from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to commit data/pitcher-statcast.json back to repo
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Copy sync script from draft location
+        run: cp scripts/sync-pitcher-statcast.mjs ./sync-pitcher-statcast.mjs
+        # NOTE: move the script to scripts/ first — see setup instructions below
+
+      - name: Run Pitcher Statcast sync
+        run: node sync-pitcher-statcast.mjs
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/pitcher-statcast.json
+          # Only commit if the file actually changed
+          git diff --cached --quiet || git commit -m "chore: sync pitcher Statcast data [skip ci]"
+          git push
